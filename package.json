@@ -1,0 +1,49 @@
+{
+    "name": "sketch-m3-color-palettes",
+    "description": "With this plugin you can export to your desktop a design-tokens.json file compatible with Amazon Style Dictionary.",
+    "version": "0.0.1",
+    "engines": {
+        "sketch": ">=3.0"
+    },
+    "skpm": {
+        "name": "sketch-m3-color-palettes",
+        "manifest": "src/manifest.json",
+        "main": "sketch-m3-color-palettes.sketchplugin",
+        "assets": [
+            "assets/**/*"
+        ],
+        "sketch-assets-file": "sketch-assets/icons.sketch"
+    },
+    "scripts": {
+        "build": "skpm-build",
+        "watch": "skpm-build --watch",
+        "start": "skpm-build --watch",
+        "postinstall": "npm run build && skpm-link"
+    },
+    "devDependencies": {
+        "@skpm/builder": "^0.8.0",
+        "@skpm/extract-loader": "^2.0.2",
+        "css-loader": "^3.2.0",
+        "html-loader": "^0.5.5"
+    },
+    "resources": [
+        "resources/**/*.js"
+    ],
+    "dependencies": {
+        "@material/material-color-utilities": "^0.2.0",
+        "@skpm/fs": "^0.2.6",
+        "@types/node": "17.0.23",
+        "hex-rgb": "^5.0.0",
+        "node-fetch": "^2.6.7",
+        "path": "0.12.7",
+        "platform-folders": "^0.6.0",
+        "rgb-hex": "^3.0.0",
+        "sketch-module-web-view": "^3.1.4",
+        "sort-object": "^3.0.3"
+    },
+    "author": "Matteo Gratton <icona79@gmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/icona79/sketch-m3-color-palettes.git"
+    }
+}

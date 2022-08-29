@@ -1,0 +1,23 @@
+{
+    "compatibleVersion": 3,
+    "bundleVersion": 1,
+    "commands": [
+        {
+            "name": "Sketch Material Design 3 Color Palettes",
+            "identifier": "ste-script",
+            "script": "./script.js",
+            "handlers": {
+                "run": "onRun",
+                "actions": {
+                    "Shutdown": "onShutdown"
+                }
+            }
+        }
+    ],
+    "menu": {
+        "title": "sketch-m3-color-palettes",
+        "items": ["ste-script"],
+        "isRoot": true
+    },
+    "icon": "icon.png"
+}

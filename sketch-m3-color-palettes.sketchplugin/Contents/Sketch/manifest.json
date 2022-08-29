@@ -1,0 +1,33 @@
+{
+  "compatibleVersion": 3,
+  "bundleVersion": 1,
+  "commands": [
+    {
+      "name": "Sketch Material Design 3 Color Palettes",
+      "identifier": "ste-script",
+      "script": "__script.js",
+      "handlers": {
+        "run": "onRun",
+        "actions": {
+          "Shutdown": "onShutdown"
+        }
+      }
+    }
+  ],
+  "menu": {
+    "title": "sketch-m3-color-palettes",
+    "items": [
+      "ste-script"
+    ],
+    "isRoot": true
+  },
+  "icon": "icon.png",
+  "version": "0.0.1",
+  "description": "With this plugin you can export to your desktop a design-tokens.json file compatible with Amazon Style Dictionary.",
+  "name": "sketch-m3-color-palettes",
+  "identifier": "sketch-m3-color-palettes",
+  "disableCocoaScriptPreprocessor": true,
+  "appcast": "https://raw.githubusercontent.com/icona79/sketch-m3-color-palettes/master/.appcast.xml",
+  "author": "Matteo Gratton",
+  "authorEmail": "icona79@gmail.com"
+}
