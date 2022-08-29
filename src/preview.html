@@ -1,0 +1,736 @@
+<html>
+
+    <style type="text/css">
+        @font-face{font-family:'Google Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlematerialicons/v127/Gw6kwdfw6UnXLJCcmafZyFRXb3BL9rvi0QZG2w.woff) format('woff');}@font-face{font-family:'Google Sans Mono';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesansmono/v18/P5sUzYWFYtnZ_Cg-t0Uq_rfivrdYH4RE8-pZ5gQ1abT53zVU.woff) format('woff');}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5mE4.woff) format('woff');}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVrmw.woff) format('woff');}@font-face{font-family:'Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/materialicons/v138/flUhRq6tzZclQEJ-Vdg-IuiaDsNa.woff) format('woff');}.google-material-icons{font-family:'Google Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;font-feature-settings:'liga';}.material-icons{font-family:'Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;font-feature-settings:'liga';}@font-face{font-family:'Google Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlematerialicons/v127/Gw6kwdfw6UnXLJCcmafZyFRXb3BL9rvi0QZG3Sy7X00.woff2) format('woff2');}@font-face{font-family:'Google Sans Mono';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesansmono/v18/P5sUzYWFYtnZ_Cg-t0Uq_rfivrdYH4RE8-pZ5gQ1abT53wVQGr-VZS26DMA.woff) format('woff');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qE52i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qEl2i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0370-03FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qEV2i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qER2i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qEp2i0VBuxM.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmxjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmtjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0370-03FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmdjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmZjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmhjtjm4DZw.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/materialicons/v138/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2) format('woff2');}.google-material-icons{font-family:'Google Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}.material-icons{font-family:'Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}
+
+        	/* body,
+	html {
+	padding: 0;
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+div {
+padding: 10px;
+} */
+
+:root {
+	color-scheme: light dark;
+	/* View Size */
+	--width: 190px;
+	--height: 320px;
+	/* Design Tokens */
+	/* --color-accent: -apple-system-control-accent; */
+
+    /* Choice Tokens - Generic */
+    --color-light-on-dark: #FFFFFF;
+    
+
+    /* Primary Tokens */
+    --color-primary-100: #ffffff;
+    --color-primary-99: #fffbff;
+    --color-primary-98: #fdf7ff;
+    --color-primary-95: #f6eeff; 
+    --color-primary-90: #e9ddff; /* used */
+    --color-primary-80: #cfbcff;
+    --color-primary-70: #b69df8;
+    --color-primary-60: #9a83db;
+    --color-primary-50: #8069bf;
+    --color-primary-40: #6750a4; /* used */
+    --color-primary-35: #5b4397;
+    --color-primary-30: #4f378a;
+    --color-primary-25: #432b7e;
+    --color-primary-20: #381e72;
+    --color-primary-10: #22005d; /* used */
+    --color-primary-0: #000000;
+
+
+    
+    /* Decision Tokens - Primary */
+    --color-primary: var(--color-primary-40);
+    --color-on-primary: var(--color-light-on-dark);
+    --color-on-primary-text: var(--color-primary);
+    --color-primary-container: var(--color-primary-90);
+    --color-primary-container-text: var(--color-primary-10);
+    --color-on-primary-container: var(--color-primary-10);
+    --color-on-primary-container-text: var(--color-primary-10);
+
+
+    /* Secondary Tokens */
+    --color-secondary-100: #ffffff;
+    --color-secondary-99: #f4fff6;
+    --color-secondary-98: #e8fff0;
+    --color-secondary-95: #bdffdd;
+    --color-secondary-90: #89f8c6; /* used */
+    --color-secondary-80: #6ddbab;
+    --color-secondary-70: #4fbf91;
+    --color-secondary-60: #2ea377;
+    --color-secondary-50: #008860;
+    --color-secondary-40: #006c4b; /* used */
+    --color-secondary-35: #005f41;
+    --color-secondary-30: #005138;
+    --color-secondary-25: #00452e;
+    --color-secondary-20: #003825;
+    --color-secondary-10: #002114; /* used */
+    --color-secondary-0: #000000;
+
+    /* Add missing Secondary Tokens */
+
+    /* Decision Tokens - Secondary */
+    --color-secondary: var(--color-secondary-40);
+    --color-on-secondary: var(--color-light-on-dark);
+    --color-on-secondary-text: var(--color-secondary);
+    --color-secondary-container: var(--color-secondary-90);
+    --color-secondary-container-text: var(--color-secondary-10);
+    --color-on-secondary-container: var(--color-secondary-10);
+    --color-on-secondary-container-text: var(--color-secondary-10);
+
+
+    /* tertiary Tokens */
+    --color-tertiary-10: #31101d;
+    --color-tertiary-40: #7e5260;
+    --color-tertiary-90: #ffd9e3;
+    /* Add missing tertiary Tokens */
+
+    /* Decision Tokens - Tertiary */
+    --color-tertiary: var(--color-tertiary-40);
+    --color-on-tertiary: var(--color-light-on-dark);
+    --color-on-tertiary-text: var(--color-tertiary);
+    --color-tertiary-container: var(--color-tertiary-90);
+    --color-tertiary-container-text: var(--color-tertiary-10);
+    --color-on-tertiary-container: var(--color-tertiary-10);
+    --color-on-tertiary-container-text: var(--color-tertiary-10);
+
+
+    /* error Tokens */
+    --color-error-10: #410002;
+    --color-error-40: #ba1a1a;
+    --color-error-90: #ffdad6;
+    /* Add missing error Tokens */
+
+    /* Decision Tokens - Error */
+    --color-error: var(--color-error-40);
+    --color-on-error: var(--color-light-on-dark);
+    --color-on-error-text: var(--color-error);
+    --color-error-container: var(--color-error-90);
+    --color-error-container-text: var(--color-error-10);
+    --color-on-error-container: var(--color-error-10);
+    --color-on-error-container-text: var(--color-error-10);
+
+
+
+}   
+
+
+
+
+body {
+	width: calc(var(--width) - 400);
+	height: var(--height);
+	display: flex;
+	flex-direction: column;
+	font-family: var(--text-font-family);
+	font-size: var(--text-font-body-size);
+	color: var(--text-font-body-color);
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	cursor: default;
+}
+
+
+
+.view {
+	width: var(--size-layout-max-width);
+	height: auto;
+	background-color: var(--view-background-color);
+}
+
+header {
+	height: var(--size-header);
+	width: var(--size-layout-max-width);
+	padding: 0 var(--space-xxx-large);
+	display: flex;
+	align-items: center;
+	justify-content: left;
+}
+
+h1 {
+	color: var(--header-color);
+	font-size: var(--text-font-h1-size);
+	font-weight: var(--text-font-h1-weight);
+}
+
+
+h2 {
+	color: var(--header-color);
+	font-size: var(--text-font-h2-size);
+	font-weight: var(--text-font-h2-weight);
+}
+
+.color-label-on-light {
+    color: #000000;
+}
+
+.color-label-on-dark {
+    color: #ffffff;
+}
+
+/* classes for colors */
+
+.color-primary {
+    background-color: var(--color-primary);
+}
+
+.color-on-primary {
+    background-color: var(--color-light-on-dark);
+}
+
+.color-on-primary-text {
+    color: var(--color-primary);
+}
+
+
+.color-primary-container {
+    background-color: var(--color-primary-container);
+}
+
+
+.color-primary-container-text {
+    color: var(--color-primary-10);
+}
+
+
+.color-on-primary-container {
+    background-color: var(--color-on-primary-container);
+}
+
+.color-on-primary-container-text {
+    color: var(--color-primary-container);
+}
+
+/* Color Scale - Primary */
+
+.color-primary-100 {
+    background-color: var(--color-primary-100);
+}
+
+.color-primary-99 {
+    background-color: var(--color-primary-99);
+}
+
+.color-primary-95 {
+    background-color: var(--color-primary-95);
+}
+
+.color-primary-90 {
+    background-color: var(--color-primary-90);
+}
+
+.color-primary-80 {
+    background-color: var(--color-primary-80);
+}
+
+.color-primary-70 {
+    background-color: var(--color-primary-70);
+}
+
+.color-primary-60 {
+    background-color: var(--color-primary-60);
+}
+
+.color-primary-50 {
+    background-color: var(--color-primary-50);
+}
+
+.color-primary-40 {
+    background-color: var(--color-primary-40);
+}
+
+.color-primary-30 {
+    background-color: var(--color-primary-30);
+}
+
+.color-primary-20 {
+    background-color: var(--color-primary-20);
+}
+
+.color-primary-10 {
+    background-color: var(--color-primary-10);
+}
+
+.color-primary-0 {
+    background-color: var(--color-primary-0);
+}
+
+
+
+.color-secondary {
+    background-color: var(--color-secondary);
+}
+
+.color-on-secondary {
+    background-color: var(--color-light-on-dark);
+}
+
+.color-on-secondary-text {
+    color: var(--color-secondary);
+}
+
+
+.color-secondary-container {
+    background-color: var(--color-secondary-container);
+}
+
+
+.color-secondary-container-text {
+    color: var(--color-secondary-10);
+}
+
+
+.color-on-secondary-container {
+    background-color: var(--color-on-secondary-container);
+}
+
+.color-on-secondary-container-text {
+    color: var(--color-secondary-container);
+}
+
+
+
+
+
+/* Color Scale - Secondary */
+
+.color-secondary-100 {
+    background-color: var(--color-secondary-100);
+}
+
+.color-secondary-99 {
+    background-color: var(--color-secondary-99);
+}
+
+.color-secondary-95 {
+    background-color: var(--color-secondary-95);
+}
+
+.color-secondary-90 {
+    background-color: var(--color-secondary-90);
+}
+
+.color-secondary-80 {
+    background-color: var(--color-secondary-80);
+}
+
+.color-secondary-70 {
+    background-color: var(--color-secondary-70);
+}
+
+.color-secondary-60 {
+    background-color: var(--color-secondary-60);
+}
+
+.color-secondary-50 {
+    background-color: var(--color-secondary-50);
+}
+
+.color-secondary-40 {
+    background-color: var(--color-secondary-40);
+}
+
+.color-secondary-30 {
+    background-color: var(--color-secondary-30);
+}
+
+.color-secondary-20 {
+    background-color: var(--color-secondary-20);
+}
+
+.color-secondary-10 {
+    background-color: var(--color-secondary-10);
+}
+
+.color-secondary-0 {
+    background-color: var(--color-secondary-0);
+}
+
+
+.color-tertiary {
+    background-color: var(--color-tertiary);
+}
+
+.color-on-tertiary {
+    background-color: var(--color-light-on-dark);
+}
+
+.color-on-tertiary-text {
+    color: var(--color-tertiary);
+}
+
+
+.color-tertiary-container {
+    background-color: var(--color-tertiary-container);
+}
+
+
+.color-tertiary-container-text {
+    color: var(--color-tertiary-10);
+}
+
+
+.color-on-tertiary-container {
+    background-color: var(--color-on-tertiary-container);
+}
+
+.color-on-tertiary-container-text {
+    color: var(--color-tertiary-container);
+}
+
+
+
+.color-error {
+    background-color: var(--color-error);
+}
+
+.color-on-error {
+    background-color: var(--color-light-on-dark);
+}
+
+.color-on-error-text {
+    color: var(--color-error);
+}
+
+
+.color-error-container {
+    background-color: var(--color-error-container);
+}
+
+
+.color-error-container-text {
+    color: var(--color-error-10);
+}
+
+
+.color-on-error-container {
+    background-color: var(--color-on-error-container);
+}
+
+.color-on-error-container-text {
+    color: var(--color-error-container);
+}
+
+
+
+
+/* 
+.color-secondary {
+    background-color: var(--color-secondary);
+}
+
+.color-secondary-container {
+    background-color: var(--color-secondary-container);
+}
+
+.color-on-secondary-container {
+    background-color: var(--color-on-secondary-container);
+}
+ */
+
+
+/* .color-scheme {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 24px;
+} */
+
+.color-family {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(1, 1fr);
+    grid-column-gap: 24px;
+    grid-row-gap: 100px;
+    padding-bottom: 24px;
+}
+
+.color-item {
+    height:100px;
+    padding: 16px;
+}
+
+    </style>
+    <body>
+
+        <main class="preview">
+            <div class="preview-content">
+                <h1>Your Theme</h1>
+                <h2>Light Theme</h2>
+
+          <div class="color-scheme">
+
+            <div class="color-family primary">          
+                <div title="primary" class="color-item color-primary">
+                    <span class="color-label">primary</span><span class="color-desc"></span>
+                </div>
+
+                <div title="on primary" class="color-item color-on-primary">
+                    <span class="color-label color-on-primary-text">on primary</span><span class="color-desc"></span>
+                </div>
+
+
+                <div title="primary container" class="color-item color-primary-container">
+                    <span class="color-label color-primary-container-text">primary container</span><span class="color-desc"></span>
+                </div>
+
+                <div title="on primary container" class="color-item color-on-primary-container">
+                    <span class="color-label color-on-primary-container-text">on primary</span><span class="color-desc"></span>
+                </div>
+            </div>
+            
+            <div class="color-family secondary">          
+                <div title="secondary" class="color-item color-secondary">
+                    <span class="color-label">secondary</span><span class="color-desc"></span>
+                </div>
+            
+                <div title="on secondary" class="color-item color-on-secondary">
+                    <span class="color-label color-on-secondary-text">on secondary</span><span class="color-desc"></span>
+                </div>
+            
+            
+                <div title="secondary container" class="color-item color-secondary-container">
+                    <span class="color-label color-secondary-container-text">secondary container</span><span class="color-desc"></span>
+                </div>
+            
+                <div title="on secondary container" class="color-item color-on-secondary-container">
+                    <span class="color-label color-on-secondary-container-text">on secondary container</span><span class="color-desc"></span>
+                </div>
+            </div>
+            
+
+            <div class="color-family tertiary">          
+                <div title="tertiary" class="color-item color-tertiary">
+                    <span class="color-label">tertiary</span><span class="color-desc"></span>
+                </div>
+            
+                <div title="on tertiary" class="color-item color-on-tertiary">
+                    <span class="color-label color-on-tertiary-text">on tertiary</span><span class="color-desc"></span>
+                </div>
+            
+            
+                <div title="tertiary container" class="color-item color-tertiary-container">
+                    <span class="color-label color-tertiary-container-text">tertiary container</span><span class="color-desc"></span>
+                </div>
+            
+                <div title="on tertiary container" class="color-item color-on-tertiary-container">
+                    <span class="color-label color-on-tertiary-container-text">on tertiary container</span><span class="color-desc"></span>
+                </div>
+            </div>
+
+
+
+
+            <div class="color-family error">          
+                <div title="error" class="color-item color-error">
+                    <span class="color-label">error</span><span class="color-desc"></span>
+                </div>
+            
+                <div title="on error" class="color-item color-on-error">
+                    <span class="color-label color-on-error-text">on error</span><span class="color-desc"></span>
+                </div>
+            
+            
+                <div title="error container" class="color-item color-error-container">
+                    <span class="color-label color-error-container-text">error container</span><span class="color-desc"></span>
+                </div>
+            
+                <div title="on error container" class="color-item color-on-error-container">
+                    <span class="color-label color-on-error-container-text">on error container</span><span class="color-desc"></span>
+                </div>
+            </div>
+            
+
+
+
+            <!-- <h1>to add above ☝️</h1> -->
+
+            <!-- <div class="color-family background">
+                <div title="background - #fffbff" class="color-item" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(28, 27, 30);">background</span><span class="color-desc" style="color: rgb(28, 27, 30);">#fffbff</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+                <div title="on background - #1c1b1e" class="color-item" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(255, 251, 255);">on background</span><span class="color-desc" style="color: rgb(255, 251, 255);">#1c1b1e</span><mwc-icon-button class="color-copy" style="color: rgb(255, 251, 255);"></mwc-icon-button></div>
+                <div title="surface - #fffbff" class="color-item" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(28, 27, 30);">surface</span><span class="color-desc" style="color: rgb(28, 27, 30);">#fffbff</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+                <div title="on surface - #1c1b1e" class="color-item" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(255, 251, 255);">on surface</span><span class="color-desc" style="color: rgb(255, 251, 255);">#1c1b1e</span><mwc-icon-button class="color-copy" style="color: rgb(255, 251, 255);"></mwc-icon-button></div>
+              </div>
+              <div class="color-family surface-variant">
+                <div title="outline - #7a757f" class="color-item color-item-2x" style="background-color: rgb(122, 117, 127);"><span class="color-label" style="color: rgb(255, 251, 255);">outline</span><span class="color-desc" style="color: rgb(255, 251, 255);">#7a757f</span><mwc-icon-button class="color-copy" style="color: rgb(255, 251, 255);"></mwc-icon-button></div>
+                <div title="surface-variant - #e7e0eb" class="color-item" style="background-color: rgb(231, 224, 235);"><span class="color-label" style="color: rgb(73, 69, 78);">surface-variant</span><span class="color-desc" style="color: rgb(73, 69, 78);">#e7e0eb</span><mwc-icon-button class="color-copy" style="color: rgb(73, 69, 78);"></mwc-icon-button></div>
+                <div title="on surface-variant - #49454e" class="color-item" style="background-color: rgb(73, 69, 78);"><span class="color-label" style="color: rgb(231, 224, 235);">on surface-variant</span><span class="color-desc" style="color: rgb(231, 224, 235);">#49454e</span><mwc-icon-button class="color-copy" style="color: rgb(231, 224, 235);"></mwc-icon-button></div>
+              </div>
+            </div> -->
+
+<!-- 
+        <div title="on primary - #ffffff" class="color-item" style="background-color: rgb(255, 255, 255);">
+            <span class="color-label" style="color: rgb(103, 80, 164);">on primary</span><span class="color-desc" style="color: rgb(103, 80, 164);">#ffffff</span><mwc-icon-button class="color-copy" style="color: rgb(103, 80, 164);"></mwc-icon-button>
+        </div> -->
+          <!-- <div title="primary container - #e9ddff" class="color-item" style="background-color: rgb(233, 221, 255);"><span class="color-label" style="color: rgb(34, 0, 93);">primary container</span><span class="color-desc" style="color: rgb(34, 0, 93);">#e9ddff</span><mwc-icon-button class="color-copy" style="color: rgb(34, 0, 93);"></mwc-icon-button></div>
+          <div title="on primary container - #22005d" class="color-item" style="background-color: rgb(34, 0, 93);"><span class="color-label" style="color: rgb(233, 221, 255);">on primary container</span><span class="color-desc" style="color: rgb(233, 221, 255);">#22005d</span><mwc-icon-button class="color-copy" style="color: rgb(233, 221, 255);"></mwc-icon-button></div> -->
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <!-- </div>
+          <div class="color-family secondary">
+          <div title="secondary - #006c4b" class="color-item" style="background-color: rgb(0, 108, 75);"><span class="color-label" style="color: rgb(255, 255, 255);">secondary</span><span class="color-desc" style="color: rgb(255, 255, 255);">#006c4b</span><mwc-icon-button class="color-copy" style="color: rgb(255, 255, 255);"></mwc-icon-button></div>
+          <div title="on secondary - #ffffff" class="color-item" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(0, 108, 75);">on secondary</span><span class="color-desc" style="color: rgb(0, 108, 75);">#ffffff</span><mwc-icon-button class="color-copy" style="color: rgb(0, 108, 75);"></mwc-icon-button></div>
+          <div title="secondary container - #89f8c6" class="color-item" style="background-color: rgb(137, 248, 198);"><span class="color-label" style="color: rgb(0, 33, 20);">secondary container</span><span class="color-desc" style="color: rgb(0, 33, 20);">#89f8c6</span><mwc-icon-button class="color-copy" style="color: rgb(0, 33, 20);"></mwc-icon-button></div>
+          <div title="on secondary container - #002114" class="color-item" style="background-color: rgb(0, 33, 20);"><span class="color-label" style="color: rgb(137, 248, 198);">on secondary container</span><span class="color-desc" style="color: rgb(137, 248, 198);">#002114</span><mwc-icon-button class="color-copy" style="color: rgb(137, 248, 198);"></mwc-icon-button></div>
+        </div>
+          <div class="color-family tertiary">
+          <div title="tertiary - #7e5260" class="color-item" style="background-color: rgb(126, 82, 96);"><span class="color-label" style="color: rgb(255, 255, 255);">tertiary</span><span class="color-desc" style="color: rgb(255, 255, 255);">#7e5260</span><mwc-icon-button class="color-copy" style="color: rgb(255, 255, 255);"></mwc-icon-button></div>
+          <div title="on tertiary - #ffffff" class="color-item" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(126, 82, 96);">on tertiary</span><span class="color-desc" style="color: rgb(126, 82, 96);">#ffffff</span><mwc-icon-button class="color-copy" style="color: rgb(126, 82, 96);"></mwc-icon-button></div>
+          <div title="tertiary container - #ffd9e3" class="color-item" style="background-color: rgb(255, 217, 227);"><span class="color-label" style="color: rgb(49, 16, 29);">tertiary container</span><span class="color-desc" style="color: rgb(49, 16, 29);">#ffd9e3</span><mwc-icon-button class="color-copy" style="color: rgb(49, 16, 29);"></mwc-icon-button></div>
+          <div title="on tertiary container - #31101d" class="color-item" style="background-color: rgb(49, 16, 29);"><span class="color-label" style="color: rgb(255, 217, 227);">on tertiary container</span><span class="color-desc" style="color: rgb(255, 217, 227);">#31101d</span><mwc-icon-button class="color-copy" style="color: rgb(255, 217, 227);"></mwc-icon-button></div>
+        </div>
+          <div class="color-family error">
+          <div title="error - #ba1a1a" class="color-item" style="background-color: rgb(186, 26, 26);"><span class="color-label" style="color: rgb(255, 255, 255);">error</span><span class="color-desc" style="color: rgb(255, 255, 255);">#ba1a1a</span><mwc-icon-button class="color-copy" style="color: rgb(255, 255, 255);"></mwc-icon-button></div>
+          <div title="on error - #ffffff" class="color-item" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(186, 26, 26);">on error</span><span class="color-desc" style="color: rgb(186, 26, 26);">#ffffff</span><mwc-icon-button class="color-copy" style="color: rgb(186, 26, 26);"></mwc-icon-button></div>
+          <div title="error container - #ffdad6" class="color-item" style="background-color: rgb(255, 218, 214);"><span class="color-label" style="color: rgb(65, 0, 2);">error container</span><span class="color-desc" style="color: rgb(65, 0, 2);">#ffdad6</span><mwc-icon-button class="color-copy" style="color: rgb(65, 0, 2);"></mwc-icon-button></div>
+          <div title="on error container - #410002" class="color-item" style="background-color: rgb(65, 0, 2);"><span class="color-label" style="color: rgb(255, 218, 214);">on error container</span><span class="color-desc" style="color: rgb(255, 218, 214);">#410002</span><mwc-icon-button class="color-copy" style="color: rgb(255, 218, 214);"></mwc-icon-button></div>
+        </div> -->
+          <!-- <div class="color-family background">
+            <div title="background - #fffbff" class="color-item" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(28, 27, 30);">background</span><span class="color-desc" style="color: rgb(28, 27, 30);">#fffbff</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+            <div title="on background - #1c1b1e" class="color-item" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(255, 251, 255);">on background</span><span class="color-desc" style="color: rgb(255, 251, 255);">#1c1b1e</span><mwc-icon-button class="color-copy" style="color: rgb(255, 251, 255);"></mwc-icon-button></div>
+            <div title="surface - #fffbff" class="color-item" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(28, 27, 30);">surface</span><span class="color-desc" style="color: rgb(28, 27, 30);">#fffbff</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+            <div title="on surface - #1c1b1e" class="color-item" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(255, 251, 255);">on surface</span><span class="color-desc" style="color: rgb(255, 251, 255);">#1c1b1e</span><mwc-icon-button class="color-copy" style="color: rgb(255, 251, 255);"></mwc-icon-button></div>
+          </div>
+          <div class="color-family surface-variant">
+            <div title="outline - #7a757f" class="color-item color-item-2x" style="background-color: rgb(122, 117, 127);"><span class="color-label" style="color: rgb(255, 251, 255);">outline</span><span class="color-desc" style="color: rgb(255, 251, 255);">#7a757f</span><mwc-icon-button class="color-copy" style="color: rgb(255, 251, 255);"></mwc-icon-button></div>
+            <div title="surface-variant - #e7e0eb" class="color-item" style="background-color: rgb(231, 224, 235);"><span class="color-label" style="color: rgb(73, 69, 78);">surface-variant</span><span class="color-desc" style="color: rgb(73, 69, 78);">#e7e0eb</span><mwc-icon-button class="color-copy" style="color: rgb(73, 69, 78);"></mwc-icon-button></div>
+            <div title="on surface-variant - #49454e" class="color-item" style="background-color: rgb(73, 69, 78);"><span class="color-label" style="color: rgb(231, 224, 235);">on surface-variant</span><span class="color-desc" style="color: rgb(231, 224, 235);">#49454e</span><mwc-icon-button class="color-copy" style="color: rgb(231, 224, 235);"></mwc-icon-button></div>
+          </div>
+        </div> -->
+
+        <!-- <br>
+        <br>
+        <br>
+        <br>
+        <br>
+              <span class="subtitle1">Dark Theme</span>
+              <div class="color-scheme">
+          <div class="color-family primary">
+          <div title="primary - #cfbcff" class="color-item" style="background-color: rgb(207, 188, 255);"><span class="color-label" style="color: rgb(56, 30, 114);">primary</span><span class="color-desc" style="color: rgb(56, 30, 114);">#cfbcff</span><mwc-icon-button class="color-copy" style="color: rgb(56, 30, 114);"></mwc-icon-button></div>
+          <div title="on primary - #381e72" class="color-item" style="background-color: rgb(56, 30, 114);"><span class="color-label" style="color: rgb(207, 188, 255);">on primary</span><span class="color-desc" style="color: rgb(207, 188, 255);">#381e72</span><mwc-icon-button class="color-copy" style="color: rgb(207, 188, 255);"></mwc-icon-button></div>
+          <div title="primary container - #4f378a" class="color-item" style="background-color: rgb(79, 55, 138);"><span class="color-label" style="color: rgb(233, 221, 255);">primary container</span><span class="color-desc" style="color: rgb(233, 221, 255);">#4f378a</span><mwc-icon-button class="color-copy" style="color: rgb(233, 221, 255);"></mwc-icon-button></div>
+          <div title="on primary container - #e9ddff" class="color-item" style="background-color: rgb(233, 221, 255);"><span class="color-label" style="color: rgb(79, 55, 138);">on primary container</span><span class="color-desc" style="color: rgb(79, 55, 138);">#e9ddff</span><mwc-icon-button class="color-copy" style="color: rgb(79, 55, 138);"></mwc-icon-button></div>
+        </div>
+          <div class="color-family secondary">
+          <div title="secondary - #6ddbab" class="color-item" style="background-color: rgb(109, 219, 171);"><span class="color-label" style="color: rgb(0, 56, 37);">secondary</span><span class="color-desc" style="color: rgb(0, 56, 37);">#6ddbab</span><mwc-icon-button class="color-copy" style="color: rgb(0, 56, 37);"></mwc-icon-button></div>
+          <div title="on secondary - #003825" class="color-item" style="background-color: rgb(0, 56, 37);"><span class="color-label" style="color: rgb(109, 219, 171);">on secondary</span><span class="color-desc" style="color: rgb(109, 219, 171);">#003825</span><mwc-icon-button class="color-copy" style="color: rgb(109, 219, 171);"></mwc-icon-button></div>
+          <div title="secondary container - #005138" class="color-item" style="background-color: rgb(0, 81, 56);"><span class="color-label" style="color: rgb(137, 248, 198);">secondary container</span><span class="color-desc" style="color: rgb(137, 248, 198);">#005138</span><mwc-icon-button class="color-copy" style="color: rgb(137, 248, 198);"></mwc-icon-button></div>
+          <div title="on secondary container - #89f8c6" class="color-item" style="background-color: rgb(137, 248, 198);"><span class="color-label" style="color: rgb(0, 81, 56);">on secondary container</span><span class="color-desc" style="color: rgb(0, 81, 56);">#89f8c6</span><mwc-icon-button class="color-copy" style="color: rgb(0, 81, 56);"></mwc-icon-button></div>
+        </div>
+          <div class="color-family tertiary">
+          <div title="tertiary - #efb8c8" class="color-item" style="background-color: rgb(239, 184, 200);"><span class="color-label" style="color: rgb(74, 37, 50);">tertiary</span><span class="color-desc" style="color: rgb(74, 37, 50);">#efb8c8</span><mwc-icon-button class="color-copy" style="color: rgb(74, 37, 50);"></mwc-icon-button></div>
+          <div title="on tertiary - #4a2532" class="color-item" style="background-color: rgb(74, 37, 50);"><span class="color-label" style="color: rgb(239, 184, 200);">on tertiary</span><span class="color-desc" style="color: rgb(239, 184, 200);">#4a2532</span><mwc-icon-button class="color-copy" style="color: rgb(239, 184, 200);"></mwc-icon-button></div>
+          <div title="tertiary container - #633b48" class="color-item" style="background-color: rgb(99, 59, 72);"><span class="color-label" style="color: rgb(255, 217, 227);">tertiary container</span><span class="color-desc" style="color: rgb(255, 217, 227);">#633b48</span><mwc-icon-button class="color-copy" style="color: rgb(255, 217, 227);"></mwc-icon-button></div>
+          <div title="on tertiary container - #ffd9e3" class="color-item" style="background-color: rgb(255, 217, 227);"><span class="color-label" style="color: rgb(99, 59, 72);">on tertiary container</span><span class="color-desc" style="color: rgb(99, 59, 72);">#ffd9e3</span><mwc-icon-button class="color-copy" style="color: rgb(99, 59, 72);"></mwc-icon-button></div>
+        </div>
+          <div class="color-family error">
+          <div title="error - #ffb4ab" class="color-item" style="background-color: rgb(255, 180, 171);"><span class="color-label" style="color: rgb(105, 0, 5);">error</span><span class="color-desc" style="color: rgb(105, 0, 5);">#ffb4ab</span><mwc-icon-button class="color-copy" style="color: rgb(105, 0, 5);"></mwc-icon-button></div>
+          <div title="on error - #690005" class="color-item" style="background-color: rgb(105, 0, 5);"><span class="color-label" style="color: rgb(255, 180, 171);">on error</span><span class="color-desc" style="color: rgb(255, 180, 171);">#690005</span><mwc-icon-button class="color-copy" style="color: rgb(255, 180, 171);"></mwc-icon-button></div>
+          <div title="error container - #93000a" class="color-item" style="background-color: rgb(147, 0, 10);"><span class="color-label" style="color: rgb(255, 218, 214);">error container</span><span class="color-desc" style="color: rgb(255, 218, 214);">#93000a</span><mwc-icon-button class="color-copy" style="color: rgb(255, 218, 214);"></mwc-icon-button></div>
+          <div title="on error container - #ffdad6" class="color-item" style="background-color: rgb(255, 218, 214);"><span class="color-label" style="color: rgb(147, 0, 10);">on error container</span><span class="color-desc" style="color: rgb(147, 0, 10);">#ffdad6</span><mwc-icon-button class="color-copy" style="color: rgb(147, 0, 10);"></mwc-icon-button></div>
+        </div>
+          <div class="color-family background">
+            <div title="background - #1c1b1e" class="color-item" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(230, 225, 230);">background</span><span class="color-desc" style="color: rgb(230, 225, 230);">#1c1b1e</span><mwc-icon-button class="color-copy" style="color: rgb(230, 225, 230);"></mwc-icon-button></div>
+            <div title="on background - #e6e1e6" class="color-item" style="background-color: rgb(230, 225, 230);"><span class="color-label" style="color: rgb(28, 27, 30);">on background</span><span class="color-desc" style="color: rgb(28, 27, 30);">#e6e1e6</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+            <div title="surface - #1c1b1e" class="color-item" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(230, 225, 230);">surface</span><span class="color-desc" style="color: rgb(230, 225, 230);">#1c1b1e</span><mwc-icon-button class="color-copy" style="color: rgb(230, 225, 230);"></mwc-icon-button></div>
+            <div title="on surface - #e6e1e6" class="color-item" style="background-color: rgb(230, 225, 230);"><span class="color-label" style="color: rgb(28, 27, 30);">on surface</span><span class="color-desc" style="color: rgb(28, 27, 30);">#e6e1e6</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+          </div>
+          <div class="color-family surface-variant">
+            <div title="outline - #948f99" class="color-item color-item-2x" style="background-color: rgb(148, 143, 153);"><span class="color-label" style="color: rgb(28, 27, 30);">outline</span><span class="color-desc" style="color: rgb(28, 27, 30);">#948f99</span><mwc-icon-button class="color-copy" style="color: rgb(28, 27, 30);"></mwc-icon-button></div>
+            <div title="surface-variant - #49454e" class="color-item" style="background-color: rgb(73, 69, 78);"><span class="color-label" style="color: rgb(202, 196, 207);">surface-variant</span><span class="color-desc" style="color: rgb(202, 196, 207);">#49454e</span><mwc-icon-button class="color-copy" style="color: rgb(202, 196, 207);"></mwc-icon-button></div>
+            <div title="on surface-variant - #cac4cf" class="color-item" style="background-color: rgb(202, 196, 207);"><span class="color-label" style="color: rgb(73, 69, 78);">on surface-variant</span><span class="color-desc" style="color: rgb(73, 69, 78);">#cac4cf</span><mwc-icon-button class="color-copy" style="color: rgb(73, 69, 78);"></mwc-icon-button></div>
+          </div>
+        </div> -->
+              <div class="tonal-palettes">
+          <span class="subtitle2">Primary</span>
+          <div class="tonal-palettes">
+          <div class="tonal-row">
+            <div class="color-item color-primary-100" title="Luminance 100"><span class="color-label color-label-on-light">100</span></div>
+            <div class="color-item color-primary-95" title="Luminance 95"><span class="color-label color-label-on-light">95</span></div>
+            <div class="color-item color-primary-90" title="Luminance 90"><span class="color-label color-label-on-light">90</span></div>
+            <div class="color-item color-primary-80" title="Luminance 80"><span class="color-label color-label-on-light">80</span></div>
+            <div class="color-item color-primary-70" title="Luminance 70"><span class="color-label color-label-on-light">70</span></div>
+            <div class="color-item color-primary-60" title="Luminance 60"><span class="color-label color-label-on-light">60</span></div>
+            <div class="color-item color-primary-50" title="Luminance 50"><span class="color-label color-label-on-dark">50</span></div>
+            <div class="color-item color-primary-40" title="Luminance 40"><span class="color-label color-label-on-dark">40</span></div>
+            <div class="color-item color-primary-30" title="Luminance 30"><span class="color-label color-label-on-dark">30</span></div>
+            <div class="color-item color-primary-20" title="Luminance 20"><span class="color-label color-label-on-dark">20</span></div>
+            <div class="color-item color-primary-10" title="Luminance 10"><span class="color-label color-label-on-dark">10</span></div>
+            <div class="color-item color-primary-0" title="Luminance 0"><span class="color-label color-label-on-dark">0</span></div>
+          </div>
+        </div>
+
+
+          <span class="subtitle2">Secondary</span>
+          <div class="tonal-palettes">
+          <div class="tonal-row">
+            <div class="color-item color-secondary-100" title="Luminance 100"><span class="color-label color-label-on-light">100</span></div>
+            <div class="color-item color-secondary-95" title="Luminance 95"><span class="color-label color-label-on-light">95</span></div>
+            <div class="color-item color-secondary-90" title="Luminance 90"><span class="color-label color-label-on-light">90</span></div>
+            <div class="color-item color-secondary-80" title="Luminance 80"><span class="color-label color-label-on-light">80</span></div>
+            <div class="color-item color-secondary-70" title="Luminance 70"><span class="color-label color-label-on-light">70</span></div>
+            <div class="color-item color-secondary-60" title="Luminance 60"><span class="color-label color-label-on-light">60</span></div>
+            <div class="color-item color-secondary-50" title="Luminance 50"><span class="color-label color-label-on-dark">50</span></div>
+            <div class="color-item color-secondary-40" title="Luminance 40"><span class="color-label color-label-on-dark">40</span></div>
+            <div class="color-item color-secondary-30" title="Luminance 30"><span class="color-label color-label-on-dark">30</span></div>
+            <div class="color-item color-secondary-20" title="Luminance 20"><span class="color-label color-label-on-dark">20</span></div>
+            <div class="color-item color-secondary-10" title="Luminance 10"><span class="color-label color-label-on-dark">10</span></div>
+            <div class="color-item color-secondary-0" title="Luminance 0"><span class="color-label color-label-on-dark">0</span></div>
+            </div>
+        </div>
+
+
+
+
+          <!-- <span class="subtitle2">Tertiary</span>
+          <div class="tonal-palettes">
+          <div class="tonal-row">
+            <div class="color-item" title="Luminance 100 - #ffffff" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">100</span></div><div class="color-item" title="Luminance 99 - #fffbff" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">99</span></div><div class="color-item" title="Luminance 98 - #fff8f8" style="background-color: rgb(255, 248, 248);"><span class="color-label" style="color: rgb(0, 0, 0);">98</span></div><div class="color-item" title="Luminance 95 - #ffecf0" style="background-color: rgb(255, 236, 240);"><span class="color-label" style="color: rgb(0, 0, 0);">95</span></div><div class="color-item" title="Luminance 90 - #ffd9e3" style="background-color: rgb(255, 217, 227);"><span class="color-label" style="color: rgb(0, 0, 0);">90</span></div><div class="color-item" title="Luminance 80 - #efb8c8" style="background-color: rgb(239, 184, 200);"><span class="color-label" style="color: rgb(0, 0, 0);">80</span></div><div class="color-item" title="Luminance 70 - #d29dad" style="background-color: rgb(210, 157, 173);"><span class="color-label" style="color: rgb(0, 0, 0);">70</span></div><div class="color-item" title="Luminance 60 - #b58392" style="background-color: rgb(181, 131, 146);"><span class="color-label" style="color: rgb(0, 0, 0);">60</span></div><div class="color-item" title="Luminance 50 - #996a79" style="background-color: rgb(153, 106, 121);"><span class="color-label" style="color: rgb(255, 255, 255);">50</span></div><div class="color-item" title="Luminance 40 - #7e5260" style="background-color: rgb(126, 82, 96);"><span class="color-label" style="color: rgb(255, 255, 255);">40</span></div><div class="color-item" title="Luminance 35 - #704654" style="background-color: rgb(112, 70, 84);"><span class="color-label" style="color: rgb(255, 255, 255);">35</span></div><div class="color-item" title="Luminance 30 - #633b48" style="background-color: rgb(99, 59, 72);"><span class="color-label" style="color: rgb(255, 255, 255);">30</span></div><div class="color-item" title="Luminance 25 - #56303d" style="background-color: rgb(86, 48, 61);"><span class="color-label" style="color: rgb(255, 255, 255);">25</span></div><div class="color-item" title="Luminance 20 - #4a2532" style="background-color: rgb(74, 37, 50);"><span class="color-label" style="color: rgb(255, 255, 255);">20</span></div><div class="color-item" title="Luminance 10 - #31101d" style="background-color: rgb(49, 16, 29);"><span class="color-label" style="color: rgb(255, 255, 255);">10</span></div><div class="color-item" title="Luminance 0 - #000000" style="background-color: rgb(0, 0, 0);"><span class="color-label" style="color: rgb(255, 255, 255);">0</span></div>
+          </div>
+        </div>
+          <span class="subtitle2">Error</span>
+          <div class="tonal-palettes">
+          <div class="tonal-row">
+            <div class="color-item" title="Luminance 100 - #ffffff" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">100</span></div><div class="color-item" title="Luminance 99 - #fffbff" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">99</span></div><div class="color-item" title="Luminance 98 - #fff8f7" style="background-color: rgb(255, 248, 247);"><span class="color-label" style="color: rgb(0, 0, 0);">98</span></div><div class="color-item" title="Luminance 95 - #ffedea" style="background-color: rgb(255, 237, 234);"><span class="color-label" style="color: rgb(0, 0, 0);">95</span></div><div class="color-item" title="Luminance 90 - #ffdad6" style="background-color: rgb(255, 218, 214);"><span class="color-label" style="color: rgb(0, 0, 0);">90</span></div><div class="color-item" title="Luminance 80 - #ffb4ab" style="background-color: rgb(255, 180, 171);"><span class="color-label" style="color: rgb(0, 0, 0);">80</span></div><div class="color-item" title="Luminance 70 - #ff897d" style="background-color: rgb(255, 137, 125);"><span class="color-label" style="color: rgb(0, 0, 0);">70</span></div><div class="color-item" title="Luminance 60 - #ff5449" style="background-color: rgb(255, 84, 73);"><span class="color-label" style="color: rgb(0, 0, 0);">60</span></div><div class="color-item" title="Luminance 50 - #de3730" style="background-color: rgb(222, 55, 48);"><span class="color-label" style="color: rgb(255, 255, 255);">50</span></div><div class="color-item" title="Luminance 40 - #ba1a1a" style="background-color: rgb(186, 26, 26);"><span class="color-label" style="color: rgb(255, 255, 255);">40</span></div><div class="color-item" title="Luminance 35 - #a80710" style="background-color: rgb(168, 7, 16);"><span class="color-label" style="color: rgb(255, 255, 255);">35</span></div><div class="color-item" title="Luminance 30 - #93000a" style="background-color: rgb(147, 0, 10);"><span class="color-label" style="color: rgb(255, 255, 255);">30</span></div><div class="color-item" title="Luminance 25 - #7e0007" style="background-color: rgb(126, 0, 7);"><span class="color-label" style="color: rgb(255, 255, 255);">25</span></div><div class="color-item" title="Luminance 20 - #690005" style="background-color: rgb(105, 0, 5);"><span class="color-label" style="color: rgb(255, 255, 255);">20</span></div><div class="color-item" title="Luminance 10 - #410002" style="background-color: rgb(65, 0, 2);"><span class="color-label" style="color: rgb(255, 255, 255);">10</span></div><div class="color-item" title="Luminance 0 - #000000" style="background-color: rgb(0, 0, 0);"><span class="color-label" style="color: rgb(255, 255, 255);">0</span></div>
+          </div>
+        </div>
+          <span class="subtitle2">Neutral</span>
+          <div class="tonal-palettes">
+          <div class="tonal-row">
+            <div class="color-item" title="Luminance 100 - #ffffff" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">100</span></div><div class="color-item" title="Luminance 99 - #fffbff" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">99</span></div><div class="color-item" title="Luminance 98 - #fdf8fd" style="background-color: rgb(253, 248, 253);"><span class="color-label" style="color: rgb(0, 0, 0);">98</span></div><div class="color-item" title="Luminance 95 - #f4eff4" style="background-color: rgb(244, 239, 244);"><span class="color-label" style="color: rgb(0, 0, 0);">95</span></div><div class="color-item" title="Luminance 90 - #e6e1e6" style="background-color: rgb(230, 225, 230);"><span class="color-label" style="color: rgb(0, 0, 0);">90</span></div><div class="color-item" title="Luminance 80 - #cac5ca" style="background-color: rgb(202, 197, 202);"><span class="color-label" style="color: rgb(0, 0, 0);">80</span></div><div class="color-item" title="Luminance 70 - #aeaaae" style="background-color: rgb(174, 170, 174);"><span class="color-label" style="color: rgb(0, 0, 0);">70</span></div><div class="color-item" title="Luminance 60 - #938f94" style="background-color: rgb(147, 143, 148);"><span class="color-label" style="color: rgb(0, 0, 0);">60</span></div><div class="color-item" title="Luminance 50 - #79767a" style="background-color: rgb(121, 118, 122);"><span class="color-label" style="color: rgb(255, 255, 255);">50</span></div><div class="color-item" title="Luminance 40 - #605d62" style="background-color: rgb(96, 93, 98);"><span class="color-label" style="color: rgb(255, 255, 255);">40</span></div><div class="color-item" title="Luminance 35 - #545156" style="background-color: rgb(84, 81, 86);"><span class="color-label" style="color: rgb(255, 255, 255);">35</span></div><div class="color-item" title="Luminance 30 - #48464a" style="background-color: rgb(72, 70, 74);"><span class="color-label" style="color: rgb(255, 255, 255);">30</span></div><div class="color-item" title="Luminance 25 - #3d3b3e" style="background-color: rgb(61, 59, 62);"><span class="color-label" style="color: rgb(255, 255, 255);">25</span></div><div class="color-item" title="Luminance 20 - #313033" style="background-color: rgb(49, 48, 51);"><span class="color-label" style="color: rgb(255, 255, 255);">20</span></div><div class="color-item" title="Luminance 10 - #1c1b1e" style="background-color: rgb(28, 27, 30);"><span class="color-label" style="color: rgb(255, 255, 255);">10</span></div><div class="color-item" title="Luminance 0 - #000000" style="background-color: rgb(0, 0, 0);"><span class="color-label" style="color: rgb(255, 255, 255);">0</span></div>
+          </div>
+        </div>
+          <span class="subtitle2">Neutral Variant</span>
+          <div class="tonal-palettes">
+          <div class="tonal-row">
+            <div class="color-item" title="Luminance 100 - #ffffff" style="background-color: rgb(255, 255, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">100</span></div><div class="color-item" title="Luminance 99 - #fffbff" style="background-color: rgb(255, 251, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">99</span></div><div class="color-item" title="Luminance 98 - #fdf7ff" style="background-color: rgb(253, 247, 255);"><span class="color-label" style="color: rgb(0, 0, 0);">98</span></div><div class="color-item" title="Luminance 95 - #f5eefa" style="background-color: rgb(245, 238, 250);"><span class="color-label" style="color: rgb(0, 0, 0);">95</span></div><div class="color-item" title="Luminance 90 - #e7e0eb" style="background-color: rgb(231, 224, 235);"><span class="color-label" style="color: rgb(0, 0, 0);">90</span></div><div class="color-item" title="Luminance 80 - #cac4cf" style="background-color: rgb(202, 196, 207);"><span class="color-label" style="color: rgb(0, 0, 0);">80</span></div><div class="color-item" title="Luminance 70 - #afa9b4" style="background-color: rgb(175, 169, 180);"><span class="color-label" style="color: rgb(0, 0, 0);">70</span></div><div class="color-item" title="Luminance 60 - #948f99" style="background-color: rgb(148, 143, 153);"><span class="color-label" style="color: rgb(0, 0, 0);">60</span></div><div class="color-item" title="Luminance 50 - #7a757f" style="background-color: rgb(122, 117, 127);"><span class="color-label" style="color: rgb(255, 255, 255);">50</span></div><div class="color-item" title="Luminance 40 - #615d66" style="background-color: rgb(97, 93, 102);"><span class="color-label" style="color: rgb(255, 255, 255);">40</span></div><div class="color-item" title="Luminance 35 - #54515a" style="background-color: rgb(84, 81, 90);"><span class="color-label" style="color: rgb(255, 255, 255);">35</span></div><div class="color-item" title="Luminance 30 - #49454e" style="background-color: rgb(73, 69, 78);"><span class="color-label" style="color: rgb(255, 255, 255);">30</span></div><div class="color-item" title="Luminance 25 - #3d3a43" style="background-color: rgb(61, 58, 67);"><span class="color-label" style="color: rgb(255, 255, 255);">25</span></div><div class="color-item" title="Luminance 20 - #322f38" style="background-color: rgb(50, 47, 56);"><span class="color-label" style="color: rgb(255, 255, 255);">20</span></div><div class="color-item" title="Luminance 10 - #1d1a22" style="background-color: rgb(29, 26, 34);"><span class="color-label" style="color: rgb(255, 255, 255);">10</span></div><div class="color-item" title="Luminance 0 - #000000" style="background-color: rgb(0, 0, 0);"><span class="color-label" style="color: rgb(255, 255, 255);">0</span></div>
+          </div>
+        </div>
+        </div>
+              <div style="height: 20px"></div>
+              <div class="extended-colors">
+          
+        </div> -->
+            </div>
+          </main>
+    </body>
+</html>
+
