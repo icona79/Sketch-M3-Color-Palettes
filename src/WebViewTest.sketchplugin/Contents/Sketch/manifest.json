@@ -1,0 +1,26 @@
+{
+  "name": "WEBVVIEW TEST",
+  "description": "Size, Position and Pin layers super fast.",
+  "author": "Francesco Bertocci",
+  "homepage": "https://www.github.com/fbmore/Magic-Wand-Sketch-Plugin/",
+  "version": "0.0.1",
+  "identifier": "com.fbmore.webviewtest",
+  "appcast": "https://raw.githubusercontent.com/fbmore/Magic-Wand-Sketch-Plugin/main/appcast.xml",
+  "copyright": "Copyright © 2022 Francesco Bertocci. All rights reserved.",
+  "icon": "icon.png",
+  "compatibleVersion": "80",
+  "bundleVersion": 1,
+  "commands": [
+    {
+      "name": "WEBVVIEW TEST",
+      "identifier": "run",
+      "shortcut": "",
+      "script": "script.js",
+      "handler": "onRun"
+    }
+  ],
+  "menu": {
+    "items": ["run"],
+    "isRoot": true
+  }
+}
