@@ -1,4 +1,25 @@
 <html>
+    <title>M3 Colors Tool</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/3.2.0/css/bootstrap-colorpicker.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/3.2.0/js/bootstrap-colorpicker.js"></script>
+    <style type="text/css">
+        body {
+        width: 80%;
+        height:80%;
+        margin:auto;
+        }
+        #main {
+        height:400px;
+        }
+        #color {
+        margin-left: 10%;
+        width:50%;
+        }
+  </style>
 
     <style type="text/css">
         @font-face{font-family:'Google Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlematerialicons/v127/Gw6kwdfw6UnXLJCcmafZyFRXb3BL9rvi0QZG2w.woff) format('woff');}@font-face{font-family:'Google Sans Mono';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesansmono/v18/P5sUzYWFYtnZ_Cg-t0Uq_rfivrdYH4RE8-pZ5gQ1abT53zVU.woff) format('woff');}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5mE4.woff) format('woff');}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVrmw.woff) format('woff');}@font-face{font-family:'Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/materialicons/v138/flUhRq6tzZclQEJ-Vdg-IuiaDsNa.woff) format('woff');}.google-material-icons{font-family:'Google Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;font-feature-settings:'liga';}.material-icons{font-family:'Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;font-feature-settings:'liga';}@font-face{font-family:'Google Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlematerialicons/v127/Gw6kwdfw6UnXLJCcmafZyFRXb3BL9rvi0QZG3Sy7X00.woff2) format('woff2');}@font-face{font-family:'Google Sans Mono';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesansmono/v18/P5sUzYWFYtnZ_Cg-t0Uq_rfivrdYH4RE8-pZ5gQ1abT53wVQGr-VZS26DMA.woff) format('woff');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qE52i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qEl2i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0370-03FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qEV2i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qER2i0VBuxOCBA.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUu9-KzpRiLCAt4Unrc-xIKmCU5qEp2i0VBuxM.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmxjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmtjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0370-03FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmdjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmZjtjm4DZzFQQ.woff2) format('woff2');unicode-range:U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Google Sans Text';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/googlesanstext/v21/5aUp9-KzpRiLCAt4Unrc-xIKmCU5oLlVnmhjtjm4DZw.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/materialicons/v138/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2) format('woff2');}.google-material-icons{font-family:'Google Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}.material-icons{font-family:'Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}
@@ -464,6 +485,30 @@ h2 {
     </style>
     <body>
 
+        <div id="main" class="container">
+            <h1>Bootstrap Color Picker</h1>
+            <input id="color" type="text" value="#269faf" class="form-control" />
+        </div>
+        <script type="text/javascript">
+          $(function () {
+            $('#color')
+            .colorpicker({})
+            .on('colorpickerChange', function (e) { //change the bacground color of the main when the color changes  
+                new_color = e.color.toString()
+                let root = document.documentElement;
+                // $('#primary').css('background-color', new_color)
+                // $('#main').css('background-color', new_color)
+
+                /// Applies the picked color to the root color variables - need script to calculate all the variables.
+                root.style.setProperty('--color-primary-40', new_color);
+                root.style.setProperty('--color-primary-90', new_color);
+                root.style.setProperty('--color-primary-10', new_color);
+                // window.alert(new_color);
+
+            })     
+        });
+    </script>
+
         <main class="preview">
             <div class="preview-content">
                 <h1>Your Theme</h1>
@@ -472,7 +517,7 @@ h2 {
           <div class="color-scheme">
 
             <div class="color-family primary">          
-                <div title="primary" class="color-item color-primary">
+                <div id="primary" title="primary" class="color-item color-primary">
                     <span class="color-label">primary</span><span class="color-desc"></span>
                 </div>
 
