@@ -93,6 +93,119 @@ var exports =
 /************************************************************************/
 /******/ ({
 
+/***/ "./node_modules/@babel/runtime/helpers/arrayLikeToArray.js":
+/*!*****************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/arrayLikeToArray.js ***!
+  \*****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) {
+    arr2[i] = arr[i];
+  }
+
+  return arr2;
+}
+
+module.exports = _arrayLikeToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/arrayWithoutHoles.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/arrayWithoutHoles.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayLikeToArray = __webpack_require__(/*! ./arrayLikeToArray.js */ "./node_modules/@babel/runtime/helpers/arrayLikeToArray.js");
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return arrayLikeToArray(arr);
+}
+
+module.exports = _arrayWithoutHoles, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/iterableToArray.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/iterableToArray.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+}
+
+module.exports = _iterableToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/nonIterableSpread.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/nonIterableSpread.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
+module.exports = _nonIterableSpread, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/toConsumableArray.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/toConsumableArray.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayWithoutHoles = __webpack_require__(/*! ./arrayWithoutHoles.js */ "./node_modules/@babel/runtime/helpers/arrayWithoutHoles.js");
+
+var iterableToArray = __webpack_require__(/*! ./iterableToArray.js */ "./node_modules/@babel/runtime/helpers/iterableToArray.js");
+
+var unsupportedIterableToArray = __webpack_require__(/*! ./unsupportedIterableToArray.js */ "./node_modules/@babel/runtime/helpers/unsupportedIterableToArray.js");
+
+var nonIterableSpread = __webpack_require__(/*! ./nonIterableSpread.js */ "./node_modules/@babel/runtime/helpers/nonIterableSpread.js");
+
+function _toConsumableArray(arr) {
+  return arrayWithoutHoles(arr) || iterableToArray(arr) || unsupportedIterableToArray(arr) || nonIterableSpread();
+}
+
+module.exports = _toConsumableArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/unsupportedIterableToArray.js":
+/*!***************************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/unsupportedIterableToArray.js ***!
+  \***************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var arrayLikeToArray = __webpack_require__(/*! ./arrayLikeToArray.js */ "./node_modules/@babel/runtime/helpers/arrayLikeToArray.js");
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(o);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return arrayLikeToArray(o, minLen);
+}
+
+module.exports = _unsupportedIterableToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
 /***/ "./node_modules/@material/material-color-utilities/dist/blend/blend.js":
 /*!*****************************************************************************!*\
   !*** ./node_modules/@material/material-color-utilities/dist/blend/blend.js ***!
@@ -4684,11 +4797,14 @@ module.exports = Promise;
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @material/material-color-utilities */ "./node_modules/@material/material-color-utilities/dist/index.js");
-/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! util */ "util");
-/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(util__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/toConsumableArray.js");
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @material/material-color-utilities */ "./node_modules/@material/material-color-utilities/dist/index.js");
+/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! util */ "util");
+/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(util__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 
@@ -4703,7 +4819,10 @@ var desktopDir = path.join(os.homedir(), "Desktop"); // #region Sketch Items
 
 var sketch = __webpack_require__(/*! sketch */ "sketch");
 
-var Swatch = sketch.Swatch; // Document variables
+var Swatch = sketch.Swatch;
+
+var Style = __webpack_require__(/*! sketch/dom */ "sketch/dom").Style; // Document variables
+
 
 var doc = context.document;
 var document = sketch.getSelectedDocument();
@@ -4711,56 +4830,190 @@ var firstSelectedLayer = document.selectedLayers.layers[0];
 var artboard = sketch.Artboard;
 var data = document.sketchObject.documentData();
 var image = sketch.Image; // #endregion
+// #region Styles Variables
+
+var layerStyles = document.sharedLayerStyles;
+var textStyles = document.sharedTextStyles;
+var arrayLayerStyleIDs = layerStyles.map(function (sharedstyle) {
+  return sharedstyle["id"];
+});
+var arrayLayerStyleNames = layerStyles.map(function (sharedstyle) {
+  return sharedstyle["name"];
+});
+var arrayLayerStyleStyles = layerStyles.map(function (sharedstyle) {
+  return sharedstyle["style"];
+});
+
+var layerStylesOrdered = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(document.sharedLayerStyles).sort(function (left, right) {
+  return left.name > right.name;
+});
+
+var arrayTextStyleIDs = textStyles.map(function (sharedstyle) {
+  return sharedstyle["id"];
+});
+var arrayTextStyleNames = textStyles.map(function (sharedstyle) {
+  return sharedstyle["name"];
+});
+var arrayTextStyleStyles = textStyles.map(function (sharedstyle) {
+  return sharedstyle["style"];
+});
+
+var textStylesOrdered = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default()(document.sharedTextStyles).sort(function (left, right) {
+  return left.name > right.name;
+});
+
+var stylesString = JSON.stringify(layerStylesOrdered);
+var textString = JSON.stringify(textStylesOrdered); // #endregion
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  var defaultColor = "#f82506";
-  var theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["argbFromHex"])(defaultColor), [{
-    name: "custom-1",
-    value: Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["argbFromHex"])("#ff0000"),
-    blend: true
-  }]);
+  var defaultColor = "#f82506"; // #region Theme
+
+  var theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(defaultColor), [// {
+  //     name: "custom-1",
+  //     value: argbFromHex("#ff0000"),
+  //     blend: true,
+  // },
+  {}]); // #endregion Theme
+  // #region Colors and palettes creation
+
   var primary = ["Primary", defaultColor];
-  var secondary = ["Secondary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.secondary)];
-  console.log(secondary);
+  var secondary = ["Secondary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary)];
+  var tertiary = ["Tertiary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary)];
+  var error = ["Error", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error)];
+  var neutral = ["Neutral", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutral)];
+  var neutralVariant = ["Neutral Variant", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutralVariant)];
+  var shadow = ["Shadow", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow)];
+  var scrim = ["Scrim", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim)];
   var primaryPalette = colorPalette(primary[1], primary[0]);
   paletteToColorVariables(primaryPalette, "Primary");
   var secondaryPalette = colorPalette(secondary[1], secondary[0]);
-  paletteToColorVariables(secondaryPalette, "Secondary"); // Light theme
+  paletteToColorVariables(secondaryPalette, "Secondary");
+  var tertiaryPalette = colorPalette(tertiary[1], tertiary[0]);
+  paletteToColorVariables(tertiaryPalette, "Tertiary");
+  var errorPalette = colorPalette(error[1], error[0]);
+  paletteToColorVariables(errorPalette, "Error");
+  var neutralPalette = colorPalette(neutral[1], neutral[0]);
+  paletteToColorVariables(neutralPalette, "Neutral");
+  var neutralVariantPalette = colorPalette(neutralVariant[1], neutralVariant[0]);
+  paletteToColorVariables(neutralVariantPalette, "Neutral Variant");
+  var shadowPalette = colorPalette(shadow[1], shadow[0]);
+  paletteToColorVariables(shadowPalette, "Shadow");
+  var scrimPalette = colorPalette(scrim[1], scrim[0]);
+  paletteToColorVariables(scrimPalette, "Scrim"); // #endregion Colors and palettes creation
+  // #region Light theme
 
-  var lightTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.primary);
-  var lightTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onPrimary);
-  var lightTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.primaryContainer);
-  var lightTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onPrimaryContainer);
-  var lightTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.secondary);
-  var lightTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onSecondary);
-  var lightTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.secondaryContainer);
-  var lightTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onSecondaryContainer);
-  var lightTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.tertiary);
-  var lightTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onTertiary);
-  var lightTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.tertiaryContainer);
-  var lightTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onTertiaryContainer);
-  var lightTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.error);
-  var lightTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onError);
-  var lightTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.errorContainer);
-  var lightTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onErrorContainer);
-  var lightTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.background);
-  var lightTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onbackground);
-  var lightTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.surface);
-  var lightTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onSurface);
-  var lightTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onbackground);
-  var lightTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.surfaceVariant);
-  var lightTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.onSurfaceVariant);
-  var lightTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.shadow);
-  var lightTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.scrim);
-  var lightTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.inverseSurface);
-  var lightTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.inverseOnSurface);
-  var lightTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(theme.schemes.light.inversePrimary);
-  var lightTheme = [lightTheme_primary, lightTheme_onPrimary, lightTheme_primaryContainer, lightTheme_onPrimaryContainer, lightTheme_secondary, lightTheme_onSecondary, lightTheme_secondaryContainer, lightTheme_onSecondaryContainer, lightTheme_tertiary, lightTheme_onTertiary, lightTheme_tertiaryContainer, lightTheme_onTertiaryContainer, lightTheme_error, lightTheme_onError, lightTheme_onErrorContainer, lightTheme_background, lightTheme_onbackground, lightTheme_surface, lightTheme_onSurface, lightTheme_outline, lightTheme_surfacevariant, lightTheme_onSurfaceVariant, lightTheme_shadow, lightTheme_scrim, lightTheme_inverseSurface, lightTheme_inverseOnSurface, lightTheme_inversePrimary];
-  console.log(lightTheme); // console.log(JSON.stringify(theme, null, 2));
-  // const primary = hexFromArgb(theme.schemes.light.primary);
-  // console.log(primary);
-  // const primary98 = TonalPalette.fromInt(primary).tone(98);
-  // console.log(primary98);
+  var lightTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primary);
+  var lightTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimary);
+  var lightTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primaryContainer);
+  var lightTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimaryContainer);
+  var lightTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary);
+  var lightTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondary);
+  var lightTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondaryContainer);
+  var lightTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondaryContainer);
+  var lightTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary);
+  var lightTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiary);
+  var lightTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiaryContainer);
+  var lightTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiaryContainer);
+  var lightTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error);
+  var lightTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onError);
+  var lightTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.errorContainer);
+  var lightTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onErrorContainer);
+  var lightTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.background);
+  var lightTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
+  var lightTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surface);
+  var lightTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurface);
+  var lightTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
+  var lightTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surfaceVariant);
+  var lightTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurfaceVariant);
+  var lightTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow);
+  var lightTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim);
+  var lightTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseSurface);
+  var lightTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseOnSurface);
+  var lightTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inversePrimary);
+  var lightTheme = [["Primary", lightTheme_primary, true, false, true, true, false], ["onPrimary", lightTheme_onPrimary, true, false, true, true, true], ["primaryContainer", lightTheme_primaryContainer, true, false, true, false, false], ["onPrimaryContainer", lightTheme_onPrimaryContainer, true, false, true, true, false], ["secondary", lightTheme_secondary, true, false, true, true, false], ["onSecondary", lightTheme_onSecondary, true, false, true, true, false], ["secondaryContainer", lightTheme_secondaryContainer, true, false, true, false, false], ["onSecondaryContainer", lightTheme_onSecondaryContainer, true, false, true, true, false], ["tertiary", lightTheme_tertiary, true, false, true, true, false], ["onTertiary", lightTheme_onTertiary, true, false, true, true, false], ["tertiaryContainer", lightTheme_tertiaryContainer, true, false, true, false, false], ["onTertiaryContainer", lightTheme_onTertiaryContainer, true, false, true, true, false], ["error", lightTheme_error, true, false, true, true, false], ["onError", lightTheme_onError, true, false, true, true, true], ["errorContainer", lightTheme_errorContainer, true, false, true, false, false], ["onErrorContainer", lightTheme_onErrorContainer, true, false, true, true, false], ["background", lightTheme_background, true, false, true, false, false], ["onbackground", lightTheme_onbackground, true, false, true, true, true], ["surface", lightTheme_surface, true, false, true, false, false], ["onSurface", lightTheme_onSurface, true, false, true, true, true], ["outline", lightTheme_outline, false, true, true, false, false], ["surfacevariant", lightTheme_surfacevariant, true, false, true, false, false], ["onSurfaceVariant", lightTheme_onSurfaceVariant, true, false, true, true, true], ["shadow", lightTheme_shadow, true, false, true, false, false], // ["scrim", lightTheme_scrim,false],
+  ["inverseSurface", lightTheme_inverseSurface, true, false, true, false, false], ["inverseOnSurface", lightTheme_inverseOnSurface, true, false, true, true, true], ["inversePrimary", lightTheme_inversePrimary, true, false, true, true, false]]; // #endregion Light Theme
+  // #region Dark theme
+
+  var darkTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primary);
+  var darkTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimary);
+  var darkTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primaryContainer);
+  var darkTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimaryContainer);
+  var darkTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondary);
+  var darkTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondary);
+  var darkTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondaryContainer);
+  var darkTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondaryContainer);
+  var darkTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiary);
+  var darkTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiary);
+  var darkTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiaryContainer);
+  var darkTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiaryContainer);
+  var darkTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.error);
+  var darkTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onError);
+  var darkTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.errorContainer);
+  var darkTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onErrorContainer);
+  var darkTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.background);
+  var darkTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
+  var darkTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surface);
+  var darkTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurface);
+  var darkTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
+  var darkTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surfaceVariant);
+  var darkTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurfaceVariant);
+  var darkTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.shadow);
+  var darkTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.scrim);
+  var darkTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseSurface);
+  var darkTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseOnSurface);
+  var darkTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inversePrimary);
+  var darkTheme = [["Primary", darkTheme_primary, true, false, true, true, false], ["onPrimary", darkTheme_onPrimary, true, false, true, true, true], ["primaryContainer", darkTheme_primaryContainer, true, false, true, false, false], ["onPrimaryContainer", darkTheme_onPrimaryContainer, true, false, true, true, true], ["secondary", darkTheme_secondary, true, false, true, true, false], ["onSecondary", darkTheme_onSecondary, true, false, true, true, false], ["secondaryContainer", darkTheme_secondaryContainer, true, false, true, false, false], ["onSecondaryContainer", darkTheme_onSecondaryContainer, true, false, true, true, false], ["tertiary", darkTheme_tertiary, true, false, true, true, false], ["onTertiary", darkTheme_onTertiary, true, false, true, true, false], ["tertiaryContainer", darkTheme_tertiaryContainer, true, false, true, false, false], ["onTertiaryContainer", darkTheme_onTertiaryContainer, true, false, true, true, false], ["error", darkTheme_error, true, false, true, true, false], ["onError", darkTheme_onError, true, false, true, true, true], ["errorContainer", darkTheme_errorContainer, true, false, true, false, false], ["onErrorContainer", darkTheme_onErrorContainer, true, false, true, true, false], ["background", darkTheme_background, true, false, true, false, false], ["onBackground", darkTheme_onbackground, true, false, true, true, true], ["surface", darkTheme_surface, true, false, true, false, false], ["onSurface", darkTheme_onSurface, true, false, true, true, true], ["outline", darkTheme_outline, false, true, true, false, false], ["surfacevariant", darkTheme_surfacevariant, true, false, true, false, false], ["onSurfaceVariant", darkTheme_onSurfaceVariant, true, false, true, true, true], ["shadow", darkTheme_shadow, true, false, true, false, false], // ["scrim", darkTheme_scrim,false,false,false],
+  ["inverseSurface", darkTheme_inverseSurface, true, false, true, false, false], ["inverseOnSurface", darkTheme_inverseOnSurface, true, false, true, true, true], ["inversePrimary", darkTheme_inversePrimary, true, false, true, true, false]]; // #endregion Dark Theme
+  // #region Create Styles
+  // Light and Dark theme arrays presents:
+  // 0 = styleName
+  // 1 = color
+  // 2 = fill
+  // 3 = border
+  // 4 = layer style
+  // 5 = text style
+  // 6 = titles
+
+  lightTheme.forEach(function (style) {
+    //  If layer style
+    if (style[4]) {
+      // Fill style
+      if (style[2]) {
+        createNewLayerStyle(style, "Light Theme/Fills/", false);
+      } //  Border Style
+
+
+      if (style[3]) {
+        createNewLayerStyle(style, "Light Theme/Borders/", true);
+      }
+    } //  If text style
+
+
+    if (style[5]) {
+      createNewTextStyle(style, "Light Theme/");
+    }
+  });
+  darkTheme.forEach(function (style) {
+    //  If layer style
+    if (style[4]) {
+      // Fill style
+      if (style[2]) {
+        createNewLayerStyle(style, "Dark Theme/Fills/", false);
+      } //  Border Style
+
+
+      if (style[3]) {
+        createNewLayerStyle(style, "Dark Theme/Borders/", true);
+      }
+    } //  If text style
+
+
+    if (style[5]) {
+      createNewTextStyle(style, "Dark Theme/");
+    }
+  }); // #endregion Create Styles
+
+  console.log(JSON.stringify(theme, null, 2));
 
   function paletteToColorVariables(palette, name) {
     var arrayColorVarNames = document.swatches.map(function (Swatch) {
@@ -4786,15 +5039,188 @@ var image = sketch.Image; // #endregion
 
 function colorPalette(color) {
   var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
-  var tones = [100, 99, 95, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
-  var palette = [[name, color]];
+  var tones = [100, 99, 95, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0]; // let palette = [[name, color]];
+
+  var palette = [];
 
   for (var n = 0; n < tones.length; n++) {
     var valueName = name + " " + tones[n].toString();
-    palette.push([valueName, Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["hexFromArgb"])(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["TonalPalette"].fromInt(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_0__["argbFromHex"])(color)).tone(tones[n]))]);
+    palette.push([valueName, Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["TonalPalette"].fromInt(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(color)).tone(tones[n]))]);
   }
 
   return palette;
+} // ******************************************************************* //
+// General Styles management functions                                 //
+// ******************************************************************* //
+
+
+function getLayerStyleNameFromID(id) {
+  var styleName = "";
+
+  for (var i = 0; i < arrayLayerStyleNames.length; i++) {
+    if (arrayLayerStyleIDs[i] === id) {
+      styleName = arrayLayerStyleNames[i];
+    }
+  }
+
+  return styleName;
+}
+
+function getTextStyleNameFromID(id) {
+  try {
+    var textStyle = "";
+
+    for (var i = 0; i < arrayTextStyleStyles.length; i++) {
+      if (arrayTextStyleIDs[i] === id) {
+        textStyle = arrayTextStyleStyles[i];
+      }
+    }
+
+    return textStyle;
+  } catch (getTextStylesStyleFromIDErr) {
+    console.log(getTextStylesStyleFromIDErr);
+  }
+}
+
+function getLayerStyleIDFromName(name) {
+  var styleID = "";
+
+  for (var i = 0; i < arrayLayerStyleIDs.length; i++) {
+    if (arrayLayerStyleNames[i] === name) {
+      styleID = arrayLayerStyleIDs[i];
+    }
+  }
+
+  return styleID;
+}
+
+function getTextStyleIDFromName(name) {
+  var styleID = "";
+
+  for (var i = 0; i < arrayTextStyleIDs.length; i++) {
+    if (arrayTextStyleNames[i] === name) {
+      styleID = arrayTextStyleIDs[i];
+    }
+  }
+
+  return styleID;
+}
+
+function createNewLayerStyle() {
+  var styleDetails = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  var folder = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+  var border = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+  try {
+    var styleName = folder + styleDetails[0];
+    var styleColor = styleDetails[1];
+
+    if (arrayLayerStyleNames.indexOf(styleName) === -1) {
+      var borders = [];
+      var fills = [];
+
+      if (border) {
+        borders = [{
+          color: styleColor,
+          fillType: Style.FillType.Color,
+          position: Style.BorderPosition.Inside
+        }];
+      } else {
+        fills = [{
+          color: styleColor,
+          fillType: Style.FillType.Color
+        }];
+      }
+
+      var sharedStyle = layerStyles.push({
+        name: styleName,
+        style: {
+          fills: fills,
+          borders: borders
+        },
+        document: document
+      });
+      updateLayerStyles();
+      return sharedStyle;
+    }
+  } catch (createLayerStyleErr) {
+    console.log(createLayerStyleErr);
+  }
+}
+
+function createNewTextStyle() {
+  var styleDetails = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  var folder = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+
+  try {
+    var styleName = folder + styleDetails[0];
+    var styleColor = styleDetails[1];
+
+    if (arrayTextStyleNames.indexOf(styleName) === -1) {
+      var sharedStyle = textStyles.push({
+        name: styleName,
+        style: {
+          fills: {},
+          borders: {},
+          textColor: styleColor,
+          fontSize: 16,
+          fontFamily: "Roboto",
+          fontWeight: 5
+        },
+        document: document
+      });
+      updateTextStyles();
+    } // Titles
+
+
+    if (styleDetails[6]) {
+      styleName = folder + "H1/" + styleDetails[0];
+
+      if (arrayTextStyleNames.indexOf(styleName) === -1) {
+        var sharedTitleStyle = textStyles.push({
+          name: styleName,
+          style: {
+            fills: {},
+            borders: {},
+            textColor: styleColor,
+            fontSize: 28,
+            fontFamily: "Roboto",
+            fontWeight: 7
+          },
+          document: document
+        });
+        updateTextStyles();
+      }
+    }
+  } catch (createTextStyleErr) {
+    console.log(createTextStyleErr);
+  }
+}
+
+function updateLayerStyles() {
+  layerStyles = document.sharedLayerStyles;
+  arrayLayerStyleIDs = layerStyles.map(function (sharedstyle) {
+    return sharedstyle["id"];
+  });
+  arrayLayerStyleNames = layerStyles.map(function (sharedstyle) {
+    return sharedstyle["name"];
+  });
+  arrayLayerStyleStyles = layerStyles.map(function (sharedstyle) {
+    return sharedstyle["style"];
+  });
+}
+
+function updateTextStyles() {
+  var textStyles = document.sharedTextStyles;
+  arrayTextStyleIDs = textStyles.map(function (sharedstyle) {
+    return sharedstyle["id"];
+  });
+  arrayTextStyleNames = textStyles.map(function (sharedstyle) {
+    return sharedstyle["name"];
+  });
+  arrayTextStyleStyles = textStyles.map(function (sharedstyle) {
+    return sharedstyle["style"];
+  });
 }
 
 /***/ }),
@@ -4840,6 +5266,17 @@ module.exports = require("path");
 /***/ (function(module, exports) {
 
 module.exports = require("sketch");
+
+/***/ }),
+
+/***/ "sketch/dom":
+/*!*****************************!*\
+  !*** external "sketch/dom" ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("sketch/dom");
 
 /***/ }),
 
