@@ -4866,7 +4866,7 @@ var stylesString = JSON.stringify(layerStylesOrdered);
 var textString = JSON.stringify(textStylesOrdered); // #endregion
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  var defaultColor = "#f82506"; // #region Theme
+  var defaultColor = "#F9BB3C"; // #region Theme
 
   var theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(defaultColor), [// {
   //     name: "custom-1",
@@ -5012,8 +5012,7 @@ var textString = JSON.stringify(textStylesOrdered); // #endregion
       createNewTextStyle(style, "Dark Theme/");
     }
   }); // #endregion Create Styles
-
-  console.log(JSON.stringify(theme, null, 2));
+  // console.log(JSON.stringify(theme, null, 2));
 
   function paletteToColorVariables(palette, name) {
     var arrayColorVarNames = document.swatches.map(function (Swatch) {
@@ -5116,6 +5115,7 @@ function createNewLayerStyle() {
     var styleColor = styleDetails[1];
 
     if (arrayLayerStyleNames.indexOf(styleName) === -1) {
+      // 1. If the style is new
       var borders = [];
       var fills = [];
 
@@ -5142,6 +5142,37 @@ function createNewLayerStyle() {
       });
       updateLayerStyles();
       return sharedStyle;
+    } else {
+      // 2. If the style exists
+      var _borders = [];
+      var _fills = [];
+
+      if (border) {
+        _borders = [{
+          color: styleColor,
+          fillType: Style.FillType.Color,
+          position: Style.BorderPosition.Inside
+        }];
+      } else {
+        _fills = [{
+          color: styleColor,
+          fillType: Style.FillType.Color
+        }];
+      }
+
+      var styleID = getLayerStyleIDFromName(styleName);
+
+      var _sharedStyle;
+
+      if (styleID !== "") {
+        var localIndex = arrayLayerStyleIDs.indexOf(styleID);
+        _sharedStyle = layerStyles[localIndex];
+        _sharedStyle.style = {
+          fills: _fills,
+          borders: _borders
+        };
+        return _sharedStyle;
+      }
     }
   } catch (createLayerStyleErr) {
     console.log(createLayerStyleErr);
@@ -5169,27 +5200,50 @@ function createNewTextStyle() {
         },
         document: document
       });
-      updateTextStyles();
-    } // Titles
+      updateTextStyles(); // Titles
 
+      if (styleDetails[6]) {
+        styleName = folder + "H1/" + styleDetails[0];
 
-    if (styleDetails[6]) {
+        if (arrayTextStyleNames.indexOf(styleName) === -1) {
+          var sharedTitleStyle = textStyles.push({
+            name: styleName,
+            style: {
+              fills: {},
+              borders: {},
+              textColor: styleColor,
+              fontSize: 28,
+              fontFamily: "Roboto",
+              fontWeight: 7
+            },
+            document: document
+          });
+          updateTextStyles();
+        }
+      }
+    } else {
+      var styleID = getTextStyleIDFromName(styleName);
+
+      var _sharedStyle2;
+
+      if (styleID !== "") {
+        var localIndex = arrayTextStyleIDs.indexOf(styleID);
+        _sharedStyle2 = textStyles[localIndex];
+        _sharedStyle2.style = {
+          textColor: styleColor
+        };
+      }
+
       styleName = folder + "H1/" + styleDetails[0];
+      styleID = getTextStyleIDFromName(styleName);
 
-      if (arrayTextStyleNames.indexOf(styleName) === -1) {
-        var sharedTitleStyle = textStyles.push({
-          name: styleName,
-          style: {
-            fills: {},
-            borders: {},
-            textColor: styleColor,
-            fontSize: 28,
-            fontFamily: "Roboto",
-            fontWeight: 7
-          },
-          document: document
-        });
-        updateTextStyles();
+      if (styleID !== "") {
+        var _localIndex = arrayTextStyleIDs.indexOf(styleID);
+
+        _sharedStyle2 = textStyles[_localIndex];
+        _sharedStyle2.style = {
+          textColor: styleColor
+        };
       }
     }
   } catch (createTextStyleErr) {

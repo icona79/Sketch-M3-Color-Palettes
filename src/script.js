@@ -55,7 +55,7 @@ var textString = JSON.stringify(textStylesOrdered);
 // #endregion
 
 export default function () {
-    const defaultColor = "#f82506";
+    const defaultColor = "#F9BB3C";
 
     // #region Theme
     const theme = themeFromSourceColor(argbFromHex(defaultColor), [
@@ -541,7 +541,7 @@ export default function () {
     });
     // #endregion Create Styles
 
-    console.log(JSON.stringify(theme, null, 2));
+    // console.log(JSON.stringify(theme, null, 2));
 
     function paletteToColorVariables(palette, name) {
         let arrayColorVarNames = document.swatches.map(
@@ -634,7 +634,9 @@ function createNewLayerStyle(styleDetails = [], folder = "", border = false) {
     try {
         let styleName = folder + styleDetails[0];
         let styleColor = styleDetails[1];
+
         if (arrayLayerStyleNames.indexOf(styleName) === -1) {
+            // 1. If the style is new
             let borders = [];
             let fills = [];
             if (border) {
@@ -664,6 +666,37 @@ function createNewLayerStyle(styleDetails = [], folder = "", border = false) {
             updateLayerStyles();
 
             return sharedStyle;
+        } else {
+            // 2. If the style exists
+            let borders = [];
+            let fills = [];
+            if (border) {
+                borders = [
+                    {
+                        color: styleColor,
+                        fillType: Style.FillType.Color,
+                        position: Style.BorderPosition.Inside,
+                    },
+                ];
+            } else {
+                fills = [
+                    {
+                        color: styleColor,
+                        fillType: Style.FillType.Color,
+                    },
+                ];
+            }
+            let styleID = getLayerStyleIDFromName(styleName);
+            let sharedStyle;
+            if (styleID !== "") {
+                let localIndex = arrayLayerStyleIDs.indexOf(styleID);
+                sharedStyle = layerStyles[localIndex];
+                sharedStyle.style = {
+                    fills: fills,
+                    borders: borders,
+                };
+                return sharedStyle;
+            }
         }
     } catch (createLayerStyleErr) {
         console.log(createLayerStyleErr);
@@ -688,24 +721,43 @@ function createNewTextStyle(styleDetails = [], folder = "") {
                 document: document,
             });
             updateTextStyles();
-        }
-        // Titles
-        if (styleDetails[6]) {
+            // Titles
+            if (styleDetails[6]) {
+                styleName = folder + "H1/" + styleDetails[0];
+                if (arrayTextStyleNames.indexOf(styleName) === -1) {
+                    let sharedTitleStyle = textStyles.push({
+                        name: styleName,
+                        style: {
+                            fills: {},
+                            borders: {},
+                            textColor: styleColor,
+                            fontSize: 28,
+                            fontFamily: "Roboto",
+                            fontWeight: 7,
+                        },
+                        document: document,
+                    });
+                    updateTextStyles();
+                }
+            }
+        } else {
+            let styleID = getTextStyleIDFromName(styleName);
+            let sharedStyle;
+            if (styleID !== "") {
+                let localIndex = arrayTextStyleIDs.indexOf(styleID);
+                sharedStyle = textStyles[localIndex];
+                sharedStyle.style = {
+                    textColor: styleColor,
+                };
+            }
             styleName = folder + "H1/" + styleDetails[0];
-            if (arrayTextStyleNames.indexOf(styleName) === -1) {
-                let sharedTitleStyle = textStyles.push({
-                    name: styleName,
-                    style: {
-                        fills: {},
-                        borders: {},
-                        textColor: styleColor,
-                        fontSize: 28,
-                        fontFamily: "Roboto",
-                        fontWeight: 7,
-                    },
-                    document: document,
-                });
-                updateTextStyles();
+            styleID = getTextStyleIDFromName(styleName);
+            if (styleID !== "") {
+                let localIndex = arrayTextStyleIDs.indexOf(styleID);
+                sharedStyle = textStyles[localIndex];
+                sharedStyle.style = {
+                    textColor: styleColor,
+                };
             }
         }
     } catch (createTextStyleErr) {
