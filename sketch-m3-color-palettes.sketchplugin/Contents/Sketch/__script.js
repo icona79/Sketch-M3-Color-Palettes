@@ -4788,6 +4788,1574 @@ module.exports = Promise;
 
 /***/ }),
 
+/***/ "./node_modules/color-difference/lib/compare.js":
+/*!******************************************************!*\
+  !*** ./node_modules/color-difference/lib/compare.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return compare; })();
+
+var HexRgb   = __webpack_require__(/*! color-model */ "./node_modules/color-model/index.js").HexRgb,
+    methods = {
+        'EuclideanDistance' : __webpack_require__(/*! ./method/euclidean-distance */ "./node_modules/color-difference/lib/method/euclidean-distance.js")
+      , 'CIE76Difference'   : __webpack_require__(/*! ./method/cie-76-difference */ "./node_modules/color-difference/lib/method/cie-76-difference.js")
+    };
+
+/**
+ * Compares two colors and returns difference from 1 to 100
+ *
+ * @param {String} color1
+ * @param {String} color2
+ * @param {String} method Default method is best from currently implemented
+ * @return {Number} difference
+ */
+function compare(color1, color2, method) {
+  var methodName = method || 'CIE76Difference';
+
+  if (undefined === methods[methodName]) {
+    throw new Error('Method "' + methodName + '" is unknown. See implemented methods in ./lib/method directory.');
+  }
+
+  /** @type Abstract */
+  var methodObj = new methods[methodName];
+
+  return methodObj.compare(new HexRgb(color1), new HexRgb(color2));
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-difference/lib/index.js":
+/*!****************************************************!*\
+  !*** ./node_modules/color-difference/lib/index.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports  = {
+  compare       : __webpack_require__(/*! ./compare */ "./node_modules/color-difference/lib/compare.js")
+  , method      : {
+      'EuclideanDistance' : __webpack_require__(/*! ./method/euclidean-distance */ "./node_modules/color-difference/lib/method/euclidean-distance.js")
+    , 'CIE76Difference'   : __webpack_require__(/*! ./method/cie-76-difference */ "./node_modules/color-difference/lib/method/cie-76-difference.js")
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-difference/lib/method/abstract.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/color-difference/lib/method/abstract.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = (function() { return Abstract; })();
+
+function Abstract() {
+};
+
+/**
+ * Compares two colors and returns difference from 1 to 100
+ *
+ * @param {Rgb} color1
+ * @param {Rgb} color2
+ * @return {Number} difference
+ */
+Abstract.prototype.compare = function(color1, color2) {
+  throw new Error('Compare method unimplemented!');
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-difference/lib/method/cie-76-difference.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/color-difference/lib/method/cie-76-difference.js ***!
+  \***********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return CIE76Difference; })();
+
+/**
+ * @extends Abstract
+ */
+function CIE76Difference() {
+};
+
+__webpack_require__(/*! util */ "util").inherits(CIE76Difference, __webpack_require__(/*! ./abstract */ "./node_modules/color-difference/lib/method/abstract.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {Rgb} color1
+ * @param {Rgb} color2
+ */
+CIE76Difference.prototype.compare = function(color1, color2) {
+  if (color1.equals(color2)) {
+    return 0;
+  }
+
+  function squaredDelta(v1, v2) {
+    return Math.pow(v1 - v2, 2);
+  }
+
+  var lab1 = color1.toLab(),
+      lab2 = color2.toLab(),
+      sum  = 0;
+
+  sum += squaredDelta(lab1.lightness(), lab2.lightness());
+  sum += squaredDelta(lab1.a(), lab2.a());
+  sum += squaredDelta(lab1.b(), lab2.b());
+
+  return Math.max(Math.min(Math.sqrt(sum), 100), 0)
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-difference/lib/method/euclidean-distance.js":
+/*!************************************************************************!*\
+  !*** ./node_modules/color-difference/lib/method/euclidean-distance.js ***!
+  \************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return EuclideanDistance; })();
+
+/**
+ * @extends Abstract
+ */
+function EuclideanDistance() {
+};
+
+__webpack_require__(/*! util */ "util").inherits(EuclideanDistance, __webpack_require__(/*! ./abstract */ "./node_modules/color-difference/lib/method/abstract.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {Rgb} color1
+ * @param {Rgb} color2
+ */
+EuclideanDistance.prototype.compare = function(color1, color2) {
+  if (color1.equals(color2)) {
+    return 0;
+  }
+
+  function squaredDelta(v1, v2) {
+    return Math.pow(v1 - v2, 2);
+  }
+
+  var sum = 0;
+  sum += squaredDelta(color1.red(),   color2.red());
+  sum += squaredDelta(color1.green(), color2.green());
+  sum += squaredDelta(color1.blue(),  color2.blue());
+
+  var conversionIndex = 19.5075;
+
+  return Math.sqrt(sum / conversionIndex);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/index.js":
+/*!*******************************************!*\
+  !*** ./node_modules/color-model/index.js ***!
+  \*******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+if (process.env.COLOR_MODEL_COVERAGE) {
+  eval('module.exports = require("./.coverage/lib");');
+} else {
+  module.exports = __webpack_require__(/*! ./lib */ "./node_modules/color-model/lib/index.js");
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/abstract-model.js":
+/*!********************************************************!*\
+  !*** ./node_modules/color-model/lib/abstract-model.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return AbstractModel; })();
+
+var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
+
+/**
+ * Abstract color model
+ */
+function AbstractModel() {
+  this._name       = null;
+  this._components = [];
+};
+
+/**
+ * @returns {String}
+ */
+AbstractModel.prototype.toString = function () {
+  var v = [];
+  for (var i = 0, iMax = this._components.length; i < iMax; i++) {
+    v.push(this['_' + this._components[i]].get());
+  }
+  return this._name + '(' + v.join(', ') + ')';
+};
+
+/**
+ * @param {AbstractModel} that
+ * @returns {Boolean}
+ */
+AbstractModel.prototype.equals = function (that) {
+  if (!(that instanceof AbstractModel) || this._name !== that._name) {
+    return false;
+  }
+  for (var i = 0, cs = this._components, iMax = cs.length; i < iMax; i++) {
+    var key = '_' + cs[i];
+    if (!this[key].equals(that[key])) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/**
+ * @abstract
+ * @returns {Xyz}
+ */
+AbstractModel.prototype.toXyz = function () {
+  throw new Error('Model ' + this._name + ' has not implemented Xyz conversion!');
+};
+
+/**
+ * @returns {Lab}
+ */
+AbstractModel.prototype.toLab = function () {
+  return this.toXyz().toLab();
+};
+
+/**
+ * Getter/chainable setter in one place
+ *
+ * @param {String} name
+ * @param {Number} value
+ * @returns {AbstractModel}
+ */
+AbstractModel.prototype.component = function (name, value) {
+  var component = this['_' + name];
+  if (undefined === component || !(component instanceof Component)) {
+    throw new Error('Component "' + name + '" is not exists');
+  }
+
+  if (1 == arguments.length) {
+    return component.get();
+  }
+
+  component.set(value);
+  return this;
+};
+
+/**
+ * @param {String} name
+ * @param {Array} args
+ * @returns {AbstractModel}
+ */
+AbstractModel.prototype._component = function (name, args) {
+  /** @type Component */
+  var component = this['_' + name];
+
+  if (0 == args.length) {
+    return component.get();
+  }
+
+  component.set(args[0]);
+  return this;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/component.js":
+/*!***************************************************!*\
+  !*** ./node_modules/color-model/lib/component.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = (function() { return Component; })();
+
+/**
+ * Color model Component
+ * @param {String} name
+ * @param {Number} from
+ * @param {Number} to
+ */
+function Component(name, from, to) {
+  if (!name) {
+    throw new Error('Name not set');
+  }
+  this._name = name;
+
+  from = parseFloat(from);
+  to   = parseFloat(to);
+  if (!(from < to)) {
+    throw new Error('From must be less than to');
+  }
+  this._from = from;
+  this._to   = to;
+
+  this._value = null;
+};
+
+/**
+ * @param {Number} value
+ * @returns {Component}
+ */
+Component.prototype.set = function (value) {
+  value = value ? parseFloat(value) : 0;
+  if (isNaN(value)) {
+    throw new Error('Value for ' + this._name + ' must be numeric');
+  }
+
+  if (value < this._from || value > this._to) {
+    throw new Error('Value for ' + this._name + ' (' + value + ') must be between ' + this._from + ' and ' + this._to);
+  }
+
+  this._value = value;
+  return this;
+};
+
+/**
+ * @returns {Number}
+ */
+Component.prototype.get = function () {
+  return this._value;
+};
+
+/**
+ * @param {Component} that
+ * @returns {Boolean}
+ */
+Component.prototype.equals = function (that) {
+  return (that instanceof Component)
+    && this._name  === that._name
+    && this._value === that._value;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/hex-rgb.js":
+/*!*************************************************!*\
+  !*** ./node_modules/color-model/lib/hex-rgb.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return HexRgb; })();
+
+var _r = __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js"); eval('var Rgb = _r');
+
+/**
+ * Rgb color model, that created from HEX string and formatted as HEX
+ * @extends Rgb
+ * @param {String} hex
+ */
+function HexRgb(hex) {
+  if (undefined === hex) {
+    return HexRgb.super_.apply(this, args);
+  }
+
+  var c  = '([a-f0-9]{1,2})',
+      re = new RegExp('^#?' + c + c + c + '$', 'i'),
+      m  = hex.match(re);
+
+  if (null === m) {
+    throw new Error('Value "' + hex + '" is unknown hex color');
+  }
+
+  var args = [
+    this._parseIntFromHex(m[1]),
+    this._parseIntFromHex(m[2]),
+    this._parseIntFromHex(m[3])
+  ];
+  HexRgb.super_.apply(this, args);
+};
+
+__webpack_require__(/*! util */ "util").inherits(HexRgb, __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {String} hex
+ * @returns {Number}
+ */
+HexRgb.prototype._parseIntFromHex = function(hex) {
+  if (1 == hex.length) {
+    hex = hex + hex;
+  }
+  return parseInt(hex, 16);
+};
+
+/**
+ * @returns {String}
+ */
+HexRgb.prototype.toString = function() {
+  return '#' + this._formatIntAsHex(this.red()) + this._formatIntAsHex(this.green()) + this._formatIntAsHex(this.blue());
+};
+
+/**
+ * @param {Number} intValue
+ * @returns {String}
+ */
+HexRgb.prototype._formatIntAsHex = function(intValue) {
+  intValue = Math.round(intValue);
+  strValue = '' + intValue;
+  if (1 == strValue.length) {
+    strValue = strValue + strValue;
+  }
+  return (intValue < 16 ? '0' : '') + intValue.toString(16);
+};
+
+/**
+ * @returns {Rgb}
+ */
+HexRgb.prototype.toRgb = function () {
+  return new Rgb(this._red.get(), this._green.get(), this._blue.get());
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/hsl.js":
+/*!*********************************************!*\
+  !*** ./node_modules/color-model/lib/hsl.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return Hsl; })();
+
+var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
+var _r = __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js");       eval('var Rgb       = _r');
+
+/**
+ * Hue, saturation, lightness color space
+ * @extends AbstractModel
+ * @param {Number} h
+ * @param {Number} s
+ * @param {Number} l
+ */
+function Hsl(h, s, l) {
+  this._name       = 'hsl';
+  this._components = ['hue', 'saturation', 'lightness'];
+  this._hue        = new Component('hue',        0, 360); this._hue.set(h);
+  this._saturation = new Component('saturation', 0, 1  ); this._saturation.set(s);
+  this._lightness  = new Component('lightness',  0, 1  ); this._lightness.set(l);
+};
+
+__webpack_require__(/*! util */ "util").inherits(Hsl, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {Number} value from 0 to 360
+ * @returns {Hsl}
+ */
+Hsl.prototype.hue = function (value) {
+  return this._component('hue', arguments);
+};
+
+/**
+ * @param {Number} value from 0 to 1
+ * @returns {Hsl}
+ */
+Hsl.prototype.saturation = function (value) {
+  return this._component('saturation', arguments);
+};
+
+/**
+ * @param {Number} value from 0 to 1
+ * @returns {Hsl}
+ */
+Hsl.prototype.lightness = function (value) {
+  return this._component('lightness', arguments);
+};
+
+/**
+ * @returns {Xyz}
+ */
+Hsl.prototype.toXyz = function () {
+  return this.toRgb().toXyz();
+};
+
+/**
+ * @returns {Rgb}
+ */
+Hsl.prototype.toRgb = function () {
+  var lightness  = this._lightness.get(),
+      saturation = this._saturation.get();
+  if (saturation == 0) {
+    var light = 0;
+    if (lightness < 0) {
+      light = 0;
+    } else if (lightness >= 1) {
+      light = 255;
+    } else {
+      light = (lightness * (1 << 16)) >> 8;
+    }
+    return new Rgb(light, light, light);
+  }
+
+  var hue   = this._hue.get() / this._hue._to,
+      temp2 = (lightness < 0.5) ?
+                (lightness * (saturation + 1)) :
+                (lightness + saturation) - (lightness * saturation),
+      temp1 = 2 * lightness - temp2;
+
+  return new Rgb(
+    this._calcHue(temp1, temp2, hue + 1 / 3),
+    this._calcHue(temp1, temp2, hue),
+    this._calcHue(temp1, temp2, hue - 1 / 3)
+  );
+};
+
+/**
+ * @param {Number} temp1
+ * @param {Number} temp2
+ * @param {Number} hue
+ * @returns {Number}
+ */
+Hsl.prototype._calcHue = function (temp1, temp2, hue) {
+  if (hue < 0) {
+    ++hue;
+  } else if (hue > 1) {
+    --hue;
+  }
+
+  result = temp1;
+  if (hue * 6 < 1) {
+    result = temp1 + (temp2 - temp1) * hue * 6;
+  } else if (hue * 2 < 1) {
+    result = temp2;
+  } else if (hue * 3 < 2) {
+    result = temp1 + (temp2 - temp1) * (2/3 - hue) * 6;
+  }
+
+  return (result * 255.99999999999997) >> 0;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/index.js":
+/*!***********************************************!*\
+  !*** ./node_modules/color-model/lib/index.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = {
+    Component     : __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js")
+  , AbstractModel : __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")
+  , Xyz           : __webpack_require__(/*! ./xyz */ "./node_modules/color-model/lib/xyz.js")
+  , Rgb           : __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js")
+  , HexRgb        : __webpack_require__(/*! ./hex-rgb */ "./node_modules/color-model/lib/hex-rgb.js")
+  , Lab           : __webpack_require__(/*! ./lab */ "./node_modules/color-model/lib/lab.js")
+  , Hsl           : __webpack_require__(/*! ./hsl */ "./node_modules/color-model/lib/hsl.js")
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/lab.js":
+/*!*********************************************!*\
+  !*** ./node_modules/color-model/lib/lab.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return Lab; })();
+
+var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
+
+/**
+ * Lab color space
+ *
+ * CIE 1976 (L*, a*, b*) color space
+ * @extends AbstractModel
+ * @param {Number} l
+ * @param {Number} a
+ * @param {Number} b
+ */
+function Lab(l, a, b) {
+  this._name       = 'lab';
+  this._components = ['lightness', 'a', 'b'];
+  this._lightness  = new Component('lightness',    0, 100); this._lightness.set(l);
+  this._a          = new Component('a',          -87, 100); this._a.set(a);
+  this._b          = new Component('b',         -108, 100); this._b.set(b);
+};
+
+__webpack_require__(/*! util */ "util").inherits(Lab, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {Number} value
+ * @returns {Lab}
+ */
+Lab.prototype.lightness = function (value) {
+  return this._component('lightness', arguments);
+};
+
+/**
+ * @param {Number} value
+ * @returns {Lab}
+ */
+Lab.prototype.a = function (value) {
+  return this._component('a', arguments);
+};
+
+/**
+ * @param {Number} value
+ * @returns {Lab}
+ */
+Lab.prototype.b = function (value) {
+  return this._component('b', arguments);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/rgb.js":
+/*!*********************************************!*\
+  !*** ./node_modules/color-model/lib/rgb.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return Rgb; })();
+
+var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
+var _r = __webpack_require__(/*! ./xyz */ "./node_modules/color-model/lib/xyz.js");       eval('var Xyz       = _r');
+var _r = __webpack_require__(/*! ./hsl */ "./node_modules/color-model/lib/hsl.js");       eval('var Hsl       = _r');
+
+/**
+ * Rgb color model
+ * @extends AbstractModel
+ * @param {Number} r
+ * @param {Number} g
+ * @param {Number} b
+ */
+function Rgb(r, g, b) {
+  this._name       = 'rgb';
+  this._components = ['red', 'green', 'blue'];
+  this._red        = new Component('red',   0, 255); this._red.set(r);
+  this._green      = new Component('green', 0, 255); this._green.set(g);
+  this._blue       = new Component('blue',  0, 255); this._blue.set(b);
+};
+
+__webpack_require__(/*! util */ "util").inherits(Rgb, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {Number} value
+ * @returns {Rgb}
+ */
+Rgb.prototype.red = function (value) {
+  return this._component('red', arguments);
+};
+
+/**
+ * @param {Number} value
+ * @returns {Rgb}
+ */
+Rgb.prototype.green = function (value) {
+  return this._component('green', arguments);
+};
+
+/**
+ * @param {Number} value
+ * @returns {Rgb}
+ */
+Rgb.prototype.blue = function (value) {
+  return this._component('blue', arguments);
+};
+
+/**
+ * @returns {HexRgb}
+ */
+Rgb.prototype.toHex = function () {
+  var HexRgb = __webpack_require__(/*! ./hex-rgb */ "./node_modules/color-model/lib/hex-rgb.js");
+  return new HexRgb()
+    .red  (this._red  .get())
+    .green(this._green.get())
+    .blue (this._blue .get());
+};
+
+/**
+ * @returns {String}
+ */
+Rgb.prototype.toHexString = function () {
+  return this.toHex().toString();
+};
+
+/**
+ * @param {Number} value
+ * @returns {Number}
+ */
+Rgb.prototype._preparePreXyzValue = function(value) {
+  value = value / 255;
+  if (value > 0.04045) {
+    value = (value + 0.055) / 1.055;
+    value = Math.pow(value, 2.4);
+  } else {
+    value = value / 12.92;
+  }
+  return value * 100;
+};
+
+/**
+ * @returns {Xyz}
+ */
+Rgb.prototype.toXyz = function () {
+  var r = this._preparePreXyzValue(this._red  .get()),
+      g = this._preparePreXyzValue(this._green.get()),
+      b = this._preparePreXyzValue(this._blue .get());
+
+  return new Xyz(
+    this._finalizeXyzValue(r * 0.4124 + g * 0.3576 + b * 0.1805),
+    this._finalizeXyzValue(r * 0.2126 + g * 0.7152 + b * 0.0722),
+    this._finalizeXyzValue(r * 0.0193 + g * 0.1192 + b * 0.9505)
+  );
+};
+
+/**
+ * @param {Number} preXyzValue
+ * @returns {Number}
+ */
+Rgb.prototype._finalizeXyzValue = function (preXyzValue) {
+  return Math.round(preXyzValue * 10000) / 10000;
+};
+
+/**
+ * @returns {Hsl}
+ */
+Rgb.prototype.toHsl = function () {
+  var r = this._red  .get() / 255,
+      g = this._green.get() / 255,
+      b = this._blue .get() / 255,
+      min   = Math.min(r, g, b),
+      max   = Math.max(r, g, b),
+      delta = max - min,
+      lightness = (min + max) / 2;
+
+  lightness = Math.round(lightness * 100) / 100;
+
+  if (delta == 0) {
+    return new Hsl(0, 0, lightness);
+  }
+
+  var saturation = 0;
+  if (lightness < 0.5) {
+    saturation = delta / (max + min);
+  } else {
+    saturation = delta / (2 - max - min);
+  }
+  saturation = Math.round(saturation * 100) / 100;
+
+  var hue  = 0,
+    deltaR = (((max - r) / 6 ) + (delta / 2)) / delta,
+    deltaG = (((max - g) / 6 ) + (delta / 2)) / delta,
+    deltaB = (((max - b) / 6 ) + (delta / 2)) / delta;
+
+  if (r == max) {
+    hue = deltaB - deltaG;
+  } else if (g == max) {
+    hue = ( 1 / 3 ) + deltaR - deltaB;
+  } else {
+    hue = ( 2 / 3 ) + deltaG - deltaR;
+  }
+
+  if (hue < 0) {
+    ++hue;
+  } else if (hue > 1) {
+    --hue;
+  }
+  hue = (hue * 360.99999999999997) >> 0;
+  if (360 == hue) {
+    hue = 0;
+  }
+
+  return new Hsl(hue, saturation, lightness);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-model/lib/xyz.js":
+/*!*********************************************!*\
+  !*** ./node_modules/color-model/lib/xyz.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = (function() { return Xyz; })();
+
+var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
+var _r = __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js");       eval('var Rgb       = _r');
+var _r = __webpack_require__(/*! ./lab */ "./node_modules/color-model/lib/lab.js");       eval('var Lab       = _r');
+
+/**
+ * XYZ color model - base color model for others
+ *
+ * CIE 1931 color space
+ * @extends AbstractModel
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Number} z
+ */
+function Xyz(x, y, z) {
+  this._name       = 'xyz';
+  this._components = ['x', 'y', 'z'];
+  this._x          = new Component('x', 0, 95.05); this._x.set(x);
+  this._y          = new Component('y', 0, 100  ); this._y.set(y);
+  this._z          = new Component('z', 0, 108.9); this._z.set(z);
+};
+
+__webpack_require__(/*! util */ "util").inherits(Xyz, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
+
+/**
+ * @param {Number} value
+ * @returns {Xyz}
+ */
+Xyz.prototype.x = function (value) {
+  return this._component('x', arguments);
+};
+
+/**
+ * @param {Number} value
+ * @returns {Xyz}
+ */
+Xyz.prototype.y = function (value) {
+  return this._component('y', arguments);
+};
+
+/**
+ * @param {Number} value
+ * @returns {Xyz}
+ */
+Xyz.prototype.z = function (value) {
+  return this._component('z', arguments);
+};
+
+/**
+ * @returns {Xyz}
+ */
+Xyz.prototype.toXyz = function () {
+  return new Xyz(this._x.get(), this._y.get(), this._z.get());
+};
+
+/**
+ * @returns {Lab}
+ */
+Xyz.prototype.toLab = function () {
+  var x = this._preparePreLabValue(this._x.get() /  95.047),
+      y = this._preparePreLabValue(this._y.get() / 100.000),
+      z = this._preparePreLabValue(this._z.get() / 108.883);
+
+  return new Lab(
+    this._finalizeLabValue((116 * y) - 16),
+    this._finalizeLabValue(500 * (x - y)),
+    this._finalizeLabValue(200 * (y - z))
+  );
+};
+
+/**
+ * @param {Number} preLabValue
+ * @returns {Number}
+ */
+Xyz.prototype._preparePreLabValue = function (preLabValue) {
+  if (preLabValue > 0.008856) {
+    return Math.pow(preLabValue, 1/3);
+  }
+  return (7.787 * preLabValue) + (16 / 116);
+};
+
+/**
+ * @param {Number} preLabValue
+ * @returns {Number}
+ */
+Xyz.prototype._finalizeLabValue = function (preLabValue) {
+  return Math.round(preLabValue * 10000) / 10000;
+};
+
+/**
+ * @returns {Rgb}
+ */
+Xyz.prototype.toRgb = function () {
+  var x = this._x.get() / 100,
+      y = this._y.get() / 100,
+      z = this._z.get() / 100,
+      r = x *  3.2406 + y * -1.5372 + z * -0.4986,
+      g = x * -0.9689 + y *  1.8758 + z *  0.0415,
+      b = x *  0.0557 + y * -0.2040 + z *  1.0570;
+
+  return new Rgb(this._finalizeRgbValue(r), this._finalizeRgbValue(g), this._finalizeRgbValue(b));
+};
+
+/**
+ * @param {Number} preRgbValue
+ * @returns {Number}
+ */
+Xyz.prototype._finalizeRgbValue = function (preRgbValue) {
+  if (preRgbValue > 0.0031308 ) {
+    preRgbValue = 1.055 * Math.pow(preRgbValue,  1/2.4) - 0.055;
+  } else {
+    preRgbValue = 12.92 * preRgbValue;
+  }
+
+  return Math.round(255 * preRgbValue);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/color-name/index.js":
+/*!******************************************!*\
+  !*** ./node_modules/color-name/index.js ***!
+  \******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = {
+	"aliceblue": [240, 248, 255],
+	"antiquewhite": [250, 235, 215],
+	"aqua": [0, 255, 255],
+	"aquamarine": [127, 255, 212],
+	"azure": [240, 255, 255],
+	"beige": [245, 245, 220],
+	"bisque": [255, 228, 196],
+	"black": [0, 0, 0],
+	"blanchedalmond": [255, 235, 205],
+	"blue": [0, 0, 255],
+	"blueviolet": [138, 43, 226],
+	"brown": [165, 42, 42],
+	"burlywood": [222, 184, 135],
+	"cadetblue": [95, 158, 160],
+	"chartreuse": [127, 255, 0],
+	"chocolate": [210, 105, 30],
+	"coral": [255, 127, 80],
+	"cornflowerblue": [100, 149, 237],
+	"cornsilk": [255, 248, 220],
+	"crimson": [220, 20, 60],
+	"cyan": [0, 255, 255],
+	"darkblue": [0, 0, 139],
+	"darkcyan": [0, 139, 139],
+	"darkgoldenrod": [184, 134, 11],
+	"darkgray": [169, 169, 169],
+	"darkgreen": [0, 100, 0],
+	"darkgrey": [169, 169, 169],
+	"darkkhaki": [189, 183, 107],
+	"darkmagenta": [139, 0, 139],
+	"darkolivegreen": [85, 107, 47],
+	"darkorange": [255, 140, 0],
+	"darkorchid": [153, 50, 204],
+	"darkred": [139, 0, 0],
+	"darksalmon": [233, 150, 122],
+	"darkseagreen": [143, 188, 143],
+	"darkslateblue": [72, 61, 139],
+	"darkslategray": [47, 79, 79],
+	"darkslategrey": [47, 79, 79],
+	"darkturquoise": [0, 206, 209],
+	"darkviolet": [148, 0, 211],
+	"deeppink": [255, 20, 147],
+	"deepskyblue": [0, 191, 255],
+	"dimgray": [105, 105, 105],
+	"dimgrey": [105, 105, 105],
+	"dodgerblue": [30, 144, 255],
+	"firebrick": [178, 34, 34],
+	"floralwhite": [255, 250, 240],
+	"forestgreen": [34, 139, 34],
+	"fuchsia": [255, 0, 255],
+	"gainsboro": [220, 220, 220],
+	"ghostwhite": [248, 248, 255],
+	"gold": [255, 215, 0],
+	"goldenrod": [218, 165, 32],
+	"gray": [128, 128, 128],
+	"green": [0, 128, 0],
+	"greenyellow": [173, 255, 47],
+	"grey": [128, 128, 128],
+	"honeydew": [240, 255, 240],
+	"hotpink": [255, 105, 180],
+	"indianred": [205, 92, 92],
+	"indigo": [75, 0, 130],
+	"ivory": [255, 255, 240],
+	"khaki": [240, 230, 140],
+	"lavender": [230, 230, 250],
+	"lavenderblush": [255, 240, 245],
+	"lawngreen": [124, 252, 0],
+	"lemonchiffon": [255, 250, 205],
+	"lightblue": [173, 216, 230],
+	"lightcoral": [240, 128, 128],
+	"lightcyan": [224, 255, 255],
+	"lightgoldenrodyellow": [250, 250, 210],
+	"lightgray": [211, 211, 211],
+	"lightgreen": [144, 238, 144],
+	"lightgrey": [211, 211, 211],
+	"lightpink": [255, 182, 193],
+	"lightsalmon": [255, 160, 122],
+	"lightseagreen": [32, 178, 170],
+	"lightskyblue": [135, 206, 250],
+	"lightslategray": [119, 136, 153],
+	"lightslategrey": [119, 136, 153],
+	"lightsteelblue": [176, 196, 222],
+	"lightyellow": [255, 255, 224],
+	"lime": [0, 255, 0],
+	"limegreen": [50, 205, 50],
+	"linen": [250, 240, 230],
+	"magenta": [255, 0, 255],
+	"maroon": [128, 0, 0],
+	"mediumaquamarine": [102, 205, 170],
+	"mediumblue": [0, 0, 205],
+	"mediumorchid": [186, 85, 211],
+	"mediumpurple": [147, 112, 219],
+	"mediumseagreen": [60, 179, 113],
+	"mediumslateblue": [123, 104, 238],
+	"mediumspringgreen": [0, 250, 154],
+	"mediumturquoise": [72, 209, 204],
+	"mediumvioletred": [199, 21, 133],
+	"midnightblue": [25, 25, 112],
+	"mintcream": [245, 255, 250],
+	"mistyrose": [255, 228, 225],
+	"moccasin": [255, 228, 181],
+	"navajowhite": [255, 222, 173],
+	"navy": [0, 0, 128],
+	"oldlace": [253, 245, 230],
+	"olive": [128, 128, 0],
+	"olivedrab": [107, 142, 35],
+	"orange": [255, 165, 0],
+	"orangered": [255, 69, 0],
+	"orchid": [218, 112, 214],
+	"palegoldenrod": [238, 232, 170],
+	"palegreen": [152, 251, 152],
+	"paleturquoise": [175, 238, 238],
+	"palevioletred": [219, 112, 147],
+	"papayawhip": [255, 239, 213],
+	"peachpuff": [255, 218, 185],
+	"peru": [205, 133, 63],
+	"pink": [255, 192, 203],
+	"plum": [221, 160, 221],
+	"powderblue": [176, 224, 230],
+	"purple": [128, 0, 128],
+	"rebeccapurple": [102, 51, 153],
+	"red": [255, 0, 0],
+	"rosybrown": [188, 143, 143],
+	"royalblue": [65, 105, 225],
+	"saddlebrown": [139, 69, 19],
+	"salmon": [250, 128, 114],
+	"sandybrown": [244, 164, 96],
+	"seagreen": [46, 139, 87],
+	"seashell": [255, 245, 238],
+	"sienna": [160, 82, 45],
+	"silver": [192, 192, 192],
+	"skyblue": [135, 206, 235],
+	"slateblue": [106, 90, 205],
+	"slategray": [112, 128, 144],
+	"slategrey": [112, 128, 144],
+	"snow": [255, 250, 250],
+	"springgreen": [0, 255, 127],
+	"steelblue": [70, 130, 180],
+	"tan": [210, 180, 140],
+	"teal": [0, 128, 128],
+	"thistle": [216, 191, 216],
+	"tomato": [255, 99, 71],
+	"turquoise": [64, 224, 208],
+	"violet": [238, 130, 238],
+	"wheat": [245, 222, 179],
+	"white": [255, 255, 255],
+	"whitesmoke": [245, 245, 245],
+	"yellow": [255, 255, 0],
+	"yellowgreen": [154, 205, 50]
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/colorcolor/src/colorcolor.js":
+/*!***************************************************!*\
+  !*** ./node_modules/colorcolor/src/colorcolor.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*jshint esversion: 6 */
+
+function colorcolor(color, newColor = "rgba", calculateOpacity = false) {
+	color = color.toLowerCase();
+	newColor = newColor.toLowerCase();
+	var returnedColor = color;
+	var namedColor = __webpack_require__(/*! color-name */ "./node_modules/color-name/index.js");
+	var r,g,b,a;
+	var roundTo = 4;
+	var colorDefinitions = {
+		rgb: {
+			re: /^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/,
+			example: [ "rgb(123, 234, 45)", "rgb(255,234,245)" ],
+			toRGBA: function (bits) {
+				return [
+					parseInt(bits[ 1 ], 10), parseInt(bits[ 2 ], 10), parseInt(bits[ 3 ], 10), 1
+				];
+			}
+		},
+		rgba: {
+			re: /^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d+(?:\.\d+)?|\.\d+)\s*\)/,
+			example: [ "rgba(123, 234, 45, 1)", "rgba(255,234,245, 0.5)" ],
+			toRGBA: function (bits) {
+				return [
+					parseInt(bits[ 1 ], 10), parseInt(bits[ 2 ], 10), parseInt(bits[ 3 ], 10), parseFloat(bits[ 4 ])
+				];
+			}
+		},
+		hex: {
+			re: /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/,
+			example: [ "00ff00", "336699" ],
+			toRGBA: function (bits) {
+				return [
+					parseInt(bits[ 1 ], 16), parseInt(bits[ 2 ], 16), parseInt(bits[ 3 ], 16), 1
+				];
+			}
+		},
+		hex3: {
+			re: /^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
+			example: [ "fb0", "f0f" ],
+			toRGBA: function (bits) {
+				return [
+					parseInt(bits[ 1 ] + bits[ 1 ], 16), parseInt(bits[ 2 ] + bits[ 2 ], 16), parseInt(bits[ 3 ] + bits[ 3 ], 16), 1
+				];
+			}
+		},
+		hexa: {
+			re: /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/,
+			example: [ "00ff00ff", "336699a0" ],
+			toRGBA: function (bits) {
+				return [
+					parseInt(bits[ 1 ], 16), parseInt(bits[ 2 ], 16), parseInt(bits[ 3 ], 16), (parseInt(bits[ 4 ], 16) / 255)
+				];
+			}
+		},
+		hex4a: {
+			re: /^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
+			example: [ "fb0f", "f0f8" ],
+			toRGBA: function (bits) {
+				return [
+					parseInt(bits[ 1 ] + bits[ 1 ], 16), parseInt(bits[ 2 ] + bits[ 2 ], 16), parseInt(bits[ 3 ] + bits[ 3 ], 16), (parseInt(bits[ 4 ] + bits[ 4 ], 16) / 255)
+				];
+			}
+		},
+		hsl: {
+			re: /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/,
+			example: [ "hsl(120, 100%, 25%)", "hsl(0, 100%, 50%)" ],
+			toRGBA: function (bits) {
+				bits[ 4 ] = 1;
+				var rgba = hslToRgb(bits);
+				return [
+					rgba.r, rgba.g, rgba.b, rgba.a
+				];
+			}
+		},
+		hsla: {
+			re: /^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*(\d+(?:\.\d+)?|\.\d+)\s*\)/,
+			example: [ "hsla(120, 100%, 25%, 1)", "hsla(0, 100%, 50%, 0.5)" ],
+			toRGBA: function (bits) {
+				var rgba = hslToRgb(bits);
+				return [
+					rgba.r, rgba.g, rgba.b, rgba.a
+				];
+			}
+		},
+		hsv: {
+			re: /^hsv\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/,
+			example: [ "hsv(120, 100%, 25%)", "hsv(0, 100%, 50%)" ],
+			toRGBA: function (bits) {
+				var rgb = hsvToRgb(bits);
+				return [
+					rgb.r, rgb.g, rgb.b, 1
+				];
+			}
+		},
+		hsb: {
+			re: /^hsb\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/,
+			example: [ "hsb(120, 100%, 25%)", "hsb(0, 100%, 50%)" ],
+			toRGBA: function (bits) {
+				var rgb = hsvToRgb(bits);
+				return [
+					rgb.r, rgb.g, rgb.b, 1
+				];
+			}
+		}
+	};
+
+	// If this is a named color, convert it to hex
+	if (namedColor.hasOwnProperty(color)) {
+		color = namedColor[color];
+		color.forEach(function(piece, index) {
+			"use strict";
+			color[index] = ("0" + piece.toString(16)).slice(-2);
+		});
+		color = "#" + color.join('');
+	}
+
+	// Search the color definitions for a match
+	for (let colorDefinition in colorDefinitions) {
+		let re = colorDefinitions[colorDefinition].re;
+		let processor = colorDefinitions[colorDefinition].toRGBA;
+		let bits = re.exec(color);
+		if (bits) {
+			let channels = processor(bits);
+			r = channels[0];
+			g = channels[1];
+			b = channels[2];
+			a = +(Math.round(channels[3] + ("e+" + roundTo)) + ("e-" + roundTo));
+		}
+	}
+	r = Math.round( ( r < 0 || isNaN(r) ) ? 0 : ( ( r > 255 ) ? 255 : r ) );
+	g = Math.round( ( g < 0 || isNaN(g) ) ? 0 : ( ( g > 255 ) ? 255 : g ) );
+	b = Math.round( ( b < 0 || isNaN(b) ) ? 0 : ( ( b > 255 ) ? 255 : b ) );
+	a = ( a < 0 || isNaN(a) ) ? 0 : ( ( a > 1 ) ? 1 : a );
+
+	switch (newColor) {
+		case "hex":
+			returnedColor = "#" + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2);
+			break;
+		case "hexa":
+			if (calculateOpacity) {
+				[r, g, b, a] = calculateOpacityFromWhite(r, g, b, a);
+			}
+			returnedColor = "#" + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2) + ("0" + (Math.round(255 * a)).toString(16)).slice(-2);
+			break;
+		case "hsl":
+			let hsl = rgbToHsl({ "r": r, "g": g, "b": b });
+			returnedColor = `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`;
+			break;
+		case "hsla":
+			if (calculateOpacity) {
+				[r, g, b, a] = calculateOpacityFromWhite(r, g, b, a);
+			}
+			let hsla = rgbToHsl({ "r": r, "g": g, "b": b, "a": a });
+			returnedColor = `hsla(${hsla.h},${hsla.s}%,${hsla.l}%,${hsla.a})`;
+			break;
+		case "hsb":
+			/* Same as `hsv` */
+			let hsb = rgbToHsv({ "r": r, "g": g, "b": b });
+			returnedColor = `hsb(${hsb.h},${hsb.s}%,${hsb.v}%)`;
+			break;
+		case "hsv":
+			let hsv = rgbToHsv({ "r": r, "g": g, "b": b });
+			returnedColor = `hsv(${hsv.h},${hsv.s}%,${hsv.v}%)`;
+			break;
+		case "rgb":
+			returnedColor = `rgb(${r},${g},${b})`;
+			break;
+		case "rgba":
+		/* falls through */
+		default:
+			if (calculateOpacity) {
+				[r, g, b, a] = calculateOpacityFromWhite(r, g, b, a);
+			}
+			returnedColor = `rgba(${r},${g},${b},${a})`;
+			break;
+	}
+
+	return returnedColor;
+}
+
+function calculateOpacityFromWhite(r, g, b, a) {
+	"use strict";
+	var min = 0;
+	a = ( 255 - ( min = Math.min(r, g, b) ) ) / 255;
+	r = (  false || ( r - min ) / a ).toFixed(0);
+	g = (  false || ( g - min ) / a ).toFixed(0);
+	b = (  false || ( b - min ) / a ).toFixed(0);
+	a = parseFloat(a.toFixed(4));
+
+	return [r, g, b, a];
+}
+
+function hslToRgb(bits) {
+	var rgba = {}, hsl = {
+		h: bits[1] / 360,
+		s: bits[2] / 100,
+		l: bits[3] / 100,
+		a: parseFloat(bits[ 4 ])
+	};
+	if (hsl.s === 0) {
+		let v = 255 * hsl.l;
+		rgba = {
+			r: v,
+			g: v,
+			b: v,
+			a: hsl.a
+		};
+	} else {
+		let q = hsl.l < 0.5 ? hsl.l * ( 1 + hsl.s ) : ( hsl.l + hsl.s ) - ( hsl.l * hsl.s );
+		let p = 2 * hsl.l - q;
+		rgba.r = hueToRgb(p, q, hsl.h + ( 1 / 3 ) ) * 255;
+		rgba.g = hueToRgb(p, q, hsl.h) * 255;
+		rgba.b = hueToRgb(p, q, hsl.h - ( 1 / 3 ) ) * 255;
+		rgba.a = hsl.a;
+	}
+
+	return rgba;
+}
+
+function rgbToHsl(rgba) {
+	rgba.r = rgba.r / 255;
+	rgba.g = rgba.g / 255;
+	rgba.b = rgba.b / 255;
+	var max = Math.max(rgba.r, rgba.g, rgba.b), min = Math.min(rgba.r, rgba.g, rgba.b), hsl = [], d;
+	hsl.a = rgba.a;
+	hsl.l = ( max + min ) / 2;
+	if (max === min) {
+		hsl.h = 0;
+		hsl.s = 0;
+	} else {
+		d = max - min;
+		hsl.s = hsl.l >= 0.5 ? d / ( 2 - max - min ) : d / ( max + min );
+		switch (max) {
+			case rgba.r:
+				hsl.h = ( rgba.g - rgba.b ) / d + ( rgba.g < rgba.b ? 6 : 0 );
+				break;
+			case rgba.g:
+				hsl.h = ( rgba.b - rgba.r ) / d + 2;
+				break;
+			case rgba.b:
+				hsl.h = ( rgba.r - rgba.g ) / d + 4;
+				break;
+		}
+		hsl.h /= 6;
+	}
+	hsl.h = parseInt(( hsl.h * 360 ).toFixed(0), 10);
+	hsl.s = parseInt(( hsl.s * 100 ).toFixed(0), 10);
+	hsl.l = parseInt(( hsl.l * 100 ).toFixed(0), 10);
+
+	return hsl;
+}
+
+function hsvToRgb(bits) {
+	var rgb = {}, hsv = {
+		h: bits[1] / 360,
+		s: bits[2] / 100,
+		v: bits[3] / 100
+	}, i = Math.floor(hsv.h * 6), f = hsv.h * 6 - i, p = hsv.v * ( 1 - hsv.s ), q = hsv.v * ( 1 - f * hsv.s ), t = hsv.v * ( 1 - ( 1 - f ) * hsv.s );
+	switch (i % 6) {
+		case 0:
+			rgb.r = hsv.v;
+			rgb.g = t;
+			rgb.b = p;
+			break;
+		case 1:
+			rgb.r = q;
+			rgb.g = hsv.v;
+			rgb.b = p;
+			break;
+		case 2:
+			rgb.r = p;
+			rgb.g = hsv.v;
+			rgb.b = t;
+			break;
+		case 3:
+			rgb.r = p;
+			rgb.g = q;
+			rgb.b = hsv.v;
+			break;
+		case 4:
+			rgb.r = t;
+			rgb.g = p;
+			rgb.b = hsv.v;
+			break;
+		case 5:
+			rgb.r = hsv.v;
+			rgb.g = p;
+			rgb.b = q;
+			break;
+	}
+	rgb.r = rgb.r * 255;
+	rgb.g = rgb.g * 255;
+	rgb.b = rgb.b * 255;
+
+	return rgb;
+}
+
+function rgbToHsv(rgba) {
+	rgba.r = toPercent(parseInt(rgba.r, 10) % 256, 256);
+	rgba.g = toPercent(parseInt(rgba.g, 10) % 256, 256);
+	rgba.b = toPercent(parseInt(rgba.b, 10) % 256, 256);
+	var max = Math.max(rgba.r, rgba.g, rgba.b), min = Math.min(rgba.r, rgba.g, rgba.b), d = max - min, hsv = {
+		"h": 0,
+		"s": max === 0 ? 0 : d / max,
+		"v": max
+	};
+	if (max !== min) {
+		switch (max) {
+			case rgba.r:
+				hsv.h = ( rgba.g - rgba.b ) / d + ( rgba.g < rgba.b ? 6 : 0 );
+				break;
+			case rgba.g:
+				hsv.h = ( rgba.b - rgba.r ) / d + 2;
+				break;
+			case rgba.b:
+				hsv.h = ( rgba.r - rgba.g ) / d + 4;
+				break;
+		}
+		hsv.h /= 6;
+	}
+	hsv.h = parseInt(( hsv.h * 360 ).toFixed(0), 10);
+	hsv.s = parseInt(( hsv.s * 100 ).toFixed(0), 10);
+	hsv.v = parseInt(( hsv.v * 100 ).toFixed(0), 10);
+
+	return hsv;
+}
+
+function hueToRgb(p, q, t) {
+	if (t < 0) {
+		t += 1;
+	}
+	if (t > 1) {
+		t -= 1;
+	}
+	if (t < 1 / 6) {
+		return p + ( q - p ) * 6 * t;
+	}
+	if (t < 1 / 2) {
+		return q;
+	}
+	if (t < 2 / 3) {
+		return p + ( q - p ) * ( ( 2 / 3 - t ) * 6 );
+	}
+
+	return p;
+}
+
+function toPercent(amount, limit) {
+	return amount / limit;
+}
+
+module.exports = colorcolor;
+global.colorcolor = module.exports; /* ew */
+
+
+/***/ }),
+
+/***/ "./node_modules/hex-color-regex/index.js":
+/*!***********************************************!*\
+  !*** ./node_modules/hex-color-regex/index.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/*!
+ * hex-color-regex <https://github.com/regexps/hex-color-regex>
+ *
+ * Copyright (c) 2015 Charlike Mike Reagent <@tunnckoCore> (http://www.tunnckocore.tk)
+ * Released under the MIT license.
+ */
+
+
+
+module.exports = function hexColorRegex (opts) {
+  opts = opts && typeof opts === 'object' ? opts : {}
+
+  return opts.strict ? /^#([a-f0-9]{6}|[a-f0-9]{3})\b$/i : /#([a-f0-9]{6}|[a-f0-9]{3})\b/gi
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/hex-rgb/index.js":
+/*!***************************************!*\
+  !*** ./node_modules/hex-rgb/index.js ***!
+  \***************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return hexRgb; });
+const hexCharacters = 'a-f\\d';
+const match3or4Hex = `#?[${hexCharacters}]{3}[${hexCharacters}]?`;
+const match6or8Hex = `#?[${hexCharacters}]{6}([${hexCharacters}]{2})?`;
+const nonHexChars = new RegExp(`[^#${hexCharacters}]`, 'gi');
+const validHexSize = new RegExp(`^${match3or4Hex}$|^${match6or8Hex}$`, 'i');
+
+function hexRgb(hex, options = {}) {
+	if (typeof hex !== 'string' || nonHexChars.test(hex) || !validHexSize.test(hex)) {
+		throw new TypeError('Expected a valid hex string');
+	}
+
+	hex = hex.replace(/^#/, '');
+	let alphaFromHex = 1;
+
+	if (hex.length === 8) {
+		alphaFromHex = Number.parseInt(hex.slice(6, 8), 16) / 255;
+		hex = hex.slice(0, 6);
+	}
+
+	if (hex.length === 4) {
+		alphaFromHex = Number.parseInt(hex.slice(3, 4).repeat(2), 16) / 255;
+		hex = hex.slice(0, 3);
+	}
+
+	if (hex.length === 3) {
+		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+	}
+
+	const number = Number.parseInt(hex, 16);
+	const red = number >> 16;
+	const green = (number >> 8) & 255;
+	const blue = number & 255;
+	const alpha = typeof options.alpha === 'number' ? options.alpha : alphaFromHex;
+
+	if (options.format === 'array') {
+		return [red, green, blue, alpha];
+	}
+
+	if (options.format === 'css') {
+		const alphaString = alpha === 1 ? '' : ` / ${Number((alpha * 100).toFixed(2))}%`;
+		return `rgb(${red} ${green} ${blue}${alphaString})`;
+	}
+
+	return {red, green, blue, alpha};
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/is-hexcolor/index.js":
+/*!*******************************************!*\
+  !*** ./node_modules/is-hexcolor/index.js ***!
+  \*******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/*!
+ * is-hexcolor <https://github.com/tunnckoCore/is-hexcolor>
+ *
+ * Copyright (c) 2015 Charlike Mike Reagent <@tunnckoCore> (http://www.tunnckocore.tk)
+ * Released under the MIT license.
+ */
+
+
+
+var hexColorRegex = __webpack_require__(/*! hex-color-regex */ "./node_modules/hex-color-regex/index.js");
+
+module.exports = function isHexcolor (hex) {
+  return hexColorRegex({strict: true}).test(hex)
+}
+
+
+/***/ }),
+
 /***/ "./src/script.js":
 /*!***********************!*\
   !*** ./src/script.js ***!
@@ -4800,10 +6368,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/toConsumableArray.js");
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @material/material-color-utilities */ "./node_modules/@material/material-color-utilities/dist/index.js");
-/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! util */ "util");
-/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(util__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var hex_rgb__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! hex-rgb */ "./node_modules/hex-rgb/index.js");
+/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! colorcolor */ "./node_modules/colorcolor/src/colorcolor.js");
+/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(colorcolor__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! is-hexcolor */ "./node_modules/is-hexcolor/index.js");
+/* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(is_hexcolor__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_5__);
+
+
+
+
+var cd = __webpack_require__(/*! color-difference */ "./node_modules/color-difference/lib/index.js");
 
 
 
@@ -4848,6 +6424,7 @@ var layerStylesOrdered = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPOR
   return left.name > right.name;
 });
 
+var insertedLayerStyles = [];
 var arrayTextStyleIDs = textStyles.map(function (sharedstyle) {
   return sharedstyle["id"];
 });
@@ -4863,156 +6440,245 @@ var textStylesOrdered = _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORT
 });
 
 var stylesString = JSON.stringify(layerStylesOrdered);
-var textString = JSON.stringify(textStylesOrdered); // #endregion
+var textString = JSON.stringify(textStylesOrdered);
+var insertedTextStyles = []; // #endregion
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  var defaultColor = "#F9BB3C"; // #region Theme
+  var defaultColor = "#F9BB3C"; // const defaultColor = "#facaca";
 
-  var theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(defaultColor), [// {
-  //     name: "custom-1",
-  //     value: argbFromHex("#ff0000"),
-  //     blend: true,
-  // },
-  {}]); // #endregion Theme
-  // #region Colors and palettes creation
+  sketch.UI.getInputFromUser("Choose your Primary color (HEX value).", {
+    initialValue: "F9bb3c"
+  }, function (err, value) {
+    if (err) {
+      // most likely the user canceled the input
+      return;
+    } else {
+      if (!is_hexcolor__WEBPACK_IMPORTED_MODULE_4___default()(value)) {
+        console.log("not valid");
+        sketch.UI.alert("Color value not valid", "Please insert a valid HEX color");
+      } else {
+        defaultColor = value; // #region Theme
 
-  var primary = ["Primary", defaultColor];
-  var secondary = ["Secondary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary)];
-  var tertiary = ["Tertiary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary)];
-  var error = ["Error", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error)];
-  var neutral = ["Neutral", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutral)];
-  var neutralVariant = ["Neutral Variant", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutralVariant)];
-  var shadow = ["Shadow", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow)];
-  var scrim = ["Scrim", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim)];
-  var primaryPalette = colorPalette(primary[1], primary[0]);
-  paletteToColorVariables(primaryPalette, "Primary");
-  var secondaryPalette = colorPalette(secondary[1], secondary[0]);
-  paletteToColorVariables(secondaryPalette, "Secondary");
-  var tertiaryPalette = colorPalette(tertiary[1], tertiary[0]);
-  paletteToColorVariables(tertiaryPalette, "Tertiary");
-  var errorPalette = colorPalette(error[1], error[0]);
-  paletteToColorVariables(errorPalette, "Error");
-  var neutralPalette = colorPalette(neutral[1], neutral[0]);
-  paletteToColorVariables(neutralPalette, "Neutral");
-  var neutralVariantPalette = colorPalette(neutralVariant[1], neutralVariant[0]);
-  paletteToColorVariables(neutralVariantPalette, "Neutral Variant");
-  var shadowPalette = colorPalette(shadow[1], shadow[0]);
-  paletteToColorVariables(shadowPalette, "Shadow");
-  var scrimPalette = colorPalette(scrim[1], scrim[0]);
-  paletteToColorVariables(scrimPalette, "Scrim"); // #endregion Colors and palettes creation
-  // #region Light theme
+        var theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(defaultColor), [// {
+        //     name: "custom-1",
+        //     value: argbFromHex("#ff0000"),
+        //     blend: true,
+        // },
+        {}]); // #endregion Theme
+        // #region Colors and palettes creation
 
-  var lightTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primary);
-  var lightTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimary);
-  var lightTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primaryContainer);
-  var lightTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimaryContainer);
-  var lightTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary);
-  var lightTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondary);
-  var lightTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondaryContainer);
-  var lightTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondaryContainer);
-  var lightTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary);
-  var lightTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiary);
-  var lightTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiaryContainer);
-  var lightTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiaryContainer);
-  var lightTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error);
-  var lightTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onError);
-  var lightTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.errorContainer);
-  var lightTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onErrorContainer);
-  var lightTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.background);
-  var lightTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
-  var lightTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surface);
-  var lightTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurface);
-  var lightTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
-  var lightTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surfaceVariant);
-  var lightTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurfaceVariant);
-  var lightTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow);
-  var lightTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim);
-  var lightTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseSurface);
-  var lightTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseOnSurface);
-  var lightTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inversePrimary);
-  var lightTheme = [["Primary", lightTheme_primary, true, false, true, true, false], ["onPrimary", lightTheme_onPrimary, true, false, true, true, true], ["primaryContainer", lightTheme_primaryContainer, true, false, true, false, false], ["onPrimaryContainer", lightTheme_onPrimaryContainer, true, false, true, true, false], ["secondary", lightTheme_secondary, true, false, true, true, false], ["onSecondary", lightTheme_onSecondary, true, false, true, true, false], ["secondaryContainer", lightTheme_secondaryContainer, true, false, true, false, false], ["onSecondaryContainer", lightTheme_onSecondaryContainer, true, false, true, true, false], ["tertiary", lightTheme_tertiary, true, false, true, true, false], ["onTertiary", lightTheme_onTertiary, true, false, true, true, false], ["tertiaryContainer", lightTheme_tertiaryContainer, true, false, true, false, false], ["onTertiaryContainer", lightTheme_onTertiaryContainer, true, false, true, true, false], ["error", lightTheme_error, true, false, true, true, false], ["onError", lightTheme_onError, true, false, true, true, true], ["errorContainer", lightTheme_errorContainer, true, false, true, false, false], ["onErrorContainer", lightTheme_onErrorContainer, true, false, true, true, false], ["background", lightTheme_background, true, false, true, false, false], ["onbackground", lightTheme_onbackground, true, false, true, true, true], ["surface", lightTheme_surface, true, false, true, false, false], ["onSurface", lightTheme_onSurface, true, false, true, true, true], ["outline", lightTheme_outline, false, true, true, false, false], ["surfacevariant", lightTheme_surfacevariant, true, false, true, false, false], ["onSurfaceVariant", lightTheme_onSurfaceVariant, true, false, true, true, true], ["shadow", lightTheme_shadow, true, false, true, false, false], // ["scrim", lightTheme_scrim,false],
-  ["inverseSurface", lightTheme_inverseSurface, true, false, true, false, false], ["inverseOnSurface", lightTheme_inverseOnSurface, true, false, true, true, true], ["inversePrimary", lightTheme_inversePrimary, true, false, true, true, false]]; // #endregion Light Theme
-  // #region Dark theme
+        var primary = ["Primary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primary)];
+        var secondary = ["Secondary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary)];
+        var tertiary = ["Tertiary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary)];
+        var error = ["Error", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error)];
+        var neutral = ["Neutral", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutral)];
+        var neutralVariant = ["Neutral Variant", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutralVariant)];
+        var shadow = ["Shadow", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow)];
+        var scrim = ["Scrim", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim)];
+        var surface = ["Surface", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surface)];
+        var primaryPalette = colorPalette(primary[1], primary[0]);
+        paletteToColorVariables(primaryPalette, "Primary");
+        var secondaryPalette = colorPalette(secondary[1], secondary[0]);
+        paletteToColorVariables(secondaryPalette, "Secondary");
+        var tertiaryPalette = colorPalette(tertiary[1], tertiary[0]);
+        paletteToColorVariables(tertiaryPalette, "Tertiary");
+        var errorPalette = colorPalette(error[1], error[0]);
+        paletteToColorVariables(errorPalette, "Error");
+        var neutralPalette = colorPalette(neutral[1], neutral[0]);
+        paletteToColorVariables(neutralPalette, "Neutral");
+        var neutralVariantPalette = colorPalette(neutralVariant[1], neutralVariant[0]);
+        paletteToColorVariables(neutralVariantPalette, "Neutral Variant");
+        var shadowPalette = colorPalette(shadow[1], shadow[0]);
+        paletteToColorVariables(shadowPalette, "Shadow");
+        var scrimPalette = colorPalette(scrim[1], scrim[0]);
+        paletteToColorVariables(scrimPalette, "Scrim");
+        var surfacePalette = colorPalette(surface[1], surface[0]);
+        paletteToColorVariables(surfacePalette, "Surface"); // #endregion Colors and palettes creation
+        // #region Light theme
 
-  var darkTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primary);
-  var darkTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimary);
-  var darkTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primaryContainer);
-  var darkTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimaryContainer);
-  var darkTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondary);
-  var darkTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondary);
-  var darkTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondaryContainer);
-  var darkTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondaryContainer);
-  var darkTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiary);
-  var darkTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiary);
-  var darkTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiaryContainer);
-  var darkTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiaryContainer);
-  var darkTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.error);
-  var darkTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onError);
-  var darkTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.errorContainer);
-  var darkTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onErrorContainer);
-  var darkTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.background);
-  var darkTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
-  var darkTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surface);
-  var darkTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurface);
-  var darkTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
-  var darkTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surfaceVariant);
-  var darkTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurfaceVariant);
-  var darkTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.shadow);
-  var darkTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.scrim);
-  var darkTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseSurface);
-  var darkTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseOnSurface);
-  var darkTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inversePrimary);
-  var darkTheme = [["Primary", darkTheme_primary, true, false, true, true, false], ["onPrimary", darkTheme_onPrimary, true, false, true, true, true], ["primaryContainer", darkTheme_primaryContainer, true, false, true, false, false], ["onPrimaryContainer", darkTheme_onPrimaryContainer, true, false, true, true, true], ["secondary", darkTheme_secondary, true, false, true, true, false], ["onSecondary", darkTheme_onSecondary, true, false, true, true, false], ["secondaryContainer", darkTheme_secondaryContainer, true, false, true, false, false], ["onSecondaryContainer", darkTheme_onSecondaryContainer, true, false, true, true, false], ["tertiary", darkTheme_tertiary, true, false, true, true, false], ["onTertiary", darkTheme_onTertiary, true, false, true, true, false], ["tertiaryContainer", darkTheme_tertiaryContainer, true, false, true, false, false], ["onTertiaryContainer", darkTheme_onTertiaryContainer, true, false, true, true, false], ["error", darkTheme_error, true, false, true, true, false], ["onError", darkTheme_onError, true, false, true, true, true], ["errorContainer", darkTheme_errorContainer, true, false, true, false, false], ["onErrorContainer", darkTheme_onErrorContainer, true, false, true, true, false], ["background", darkTheme_background, true, false, true, false, false], ["onBackground", darkTheme_onbackground, true, false, true, true, true], ["surface", darkTheme_surface, true, false, true, false, false], ["onSurface", darkTheme_onSurface, true, false, true, true, true], ["outline", darkTheme_outline, false, true, true, false, false], ["surfacevariant", darkTheme_surfacevariant, true, false, true, false, false], ["onSurfaceVariant", darkTheme_onSurfaceVariant, true, false, true, true, true], ["shadow", darkTheme_shadow, true, false, true, false, false], // ["scrim", darkTheme_scrim,false,false,false],
-  ["inverseSurface", darkTheme_inverseSurface, true, false, true, false, false], ["inverseOnSurface", darkTheme_inverseOnSurface, true, false, true, true, true], ["inversePrimary", darkTheme_inversePrimary, true, false, true, true, false]]; // #endregion Dark Theme
-  // #region Create Styles
-  // Light and Dark theme arrays presents:
-  // 0 = styleName
-  // 1 = color
-  // 2 = fill
-  // 3 = border
-  // 4 = layer style
-  // 5 = text style
-  // 6 = titles
+        var lightTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primary);
+        var lightTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimary);
+        var lightTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primaryContainer);
+        var lightTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimaryContainer);
+        var lightTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary);
+        var lightTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondary);
+        var lightTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondaryContainer);
+        var lightTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondaryContainer);
+        var lightTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary);
+        var lightTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiary);
+        var lightTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiaryContainer);
+        var lightTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiaryContainer);
+        var lightTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error);
+        var lightTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onError);
+        var lightTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.errorContainer);
+        var lightTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onErrorContainer);
+        var lightTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.background);
+        var lightTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
+        var lightTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surface);
+        var lightTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurface);
+        var lightTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
+        var lightTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surfaceVariant);
+        var lightTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurfaceVariant);
+        var lightTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow);
+        var lightTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim);
+        var lightTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseSurface);
+        var lightTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseOnSurface);
+        var lightTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inversePrimary);
+        var lightTheme = [["Primary", lightTheme_primary, true, false, true, true, false, "Primary"], ["onPrimary", lightTheme_onPrimary, true, false, true, true, true, "Neutral"], ["primaryContainer", lightTheme_primaryContainer, true, false, true, false, false, "Primary"], ["onPrimaryContainer", lightTheme_onPrimaryContainer, true, false, true, true, false, "Neutral"], ["secondary", lightTheme_secondary, true, false, true, true, false, "Secondary"], ["onSecondary", lightTheme_onSecondary, true, false, true, true, false, "Neutral"], ["secondaryContainer", lightTheme_secondaryContainer, true, false, true, false, false, "Secondary"], ["onSecondaryContainer", lightTheme_onSecondaryContainer, true, false, true, true, false, "Neutral"], ["tertiary", lightTheme_tertiary, true, false, true, true, false, "Tertiary"], ["onTertiary", lightTheme_onTertiary, true, false, true, true, false, "Neutral"], ["tertiaryContainer", lightTheme_tertiaryContainer, true, false, true, false, false, "Tertiary"], ["onTertiaryContainer", lightTheme_onTertiaryContainer, true, false, true, true, false, "Neutral"], ["error", lightTheme_error, true, false, true, true, false, "Error"], ["onError", lightTheme_onError, true, false, true, true, true, "Neutral"], ["errorContainer", lightTheme_errorContainer, true, false, true, false, false, "Error"], ["onErrorContainer", lightTheme_onErrorContainer, true, false, true, true, false, "Neutral"], ["background", lightTheme_background, true, false, true, false, false, "Neutral"], ["onbackground", lightTheme_onbackground, true, false, true, true, true, "Neutral"], ["surface", lightTheme_surface, true, false, true, false, false, "Surface"], ["onSurface", lightTheme_onSurface, true, false, true, true, true, "Surface"], ["outline", lightTheme_outline, false, true, true, false, false, "Neutral"], ["surfacevariant", lightTheme_surfacevariant, true, false, true, false, false, "Surface"], ["onSurfaceVariant", lightTheme_onSurfaceVariant, true, false, true, true, true, "Surface"], ["shadow", lightTheme_shadow, true, false, true, false, false, "Shadow"], // ["scrim", lightTheme_scrim,false],
+        ["inverseSurface", lightTheme_inverseSurface, true, false, true, false, false, "Surface"], ["inverseOnSurface", lightTheme_inverseOnSurface, true, false, true, true, true, "Surface"], ["inversePrimary", lightTheme_inversePrimary, true, false, true, true, false, "Primary"]]; // #endregion Light Theme
+        // #region Dark theme
 
-  lightTheme.forEach(function (style) {
-    //  If layer style
-    if (style[4]) {
-      // Fill style
-      if (style[2]) {
-        createNewLayerStyle(style, "Light Theme/Fills/", false);
-      } //  Border Style
+        var darkTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primary);
+        var darkTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimary);
+        var darkTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primaryContainer);
+        var darkTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimaryContainer);
+        var darkTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondary);
+        var darkTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondary);
+        var darkTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondaryContainer);
+        var darkTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondaryContainer);
+        var darkTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiary);
+        var darkTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiary);
+        var darkTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiaryContainer);
+        var darkTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiaryContainer);
+        var darkTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.error);
+        var darkTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onError);
+        var darkTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.errorContainer);
+        var darkTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onErrorContainer);
+        var darkTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.background);
+        var darkTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
+        var darkTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surface);
+        var darkTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurface);
+        var darkTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
+        var darkTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surfaceVariant);
+        var darkTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurfaceVariant);
+        var darkTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.shadow);
+        var darkTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.scrim);
+        var darkTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseSurface);
+        var darkTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseOnSurface);
+        var darkTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inversePrimary);
+        var darkTheme = [["Primary", darkTheme_primary, true, false, true, true, false, "Primary"], ["onPrimary", darkTheme_onPrimary, true, false, true, true, true, "Neutral"], ["primaryContainer", darkTheme_primaryContainer, true, false, true, false, false, "Primary"], ["onPrimaryContainer", darkTheme_onPrimaryContainer, true, false, true, true, false, "Neutral"], ["secondary", darkTheme_secondary, true, false, true, true, false, "Secondary"], ["onSecondary", darkTheme_onSecondary, true, false, true, true, false, "Neutral"], ["secondaryContainer", darkTheme_secondaryContainer, true, false, true, false, false, "Secondary"], ["onSecondaryContainer", darkTheme_onSecondaryContainer, true, false, true, true, false, "Neutral"], ["tertiary", darkTheme_tertiary, true, false, true, true, false, "Tertiary"], ["onTertiary", darkTheme_onTertiary, true, false, true, true, false, "Neutral"], ["tertiaryContainer", darkTheme_tertiaryContainer, true, false, true, false, false, "Tertiary"], ["onTertiaryContainer", darkTheme_onTertiaryContainer, true, false, true, true, false, "Neutral"], ["error", darkTheme_error, true, false, true, true, false, "Error"], ["onError", darkTheme_onError, true, false, true, true, true, "Neutral"], ["errorContainer", darkTheme_errorContainer, true, false, true, false, false, "Error"], ["onErrorContainer", darkTheme_onErrorContainer, true, false, true, true, false, "Neutral"], ["background", darkTheme_background, true, false, true, false, false, "Neutral"], ["onbackground", darkTheme_onbackground, true, false, true, true, true, "Neutral"], ["surface", darkTheme_surface, true, false, true, false, false, "Surface"], ["onSurface", darkTheme_onSurface, true, false, true, true, true, "Surface"], ["outline", darkTheme_outline, false, true, true, false, false, "Neutral"], ["surfacevariant", darkTheme_surfacevariant, true, false, true, false, false, "Surface"], ["onSurfaceVariant", darkTheme_onSurfaceVariant, true, false, true, true, true, "Surface"], ["shadow", darkTheme_shadow, true, false, true, false, false, "Shadow"], // ["scrim", darkTheme_scrim,false],
+        ["inverseSurface", darkTheme_inverseSurface, true, false, true, false, false, "Surface"], ["inverseOnSurface", darkTheme_inverseOnSurface, true, false, true, true, true, "Surface"], ["inversePrimary", darkTheme_inversePrimary, true, false, true, true, false, "Primary"]]; // #endregion Dark Theme
+        // #region Create Styles
+        // Light and Dark theme arrays presents:
+        // 0 = styleName
+        // 1 = color
+        // 2 = fill
+        // 3 = border
+        // 4 = layer style
+        // 5 = text style
+        // 6 = titles
+        // 7 = palette of reference
+
+        lightTheme.forEach(function (style) {
+          //  If layer style
+          if (style[4]) {
+            // Fill style
+            if (style[2]) {
+              createNewLayerStyle(style, "Light Theme/Fills/", false, style[7]);
+            } //  Border Style
 
 
-      if (style[3]) {
-        createNewLayerStyle(style, "Light Theme/Borders/", true);
+            if (style[3]) {
+              createNewLayerStyle(style, "Light Theme/Borders/", true, style[7]);
+            }
+          } //  If text style
+
+
+          if (style[5]) {
+            createNewTextStyle(style, "Light Theme/", style[7]);
+          }
+        });
+        darkTheme.forEach(function (style) {
+          //  If layer style
+          if (style[4]) {
+            // Fill style
+            if (style[2]) {
+              createNewLayerStyle(style, "Dark Theme/Fills/", false, style[7]);
+            } //  Border Style
+
+
+            if (style[3]) {
+              createNewLayerStyle(style, "Dark Theme/Borders/", true, style[7]);
+            }
+          } //  If text style
+
+
+          if (style[5]) {
+            createNewTextStyle(style, "Dark Theme/", style[7]);
+          }
+        }); // #endregion Create Styles
+        // #region Connect Color Variables
+
+        layerStyles.forEach(function (layerStyle) {
+          var styleName = layerStyle.name;
+          var stylePalette = "";
+
+          for (var n = 0; n < insertedLayerStyles.length; n++) {
+            if (insertedLayerStyles[n][0] === styleName) {
+              stylePalette = insertedLayerStyles[n][1];
+              return;
+            }
+          }
+
+          var styleFillColor = "";
+
+          if (layerStyle.style.fills[0] !== "" && layerStyle.style.fills[0] !== undefined) {
+            styleFillColor = layerStyle.style.fills[0].color;
+          }
+
+          var styleBorderColor = "";
+
+          if (layerStyle.style.borders[0] !== "" && layerStyle.style.borders[0] !== undefined) {
+            styleBorderColor = layerStyle.style.borders[0].color;
+          }
+
+          var message = "Style Name: " + styleName;
+          message = message + " - Fill Color: " + styleFillColor;
+          message = message + " - Border Color: " + styleBorderColor; // console.log(message);
+
+          if (styleFillColor !== undefined && styleFillColor !== "") {
+            var colorVariable = matchColorVariables(styleFillColor, stylePalette);
+
+            if (colorVariable !== undefined) {
+              layerStyle.style.fills[0].color = colorVariable.referencingColor;
+            } // console.log(colorVariable);
+
+          }
+
+          if (styleBorderColor !== undefined && styleBorderColor !== "") {
+            var _colorVariable = matchColorVariables(styleBorderColor, styleName);
+
+            if (_colorVariable !== undefined) {
+              layerStyle.style.borders[0].color = _colorVariable.referencingColor;
+            } // console.log(colorVariable);
+
+
+            updateLayerStyles();
+          }
+        });
+        textStyles.forEach(function (textStyle) {
+          var styleName = textStyle.name;
+          var stylePalette = "";
+
+          for (var n = 0; n < insertedTextStyles.length; n++) {
+            if (insertedTextStyles[n][0] === styleName) {
+              stylePalette = insertedTextStyles[n][1];
+              return;
+            }
+          }
+
+          var styleTextColor = textStyle.style.textColor;
+          var colorVariable = matchColorVariables(styleTextColor, stylePalette);
+
+          if (colorVariable !== undefined) {
+            textStyle.style.textColor = colorVariable.referencingColor;
+          }
+
+          updateTextStyles();
+        }); // #endregion Connect Color Variables
       }
-    } //  If text style
-
-
-    if (style[5]) {
-      createNewTextStyle(style, "Light Theme/");
     }
-  });
-  darkTheme.forEach(function (style) {
-    //  If layer style
-    if (style[4]) {
-      // Fill style
-      if (style[2]) {
-        createNewLayerStyle(style, "Dark Theme/Fills/", false);
-      } //  Border Style
-
-
-      if (style[3]) {
-        createNewLayerStyle(style, "Dark Theme/Borders/", true);
-      }
-    } //  If text style
-
-
-    if (style[5]) {
-      createNewTextStyle(style, "Dark Theme/");
-    }
-  }); // #endregion Create Styles
-  // console.log(JSON.stringify(theme, null, 2));
+  }); // console.log(JSON.stringify(theme, null, 2));
 
   function paletteToColorVariables(palette, name) {
     var arrayColorVarNames = document.swatches.map(function (Swatch) {
@@ -5028,6 +6694,12 @@ var textString = JSON.stringify(textStylesOrdered); // #endregion
       if (arrayColorVarNames.length > 0) {
         if (arrayColorVarNames.indexOf(colorName) === -1) {
           document.swatches.push(newSwatch);
+        } else {
+          var existingSwatch = document.swatches[arrayColorVarNames.indexOf(colorName)];
+          document.swatches[arrayColorVarNames.indexOf(colorName)].sketchObject.updateWithColor(MSColor.colorWithHex_alpha(color[1].slice(0, 7), 1));
+          var swatchContainer = document.sketchObject.documentData().sharedSwatches(); // REFRESHES THE UI
+
+          swatchContainer.updateReferencesToSwatch(existingSwatch.sketchObject);
         }
       } else {
         document.swatches.push(newSwatch);
@@ -5105,33 +6777,66 @@ function getTextStyleIDFromName(name) {
   return styleID;
 }
 
+function matchColorVariables(color, name) {
+  var newColorVariable;
+  name = name.toUpperCase();
+  var colorVariables = document.swatches;
+  var colorVariablesNames = [];
+  colorVariables.forEach(function (variable) {
+    var variableName = variable.name.toString().toUpperCase();
+    colorVariablesNames.push(variableName);
+  }); // console.log(colorVariablesNames);
+
+  colorVariables.forEach(function (variable) {
+    var variableName = variable.name.toString().toUpperCase();
+    var variableColor = variable.color.toString().toUpperCase();
+    color = color.toString().toUpperCase();
+    var variableColorHEX = colorcolor__WEBPACK_IMPORTED_MODULE_3___default()(variableColor, "hex");
+    var colorHEX = colorcolor__WEBPACK_IMPORTED_MODULE_3___default()(color, "hex");
+    var colorMatch = false;
+
+    if (cd.compare(variableColorHEX, colorHEX) < 3) {
+      colorMatch = true;
+    }
+
+    if (variableName.includes(name) && colorMatch) {
+      newColorVariable = variable;
+    }
+  });
+  return newColorVariable;
+}
+
+function checkSubString(str1, str2) {
+  return str1.indexOf(str2);
+}
+
 function createNewLayerStyle() {
   var styleDetails = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   var folder = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
   var border = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+  var palette = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : "";
 
   try {
     var styleName = folder + styleDetails[0];
     var styleColor = styleDetails[1];
+    var borders = [];
+    var fills = [];
+
+    if (border) {
+      borders = [{
+        color: styleColor,
+        fillType: Style.FillType.Color,
+        position: Style.BorderPosition.Inside
+      }];
+    } else {
+      fills = [{
+        color: styleColor,
+        fillType: Style.FillType.Color
+      }];
+    }
 
     if (arrayLayerStyleNames.indexOf(styleName) === -1) {
       // 1. If the style is new
-      var borders = [];
-      var fills = [];
-
-      if (border) {
-        borders = [{
-          color: styleColor,
-          fillType: Style.FillType.Color,
-          position: Style.BorderPosition.Inside
-        }];
-      } else {
-        fills = [{
-          color: styleColor,
-          fillType: Style.FillType.Color
-        }];
-      }
-
       var sharedStyle = layerStyles.push({
         name: styleName,
         style: {
@@ -5140,38 +6845,26 @@ function createNewLayerStyle() {
         },
         document: document
       });
+      insertedLayerStyles.push([sharedStyle.name, palette]);
       updateLayerStyles();
       return sharedStyle;
     } else {
-      // 2. If the style exists
-      var _borders = [];
-      var _fills = [];
+      var existingStyleID = getLayerStyleIDFromName(styleName);
 
-      if (border) {
-        _borders = [{
-          color: styleColor,
-          fillType: Style.FillType.Color,
-          position: Style.BorderPosition.Inside
-        }];
-      } else {
-        _fills = [{
-          color: styleColor,
-          fillType: Style.FillType.Color
-        }];
-      }
+      if (existingStyleID !== "") {
+        var localIndex = arrayLayerStyleIDs.indexOf(existingStyleID);
+        var existingStyle = layerStyles[localIndex];
 
-      var styleID = getLayerStyleIDFromName(styleName);
+        if (fills.length > 0) {
+          existingStyle.style.fills[0].color = fills[0].color;
+        }
 
-      var _sharedStyle;
+        if (borders.lengh > 0) {
+          existingStyle.style.borders[0].color = borders[0].color;
+        }
 
-      if (styleID !== "") {
-        var localIndex = arrayLayerStyleIDs.indexOf(styleID);
-        _sharedStyle = layerStyles[localIndex];
-        _sharedStyle.style = {
-          fills: _fills,
-          borders: _borders
-        };
-        return _sharedStyle;
+        insertedLayerStyles.push([existingStyle.name, palette]);
+        updateLayerStyles();
       }
     }
   } catch (createLayerStyleErr) {
@@ -5182,6 +6875,7 @@ function createNewLayerStyle() {
 function createNewTextStyle() {
   var styleDetails = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   var folder = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+  var palette = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
 
   try {
     var styleName = folder + styleDetails[0];
@@ -5191,59 +6885,60 @@ function createNewTextStyle() {
       var sharedStyle = textStyles.push({
         name: styleName,
         style: {
-          fills: {},
-          borders: {},
           textColor: styleColor,
           fontSize: 16,
-          fontFamily: "Roboto",
-          fontWeight: 5
+          fontFamily: "Roboto"
         },
         document: document
       });
+      insertedTextStyles.push([sharedStyle.name, palette]);
       updateTextStyles(); // Titles
 
-      if (styleDetails[6]) {
+      if (styleDetails[6] === true) {
+        console.log("Titles");
         styleName = folder + "H1/" + styleDetails[0];
 
         if (arrayTextStyleNames.indexOf(styleName) === -1) {
           var sharedTitleStyle = textStyles.push({
             name: styleName,
             style: {
-              fills: {},
-              borders: {},
               textColor: styleColor,
               fontSize: 28,
-              fontFamily: "Roboto",
-              fontWeight: 7
+              fontFamily: "Roboto"
             },
             document: document
           });
+          insertedTextStyles.push([sharedTitleStyle.name, palette]);
           updateTextStyles();
         }
       }
+
+      return sharedStyle;
     } else {
-      var styleID = getTextStyleIDFromName(styleName);
+      // Update styles
+      var existingStyleID = getTextStyleIDFromName(styleName);
 
-      var _sharedStyle2;
+      if (existingStyleID !== "") {
+        var localIndex = arrayTextStyleIDs.indexOf(existingStyleID);
+        var existingStyle = textStyles[localIndex];
+        existingStyle.style.textColor = styleColor;
+        insertedLayerStyles.push([existingStyle.name, palette]);
+        updateTextStyles();
+        return existingStyle;
+      } // Update titles
 
-      if (styleID !== "") {
-        var localIndex = arrayTextStyleIDs.indexOf(styleID);
-        _sharedStyle2 = textStyles[localIndex];
-        _sharedStyle2.style = {
-          textColor: styleColor
-        };
-      }
 
       styleName = folder + "H1/" + styleDetails[0];
-      styleID = getTextStyleIDFromName(styleName);
+      existingStyleID = getTextStyleIDFromName(styleName);
 
-      if (styleID !== "") {
-        var _localIndex = arrayTextStyleIDs.indexOf(styleID);
+      if (existingStyleID !== "") {
+        var _localIndex = arrayTextStyleIDs.indexOf(existingStyleID);
 
-        _sharedStyle2 = textStyles[_localIndex];
-        _sharedStyle2.style = {
-          textColor: styleColor
-        };
+        var _existingStyle = textStyles[_localIndex];
+        _existingStyle.style.textColor = styleColor;
+        insertedLayerStyles.push([_existingStyle.name, palette]);
+        updateTextStyles();
+        return _existingStyle;
       }
     }
   } catch (createTextStyleErr) {
