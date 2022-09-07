@@ -1,12 +1,16 @@
-module.exports = function(config, entry) {
-    config.node = entry.isPluginCommand ?
-        false :
-        {
-            setImmediate: false,
-        };
+module.exports = function (config, entry) {
+    config.node = entry.isPluginCommand
+        ? false
+        : {
+              setImmediate: false,
+          };
+    // config.node = {
+    //     fs: "empty",
+    // };
     config.module.rules.push({
         test: /\.(html)$/,
-        use: [{
+        use: [
+            {
                 loader: "@skpm/extract-loader",
             },
             {
@@ -20,7 +24,8 @@ module.exports = function(config, entry) {
     });
     config.module.rules.push({
         test: /\.(css)$/,
-        use: [{
+        use: [
+            {
                 loader: "@skpm/extract-loader",
             },
             {

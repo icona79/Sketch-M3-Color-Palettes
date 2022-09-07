@@ -3,9 +3,20 @@
     "bundleVersion": 1,
     "commands": [
         {
-            "name": "Sketch Material Design 3 Color Palettes",
-            "identifier": "ste-script",
+            "name": "🎨 Theme from custom color",
+            "identifier": "palette-custom",
             "script": "./script.js",
+            "handlers": {
+                "run": "onRun",
+                "actions": {
+                    "Shutdown": "onShutdown"
+                }
+            }
+        },
+        {
+            "name": "🖼 Dynamic theme from pictures",
+            "identifier": "palette-dynamic",
+            "script": "./dynamicPalette.js",
             "handlers": {
                 "run": "onRun",
                 "actions": {
@@ -15,9 +26,8 @@
         }
     ],
     "menu": {
-        "title": "sketch-m3-color-palettes",
-        "items": ["ste-script"],
-        "isRoot": true
+        "title": "🤖 MD3 Color Palettes",
+        "items": ["palette-custom", "palette-dynamic"]
     },
     "icon": "icon.png"
 }

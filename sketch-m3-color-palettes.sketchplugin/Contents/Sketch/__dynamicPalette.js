@@ -88,7 +88,7 @@ var exports =
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/script.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/dynamicPalette.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -4958,117 +4958,6 @@ EuclideanDistance.prototype.compare = function(color1, color2) {
 
 /***/ }),
 
-/***/ "./node_modules/color-extr-thief/dist/color-thief.js":
-/*!***********************************************************!*\
-  !*** ./node_modules/color-extr-thief/dist/color-thief.js ***!
-  \***********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(Promise) {const getPixels = __webpack_require__(/*! get-pixels */ "./node_modules/get-pixels/dom-pixels.js");
-const quantize = __webpack_require__(/*! quantize */ "./node_modules/quantize/quantize.js");
-
-function createPixelArray(imgData, pixelCount, quality) {
-    const pixels = imgData;
-    const pixelArray = [];
-
-    for (let i = 0, offset, r, g, b, a; i < pixelCount; i = i + quality) {
-        offset = i * 4;
-        r = pixels[offset + 0];
-        g = pixels[offset + 1];
-        b = pixels[offset + 2];
-        a = pixels[offset + 3];
-
-        // If pixel is mostly opaque and not white
-        if (typeof a === 'undefined' || a >= 125) {
-            if (!(r > 250 && g > 250 && b > 250)) {
-                pixelArray.push([r, g, b]);
-            }
-        }
-    }
-    return pixelArray;
-}
-
-function validateOptions(options) {
-    let { colorCount, quality } = options;
-
-    if (typeof colorCount === 'undefined' || !Number.isInteger(colorCount)) {
-        colorCount = 10;
-    } else if (colorCount === 1 ) {
-        throw new Error('colorCount should be between 2 and 20. To get one color, call getColor() instead of getPalette()');
-    } else {
-        colorCount = Math.max(colorCount, 2);
-        colorCount = Math.min(colorCount, 20);
-    }
-
-    if (typeof quality === 'undefined' || !Number.isInteger(quality) || quality < 1) {
-        quality = 10;
-    }
-
-    return {
-        colorCount,
-        quality
-    }
-}
-
-function loadImg(img) {
-    return new Promise((resolve, reject) => {
-        getPixels(img, function(err, data) {
-            if(err) {
-                reject(err)
-            } else {
-                resolve(data);
-            }
-        })
-    });
-}
-
-function getColor(img, quality) {
-    return new Promise((resolve, reject) => {
-        getPalette(img, 5, quality)
-            .then(palette => {
-                resolve(palette[0]);
-            })
-            .catch(err => {
-                reject(err);
-            })
-    });
-
-}
-
-function getPalette(img, colorCount = 10, quality = 10) {
-    const options = validateOptions({
-        colorCount,
-        quality
-    });
-
-    return new Promise((resolve, reject) => {
-        loadImg(img)
-            .then(imgData => {
-                const pixelCount = imgData.shape[0] * imgData.shape[1];
-                const pixelArray = createPixelArray(imgData.data, pixelCount, options.quality);
-
-                const cmap = quantize(pixelArray, options.colorCount);
-                const palette = cmap? cmap.palette() : null;
-
-                resolve(palette);
-            })
-            .catch(err => {
-                reject(err);
-            })
-    });
-}
-
-module.exports = {
-    getColor,
-    getPalette
-};
-
-
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@skpm/promise/index.js */ "./node_modules/@skpm/promise/index.js")))
-
-/***/ }),
-
 /***/ "./node_modules/color-model/index.js":
 /*!*******************************************!*\
   !*** ./node_modules/color-model/index.js ***!
@@ -6356,806 +6245,6 @@ global.colorcolor = module.exports; /* ew */
 
 /***/ }),
 
-/***/ "./node_modules/cwise-compiler/compiler.js":
-/*!*************************************************!*\
-  !*** ./node_modules/cwise-compiler/compiler.js ***!
-  \*************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var createThunk = __webpack_require__(/*! ./lib/thunk.js */ "./node_modules/cwise-compiler/lib/thunk.js")
-
-function Procedure() {
-  this.argTypes = []
-  this.shimArgs = []
-  this.arrayArgs = []
-  this.arrayBlockIndices = []
-  this.scalarArgs = []
-  this.offsetArgs = []
-  this.offsetArgIndex = []
-  this.indexArgs = []
-  this.shapeArgs = []
-  this.funcName = ""
-  this.pre = null
-  this.body = null
-  this.post = null
-  this.debug = false
-}
-
-function compileCwise(user_args) {
-  //Create procedure
-  var proc = new Procedure()
-  
-  //Parse blocks
-  proc.pre    = user_args.pre
-  proc.body   = user_args.body
-  proc.post   = user_args.post
-
-  //Parse arguments
-  var proc_args = user_args.args.slice(0)
-  proc.argTypes = proc_args
-  for(var i=0; i<proc_args.length; ++i) {
-    var arg_type = proc_args[i]
-    if(arg_type === "array" || (typeof arg_type === "object" && arg_type.blockIndices)) {
-      proc.argTypes[i] = "array"
-      proc.arrayArgs.push(i)
-      proc.arrayBlockIndices.push(arg_type.blockIndices ? arg_type.blockIndices : 0)
-      proc.shimArgs.push("array" + i)
-      if(i < proc.pre.args.length && proc.pre.args[i].count>0) {
-        throw new Error("cwise: pre() block may not reference array args")
-      }
-      if(i < proc.post.args.length && proc.post.args[i].count>0) {
-        throw new Error("cwise: post() block may not reference array args")
-      }
-    } else if(arg_type === "scalar") {
-      proc.scalarArgs.push(i)
-      proc.shimArgs.push("scalar" + i)
-    } else if(arg_type === "index") {
-      proc.indexArgs.push(i)
-      if(i < proc.pre.args.length && proc.pre.args[i].count > 0) {
-        throw new Error("cwise: pre() block may not reference array index")
-      }
-      if(i < proc.body.args.length && proc.body.args[i].lvalue) {
-        throw new Error("cwise: body() block may not write to array index")
-      }
-      if(i < proc.post.args.length && proc.post.args[i].count > 0) {
-        throw new Error("cwise: post() block may not reference array index")
-      }
-    } else if(arg_type === "shape") {
-      proc.shapeArgs.push(i)
-      if(i < proc.pre.args.length && proc.pre.args[i].lvalue) {
-        throw new Error("cwise: pre() block may not write to array shape")
-      }
-      if(i < proc.body.args.length && proc.body.args[i].lvalue) {
-        throw new Error("cwise: body() block may not write to array shape")
-      }
-      if(i < proc.post.args.length && proc.post.args[i].lvalue) {
-        throw new Error("cwise: post() block may not write to array shape")
-      }
-    } else if(typeof arg_type === "object" && arg_type.offset) {
-      proc.argTypes[i] = "offset"
-      proc.offsetArgs.push({ array: arg_type.array, offset:arg_type.offset })
-      proc.offsetArgIndex.push(i)
-    } else {
-      throw new Error("cwise: Unknown argument type " + proc_args[i])
-    }
-  }
-  
-  //Make sure at least one array argument was specified
-  if(proc.arrayArgs.length <= 0) {
-    throw new Error("cwise: No array arguments specified")
-  }
-  
-  //Make sure arguments are correct
-  if(proc.pre.args.length > proc_args.length) {
-    throw new Error("cwise: Too many arguments in pre() block")
-  }
-  if(proc.body.args.length > proc_args.length) {
-    throw new Error("cwise: Too many arguments in body() block")
-  }
-  if(proc.post.args.length > proc_args.length) {
-    throw new Error("cwise: Too many arguments in post() block")
-  }
-
-  //Check debug flag
-  proc.debug = !!user_args.printCode || !!user_args.debug
-  
-  //Retrieve name
-  proc.funcName = user_args.funcName || "cwise"
-  
-  //Read in block size
-  proc.blockSize = user_args.blockSize || 64
-
-  return createThunk(proc)
-}
-
-module.exports = compileCwise
-
-
-/***/ }),
-
-/***/ "./node_modules/cwise-compiler/lib/compile.js":
-/*!****************************************************!*\
-  !*** ./node_modules/cwise-compiler/lib/compile.js ***!
-  \****************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var uniq = __webpack_require__(/*! uniq */ "./node_modules/uniq/uniq.js")
-
-// This function generates very simple loops analogous to how you typically traverse arrays (the outermost loop corresponds to the slowest changing index, the innermost loop to the fastest changing index)
-// TODO: If two arrays have the same strides (and offsets) there is potential for decreasing the number of "pointers" and related variables. The drawback is that the type signature would become more specific and that there would thus be less potential for caching, but it might still be worth it, especially when dealing with large numbers of arguments.
-function innerFill(order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , has_index = proc.indexArgs.length>0
-    , code = []
-    , vars = []
-    , idx=0, pidx=0, i, j
-  for(i=0; i<dimension; ++i) { // Iteration variables
-    vars.push(["i",i,"=0"].join(""))
-  }
-  //Compute scan deltas
-  for(j=0; j<nargs; ++j) {
-    for(i=0; i<dimension; ++i) {
-      pidx = idx
-      idx = order[i]
-      if(i === 0) { // The innermost/fastest dimension's delta is simply its stride
-        vars.push(["d",j,"s",i,"=t",j,"p",idx].join(""))
-      } else { // For other dimensions the delta is basically the stride minus something which essentially "rewinds" the previous (more inner) dimension
-        vars.push(["d",j,"s",i,"=(t",j,"p",idx,"-s",pidx,"*t",j,"p",pidx,")"].join(""))
-      }
-    }
-  }
-  if (vars.length > 0) {
-    code.push("var " + vars.join(","))
-  }  
-  //Scan loop
-  for(i=dimension-1; i>=0; --i) { // Start at largest stride and work your way inwards
-    idx = order[i]
-    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
-  }
-  //Push body of inner loop
-  code.push(body)
-  //Advance scan pointers
-  for(i=0; i<dimension; ++i) {
-    pidx = idx
-    idx = order[i]
-    for(j=0; j<nargs; ++j) {
-      code.push(["p",j,"+=d",j,"s",i].join(""))
-    }
-    if(has_index) {
-      if(i > 0) {
-        code.push(["index[",pidx,"]-=s",pidx].join(""))
-      }
-      code.push(["++index[",idx,"]"].join(""))
-    }
-    code.push("}")
-  }
-  return code.join("\n")
-}
-
-// Generate "outer" loops that loop over blocks of data, applying "inner" loops to the blocks by manipulating the local variables in such a way that the inner loop only "sees" the current block.
-// TODO: If this is used, then the previous declaration (done by generateCwiseOp) of s* is essentially unnecessary.
-//       I believe the s* are not used elsewhere (in particular, I don't think they're used in the pre/post parts and "shape" is defined independently), so it would be possible to make defining the s* dependent on what loop method is being used.
-function outerFill(matched, order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , blockSize = proc.blockSize
-    , has_index = proc.indexArgs.length > 0
-    , code = []
-  for(var i=0; i<nargs; ++i) {
-    code.push(["var offset",i,"=p",i].join(""))
-  }
-  //Generate loops for unmatched dimensions
-  // The order in which these dimensions are traversed is fairly arbitrary (from small stride to large stride, for the first argument)
-  // TODO: It would be nice if the order in which these loops are placed would also be somehow "optimal" (at the very least we should check that it really doesn't hurt us if they're not).
-  for(var i=matched; i<dimension; ++i) {
-    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join("")) // Iterate back to front
-    code.push(["if(j",i,"<",blockSize,"){"].join("")) // Either decrease j by blockSize (s = blockSize), or set it to zero (after setting s = j).
-    code.push(["s",order[i],"=j",i].join(""))
-    code.push(["j",i,"=0"].join(""))
-    code.push(["}else{s",order[i],"=",blockSize].join(""))
-    code.push(["j",i,"-=",blockSize,"}"].join(""))
-    if(has_index) {
-      code.push(["index[",order[i],"]=j",i].join(""))
-    }
-  }
-  for(var i=0; i<nargs; ++i) {
-    var indexStr = ["offset"+i]
-    for(var j=matched; j<dimension; ++j) {
-      indexStr.push(["j",j,"*t",i,"p",order[j]].join(""))
-    }
-    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
-  }
-  code.push(innerFill(order, proc, body))
-  for(var i=matched; i<dimension; ++i) {
-    code.push("}")
-  }
-  return code.join("\n")
-}
-
-//Count the number of compatible inner orders
-// This is the length of the longest common prefix of the arrays in orders.
-// Each array in orders lists the dimensions of the correspond ndarray in order of increasing stride.
-// This is thus the maximum number of dimensions that can be efficiently traversed by simple nested loops for all arrays.
-function countMatches(orders) {
-  var matched = 0, dimension = orders[0].length
-  while(matched < dimension) {
-    for(var j=1; j<orders.length; ++j) {
-      if(orders[j][matched] !== orders[0][matched]) {
-        return matched
-      }
-    }
-    ++matched
-  }
-  return matched
-}
-
-//Processes a block according to the given data types
-// Replaces variable names by different ones, either "local" ones (that are then ferried in and out of the given array) or ones matching the arguments that the function performing the ultimate loop will accept.
-function processBlock(block, proc, dtypes) {
-  var code = block.body
-  var pre = []
-  var post = []
-  for(var i=0; i<block.args.length; ++i) {
-    var carg = block.args[i]
-    if(carg.count <= 0) {
-      continue
-    }
-    var re = new RegExp(carg.name, "g")
-    var ptrStr = ""
-    var arrNum = proc.arrayArgs.indexOf(i)
-    switch(proc.argTypes[i]) {
-      case "offset":
-        var offArgIndex = proc.offsetArgIndex.indexOf(i)
-        var offArg = proc.offsetArgs[offArgIndex]
-        arrNum = offArg.array
-        ptrStr = "+q" + offArgIndex // Adds offset to the "pointer" in the array
-      case "array":
-        ptrStr = "p" + arrNum + ptrStr
-        var localStr = "l" + i
-        var arrStr = "a" + arrNum
-        if (proc.arrayBlockIndices[arrNum] === 0) { // Argument to body is just a single value from this array
-          if(carg.count === 1) { // Argument/array used only once(?)
-            if(dtypes[arrNum] === "generic") {
-              if(carg.lvalue) {
-                pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join("")) // Is this necessary if the argument is ONLY used as an lvalue? (keep in mind that we can have a += something, so we would actually need to check carg.rvalue)
-                code = code.replace(re, localStr)
-                post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-              } else {
-                code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
-              }
-            } else {
-              code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
-            }
-          } else if(dtypes[arrNum] === "generic") {
-            pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join("")) // TODO: Could we optimize by checking for carg.rvalue?
-            code = code.replace(re, localStr)
-            if(carg.lvalue) {
-              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-            }
-          } else {
-            pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join("")) // TODO: Could we optimize by checking for carg.rvalue?
-            code = code.replace(re, localStr)
-            if(carg.lvalue) {
-              post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
-            }
-          }
-        } else { // Argument to body is a "block"
-          var reStrArr = [carg.name], ptrStrArr = [ptrStr]
-          for(var j=0; j<Math.abs(proc.arrayBlockIndices[arrNum]); j++) {
-            reStrArr.push("\\s*\\[([^\\]]+)\\]")
-            ptrStrArr.push("$" + (j+1) + "*t" + arrNum + "b" + j) // Matched index times stride
-          }
-          re = new RegExp(reStrArr.join(""), "g")
-          ptrStr = ptrStrArr.join("+")
-          if(dtypes[arrNum] === "generic") {
-            /*if(carg.lvalue) {
-              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join("")) // Is this necessary if the argument is ONLY used as an lvalue? (keep in mind that we can have a += something, so we would actually need to check carg.rvalue)
-              code = code.replace(re, localStr)
-              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-            } else {
-              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
-            }*/
-            throw new Error("cwise: Generic arrays not supported in combination with blocks!")
-          } else {
-            // This does not produce any local variables, even if variables are used multiple times. It would be possible to do so, but it would complicate things quite a bit.
-            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
-          }
-        }
-      break
-      case "scalar":
-        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
-      break
-      case "index":
-        code = code.replace(re, "index")
-      break
-      case "shape":
-        code = code.replace(re, "shape")
-      break
-    }
-  }
-  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
-}
-
-function typeSummary(dtypes) {
-  var summary = new Array(dtypes.length)
-  var allEqual = true
-  for(var i=0; i<dtypes.length; ++i) {
-    var t = dtypes[i]
-    var digits = t.match(/\d+/)
-    if(!digits) {
-      digits = ""
-    } else {
-      digits = digits[0]
-    }
-    if(t.charAt(0) === 0) {
-      summary[i] = "u" + t.charAt(1) + digits
-    } else {
-      summary[i] = t.charAt(0) + digits
-    }
-    if(i > 0) {
-      allEqual = allEqual && summary[i] === summary[i-1]
-    }
-  }
-  if(allEqual) {
-    return summary[0]
-  }
-  return summary.join("")
-}
-
-//Generates a cwise operator
-function generateCWiseOp(proc, typesig) {
-
-  //Compute dimension
-  // Arrays get put first in typesig, and there are two entries per array (dtype and order), so this gets the number of dimensions in the first array arg.
-  var dimension = (typesig[1].length - Math.abs(proc.arrayBlockIndices[0]))|0
-  var orders = new Array(proc.arrayArgs.length)
-  var dtypes = new Array(proc.arrayArgs.length)
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    dtypes[i] = typesig[2*i]
-    orders[i] = typesig[2*i+1]
-  }
-  
-  //Determine where block and loop indices start and end
-  var blockBegin = [], blockEnd = [] // These indices are exposed as blocks
-  var loopBegin = [], loopEnd = [] // These indices are iterated over
-  var loopOrders = [] // orders restricted to the loop indices
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    if (proc.arrayBlockIndices[i]<0) {
-      loopBegin.push(0)
-      loopEnd.push(dimension)
-      blockBegin.push(dimension)
-      blockEnd.push(dimension+proc.arrayBlockIndices[i])
-    } else {
-      loopBegin.push(proc.arrayBlockIndices[i]) // Non-negative
-      loopEnd.push(proc.arrayBlockIndices[i]+dimension)
-      blockBegin.push(0)
-      blockEnd.push(proc.arrayBlockIndices[i])
-    }
-    var newOrder = []
-    for(var j=0; j<orders[i].length; j++) {
-      if (loopBegin[i]<=orders[i][j] && orders[i][j]<loopEnd[i]) {
-        newOrder.push(orders[i][j]-loopBegin[i]) // If this is a loop index, put it in newOrder, subtracting loopBegin, to make sure that all loopOrders are using a common set of indices.
-      }
-    }
-    loopOrders.push(newOrder)
-  }
-
-  //First create arguments for procedure
-  var arglist = ["SS"] // SS is the overall shape over which we iterate
-  var code = ["'use strict'"]
-  var vars = []
-  
-  for(var j=0; j<dimension; ++j) {
-    vars.push(["s", j, "=SS[", j, "]"].join("")) // The limits for each dimension.
-  }
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    arglist.push("a"+i) // Actual data array
-    arglist.push("t"+i) // Strides
-    arglist.push("p"+i) // Offset in the array at which the data starts (also used for iterating over the data)
-    
-    for(var j=0; j<dimension; ++j) { // Unpack the strides into vars for looping
-      vars.push(["t",i,"p",j,"=t",i,"[",loopBegin[i]+j,"]"].join(""))
-    }
-    
-    for(var j=0; j<Math.abs(proc.arrayBlockIndices[i]); ++j) { // Unpack the strides into vars for block iteration
-      vars.push(["t",i,"b",j,"=t",i,"[",blockBegin[i]+j,"]"].join(""))
-    }
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    arglist.push("Y" + i)
-  }
-  if(proc.shapeArgs.length > 0) {
-    vars.push("shape=SS.slice(0)") // Makes the shape over which we iterate available to the user defined functions (so you can use width/height for example)
-  }
-  if(proc.indexArgs.length > 0) {
-    // Prepare an array to keep track of the (logical) indices, initialized to dimension zeroes.
-    var zeros = new Array(dimension)
-    for(var i=0; i<dimension; ++i) {
-      zeros[i] = "0"
-    }
-    vars.push(["index=[", zeros.join(","), "]"].join(""))
-  }
-  for(var i=0; i<proc.offsetArgs.length; ++i) { // Offset arguments used for stencil operations
-    var off_arg = proc.offsetArgs[i]
-    var init_string = []
-    for(var j=0; j<off_arg.offset.length; ++j) {
-      if(off_arg.offset[j] === 0) {
-        continue
-      } else if(off_arg.offset[j] === 1) {
-        init_string.push(["t", off_arg.array, "p", j].join(""))      
-      } else {
-        init_string.push([off_arg.offset[j], "*t", off_arg.array, "p", j].join(""))
-      }
-    }
-    if(init_string.length === 0) {
-      vars.push("q" + i + "=0")
-    } else {
-      vars.push(["q", i, "=", init_string.join("+")].join(""))
-    }
-  }
-
-  //Prepare this variables
-  var thisVars = uniq([].concat(proc.pre.thisVars)
-                      .concat(proc.body.thisVars)
-                      .concat(proc.post.thisVars))
-  vars = vars.concat(thisVars)
-  if (vars.length > 0) {
-    code.push("var " + vars.join(","))
-  }
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    code.push("p"+i+"|=0")
-  }
-  
-  //Inline prelude
-  if(proc.pre.body.length > 3) {
-    code.push(processBlock(proc.pre, proc, dtypes))
-  }
-
-  //Process body
-  var body = processBlock(proc.body, proc, dtypes)
-  var matched = countMatches(loopOrders)
-  if(matched < dimension) {
-    code.push(outerFill(matched, loopOrders[0], proc, body)) // TODO: Rather than passing loopOrders[0], it might be interesting to look at passing an order that represents the majority of the arguments for example.
-  } else {
-    code.push(innerFill(loopOrders[0], proc, body))
-  }
-
-  //Inline epilog
-  if(proc.post.body.length > 3) {
-    code.push(processBlock(proc.post, proc, dtypes))
-  }
-  
-  if(proc.debug) {
-    console.log("-----Generated cwise routine for ", typesig, ":\n" + code.join("\n") + "\n----------")
-  }
-  
-  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
-  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
-  return f()
-}
-module.exports = generateCWiseOp
-
-
-/***/ }),
-
-/***/ "./node_modules/cwise-compiler/lib/thunk.js":
-/*!**************************************************!*\
-  !*** ./node_modules/cwise-compiler/lib/thunk.js ***!
-  \**************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-// The function below is called when constructing a cwise function object, and does the following:
-// A function object is constructed which accepts as argument a compilation function and returns another function.
-// It is this other function that is eventually returned by createThunk, and this function is the one that actually
-// checks whether a certain pattern of arguments has already been used before and compiles new loops as needed.
-// The compilation passed to the first function object is used for compiling new functions.
-// Once this function object is created, it is called with compile as argument, where the first argument of compile
-// is bound to "proc" (essentially containing a preprocessed version of the user arguments to cwise).
-// So createThunk roughly works like this:
-// function createThunk(proc) {
-//   var thunk = function(compileBound) {
-//     var CACHED = {}
-//     return function(arrays and scalars) {
-//       if (dtype and order of arrays in CACHED) {
-//         var func = CACHED[dtype and order of arrays]
-//       } else {
-//         var func = CACHED[dtype and order of arrays] = compileBound(dtype and order of arrays)
-//       }
-//       return func(arrays and scalars)
-//     }
-//   }
-//   return thunk(compile.bind1(proc))
-// }
-
-var compile = __webpack_require__(/*! ./compile.js */ "./node_modules/cwise-compiler/lib/compile.js")
-
-function createThunk(proc) {
-  var code = ["'use strict'", "var CACHED={}"]
-  var vars = []
-  var thunkName = proc.funcName + "_cwise_thunk"
-  
-  //Build thunk
-  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
-  var typesig = []
-  var string_typesig = []
-  var proc_args = [["array",proc.arrayArgs[0],".shape.slice(", // Slice shape so that we only retain the shape over which we iterate (which gets passed to the cwise operator as SS).
-                    Math.max(0,proc.arrayBlockIndices[0]),proc.arrayBlockIndices[0]<0?(","+proc.arrayBlockIndices[0]+")"):")"].join("")]
-  var shapeLengthConditions = [], shapeConditions = []
-  // Process array arguments
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    var j = proc.arrayArgs[i]
-    vars.push(["t", j, "=array", j, ".dtype,",
-               "r", j, "=array", j, ".order"].join(""))
-    typesig.push("t" + j)
-    typesig.push("r" + j)
-    string_typesig.push("t"+j)
-    string_typesig.push("r"+j+".join()")
-    proc_args.push("array" + j + ".data")
-    proc_args.push("array" + j + ".stride")
-    proc_args.push("array" + j + ".offset|0")
-    if (i>0) { // Gather conditions to check for shape equality (ignoring block indices)
-      shapeLengthConditions.push("array" + proc.arrayArgs[0] + ".shape.length===array" + j + ".shape.length+" + (Math.abs(proc.arrayBlockIndices[0])-Math.abs(proc.arrayBlockIndices[i])))
-      shapeConditions.push("array" + proc.arrayArgs[0] + ".shape[shapeIndex+" + Math.max(0,proc.arrayBlockIndices[0]) + "]===array" + j + ".shape[shapeIndex+" + Math.max(0,proc.arrayBlockIndices[i]) + "]")
-    }
-  }
-  // Check for shape equality
-  if (proc.arrayArgs.length > 1) {
-    code.push("if (!(" + shapeLengthConditions.join(" && ") + ")) throw new Error('cwise: Arrays do not all have the same dimensionality!')")
-    code.push("for(var shapeIndex=array" + proc.arrayArgs[0] + ".shape.length-" + Math.abs(proc.arrayBlockIndices[0]) + "; shapeIndex-->0;) {")
-    code.push("if (!(" + shapeConditions.join(" && ") + ")) throw new Error('cwise: Arrays do not all have the same shape!')")
-    code.push("}")
-  }
-  // Process scalar arguments
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    proc_args.push("scalar" + proc.scalarArgs[i])
-  }
-  // Check for cached function (and if not present, generate it)
-  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
-  vars.push("proc=CACHED[type]")
-  code.push("var " + vars.join(","))
-  
-  code.push(["if(!proc){",
-             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
-             "return proc(", proc_args.join(","), ")}"].join(""))
-
-  if(proc.debug) {
-    console.log("-----Generated thunk:\n" + code.join("\n") + "\n----------")
-  }
-  
-  //Compile thunk
-  var thunk = new Function("compile", code.join("\n"))
-  return thunk(compile.bind(undefined, proc))
-}
-
-module.exports = createThunk
-
-
-/***/ }),
-
-/***/ "./node_modules/data-uri-to-buffer/index.js":
-/*!**************************************************!*\
-  !*** ./node_modules/data-uri-to-buffer/index.js ***!
-  \**************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-
-/**
- * Module exports.
- */
-
-module.exports = dataUriToBuffer;
-
-/**
- * Returns a `Buffer` instance from the given data URI `uri`.
- *
- * @param {String} uri Data URI to turn into a Buffer instance
- * @return {Buffer} Buffer instance from Data URI
- * @api public
- */
-
-function dataUriToBuffer (uri) {
-  if (!/^data\:/i.test(uri)) {
-    throw new TypeError('`uri` does not appear to be a Data URI (must begin with "data:")');
-  }
-
-  // strip newlines
-  uri = uri.replace(/\r?\n/g, '');
-
-  // split the URI up into the "metadata" and the "data" portions
-  var firstComma = uri.indexOf(',');
-  if (-1 === firstComma || firstComma <= 4) throw new TypeError('malformed data: URI');
-
-  // remove the "data:" scheme and parse the metadata
-  var meta = uri.substring(5, firstComma).split(';');
-
-  var base64 = false;
-  var charset = 'US-ASCII';
-  for (var i = 0; i < meta.length; i++) {
-    if ('base64' == meta[i]) {
-      base64 = true;
-    } else if (0 == meta[i].indexOf('charset=')) {
-      charset = meta[i].substring(8);
-    }
-  }
-
-  // get the encoded data portion and decode URI-encoded chars
-  var data = unescape(uri.substring(firstComma + 1));
-
-  var encoding = base64 ? 'base64' : 'ascii';
-  var buffer = new Buffer(data, encoding);
-
-  // set `.type` property to MIME type
-  buffer.type = meta[0] || 'text/plain';
-
-  // set the `.charset` property
-  buffer.charset = charset;
-
-  return buffer;
-}
-
-
-/***/ }),
-
-/***/ "./node_modules/get-pixels/dom-pixels.js":
-/*!***********************************************!*\
-  !*** ./node_modules/get-pixels/dom-pixels.js ***!
-  \***********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var path          = __webpack_require__(/*! path */ "path")
-var ndarray       = __webpack_require__(/*! ndarray */ "./node_modules/ndarray/ndarray.js")
-var GifReader     = __webpack_require__(/*! omggif */ "./node_modules/omggif/omggif.js").GifReader
-var pack          = __webpack_require__(/*! ndarray-pack */ "./node_modules/ndarray-pack/convert.js")
-var through       = __webpack_require__(/*! through */ "./node_modules/through/index.js")
-var parseDataURI  = __webpack_require__(/*! data-uri-to-buffer */ "./node_modules/data-uri-to-buffer/index.js")
-
-function defaultImage(url, cb) {
-  var img = new Image()
-  img.crossOrigin = "Anonymous"
-  img.onload = function() {
-    var canvas = document.createElement('canvas')
-    canvas.width = img.width
-    canvas.height = img.height
-    var context = canvas.getContext('2d')
-    context.drawImage(img, 0, 0)
-    var pixels = context.getImageData(0, 0, img.width, img.height)
-    cb(null, ndarray(new Uint8Array(pixels.data), [img.width, img.height, 4], [4, 4*img.width, 1], 0))
-  }
-  img.onerror = function(err) {
-    cb(err)
-  }
-  img.src = url
-}
-
-//Animated gif loading
-function handleGif(data, cb) {
-  var reader
-  try {
-    reader = new GifReader(data)
-  } catch(err) {
-    cb(err)
-    return
-  }
-  if(reader.numFrames() > 0) {
-    var nshape = [reader.numFrames(), reader.height, reader.width, 4]
-    var ndata = new Uint8Array(nshape[0] * nshape[1] * nshape[2] * nshape[3])
-    var result = ndarray(ndata, nshape)
-    try {
-      for(var i=0; i<reader.numFrames(); ++i) {
-        reader.decodeAndBlitFrameRGBA(i, ndata.subarray(
-          result.index(i, 0, 0, 0),
-          result.index(i+1, 0, 0, 0)))
-      }
-    } catch(err) {
-      cb(err)
-      return
-    }
-    cb(null, result.transpose(0,2,1))
-  } else {
-    var nshape = [reader.height, reader.width, 4]
-    var ndata = new Uint8Array(nshape[0] * nshape[1] * nshape[2])
-    var result = ndarray(ndata, nshape)
-    try {
-      reader.decodeAndBlitFrameRGBA(0, ndata)
-    } catch(err) {
-      cb(err)
-      return
-    }
-    cb(null, result.transpose(1,0))
-  }
-}
-
-function httpGif(url, cb) {
-  var xhr          = new XMLHttpRequest()
-  xhr.open('GET', url, true)
-  xhr.responseType = 'arraybuffer'
-  if(xhr.overrideMimeType){
-    xhr.overrideMimeType('application/binary')
-  }
-  xhr.onerror = function(err) {
-    cb(err)
-  }
-  xhr.onload = function() {
-    if(xhr.readyState !== 4) {
-      return
-    }
-    var data = new Uint8Array(xhr.response)
-    handleGif(data, cb)
-    return
-  }
-  xhr.send()
-}
-
-function copyBuffer(buffer) {
-  if(buffer[0] === undefined) {
-    var n = buffer.length
-    var result = new Uint8Array(n)
-    for(var i=0; i<n; ++i) {
-      result[i] = buffer.get(i)
-    }
-    return result
-  } else {
-    return new Uint8Array(buffer)
-  }
-}
-
-function dataGif(url, cb) {
-  process.nextTick(function() {
-    try {
-      var buffer = parseDataURI(url)
-      if(buffer) {
-        handleGif(copyBuffer(buffer), cb)
-      } else {
-        cb(new Error('Error parsing data URI'))
-      }
-    } catch(err) {
-      cb(err)
-    }
-  })
-}
-
-module.exports = function getPixels(url, type, cb) {
-  if(!cb) {
-    cb = type
-    type = ''
-  }
-  var ext = path.extname(url)
-  switch(type || ext.toUpperCase()) {
-    case '.GIF':
-      httpGif(url, cb)
-    break
-    default:
-      if(Buffer.isBuffer(url)) {
-        url = 'data:' + type + ';base64,' + url.toString('base64')
-      }
-      if(url.indexOf('data:image/gif;') === 0) {
-        dataGif(url, cb)
-      } else {
-        defaultImage(url, cb)
-      }
-  }
-}
-
-/***/ }),
-
 /***/ "./node_modules/hex-color-regex/index.js":
 /*!***********************************************!*\
   !*** ./node_modules/hex-color-regex/index.js ***!
@@ -7241,60 +6330,6 @@ function hexRgb(hex, options = {}) {
 
 /***/ }),
 
-/***/ "./node_modules/iota-array/iota.js":
-/*!*****************************************!*\
-  !*** ./node_modules/iota-array/iota.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function iota(n) {
-  var result = new Array(n)
-  for(var i=0; i<n; ++i) {
-    result[i] = i
-  }
-  return result
-}
-
-module.exports = iota
-
-/***/ }),
-
-/***/ "./node_modules/is-buffer/index.js":
-/*!*****************************************!*\
-  !*** ./node_modules/is-buffer/index.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/*!
- * Determine if an object is a Buffer
- *
- * @author   Feross Aboukhadijeh <https://feross.org>
- * @license  MIT
- */
-
-// The _isBuffer check is for Safari 5-7 support, because it's missing
-// Object.prototype.constructor. Remove this eventually
-module.exports = function (obj) {
-  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
-}
-
-function isBuffer (obj) {
-  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
-}
-
-// For Node v0.10 support. Remove this eventually.
-function isSlowBuffer (obj) {
-  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
-}
-
-
-/***/ }),
-
 /***/ "./node_modules/is-hexcolor/index.js":
 /*!*******************************************!*\
   !*** ./node_modules/is-hexcolor/index.js ***!
@@ -7321,1953 +6356,2201 @@ module.exports = function isHexcolor (hex) {
 
 /***/ }),
 
-/***/ "./node_modules/ndarray-pack/convert.js":
-/*!**********************************************!*\
-  !*** ./node_modules/ndarray-pack/convert.js ***!
-  \**********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var ndarray = __webpack_require__(/*! ndarray */ "./node_modules/ndarray/ndarray.js")
-var do_convert = __webpack_require__(/*! ./doConvert.js */ "./node_modules/ndarray-pack/doConvert.js")
-
-module.exports = function convert(arr, result) {
-  var shape = [], c = arr, sz = 1
-  while(Array.isArray(c)) {
-    shape.push(c.length)
-    sz *= c.length
-    c = c[0]
-  }
-  if(shape.length === 0) {
-    return ndarray()
-  }
-  if(!result) {
-    result = ndarray(new Float64Array(sz), shape)
-  }
-  do_convert(result, arr)
-  return result
-}
-
-
-/***/ }),
-
-/***/ "./node_modules/ndarray-pack/doConvert.js":
-/*!************************************************!*\
-  !*** ./node_modules/ndarray-pack/doConvert.js ***!
-  \************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports=__webpack_require__(/*! cwise-compiler */ "./node_modules/cwise-compiler/compiler.js")({"args":["array","scalar","index"],"pre":{"body":"{}","args":[],"thisVars":[],"localVars":[]},"body":{"body":"{\nvar _inline_1_v=_inline_1_arg1_,_inline_1_i\nfor(_inline_1_i=0;_inline_1_i<_inline_1_arg2_.length-1;++_inline_1_i) {\n_inline_1_v=_inline_1_v[_inline_1_arg2_[_inline_1_i]]\n}\n_inline_1_arg0_=_inline_1_v[_inline_1_arg2_[_inline_1_arg2_.length-1]]\n}","args":[{"name":"_inline_1_arg0_","lvalue":true,"rvalue":false,"count":1},{"name":"_inline_1_arg1_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg2_","lvalue":false,"rvalue":true,"count":4}],"thisVars":[],"localVars":["_inline_1_i","_inline_1_v"]},"post":{"body":"{}","args":[],"thisVars":[],"localVars":[]},"funcName":"convert","blockSize":64})
-
-
-/***/ }),
-
-/***/ "./node_modules/ndarray/ndarray.js":
-/*!*****************************************!*\
-  !*** ./node_modules/ndarray/ndarray.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var iota = __webpack_require__(/*! iota-array */ "./node_modules/iota-array/iota.js")
-var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/is-buffer/index.js")
-
-var hasTypedArrays  = ((typeof Float64Array) !== "undefined")
-
-function compare1st(a, b) {
-  return a[0] - b[0]
-}
-
-function order() {
-  var stride = this.stride
-  var terms = new Array(stride.length)
-  var i
-  for(i=0; i<terms.length; ++i) {
-    terms[i] = [Math.abs(stride[i]), i]
-  }
-  terms.sort(compare1st)
-  var result = new Array(terms.length)
-  for(i=0; i<result.length; ++i) {
-    result[i] = terms[i][1]
-  }
-  return result
-}
-
-function compileConstructor(dtype, dimension) {
-  var className = ["View", dimension, "d", dtype].join("")
-  if(dimension < 0) {
-    className = "View_Nil" + dtype
-  }
-  var useGetters = (dtype === "generic")
-
-  if(dimension === -1) {
-    //Special case for trivial arrays
-    var code =
-      "function "+className+"(a){this.data=a;};\
-var proto="+className+".prototype;\
-proto.dtype='"+dtype+"';\
-proto.index=function(){return -1};\
-proto.size=0;\
-proto.dimension=-1;\
-proto.shape=proto.stride=proto.order=[];\
-proto.lo=proto.hi=proto.transpose=proto.step=\
-function(){return new "+className+"(this.data);};\
-proto.get=proto.set=function(){};\
-proto.pick=function(){return null};\
-return function construct_"+className+"(a){return new "+className+"(a);}"
-    var procedure = new Function(code)
-    return procedure()
-  } else if(dimension === 0) {
-    //Special case for 0d arrays
-    var code =
-      "function "+className+"(a,d) {\
-this.data = a;\
-this.offset = d\
-};\
-var proto="+className+".prototype;\
-proto.dtype='"+dtype+"';\
-proto.index=function(){return this.offset};\
-proto.dimension=0;\
-proto.size=1;\
-proto.shape=\
-proto.stride=\
-proto.order=[];\
-proto.lo=\
-proto.hi=\
-proto.transpose=\
-proto.step=function "+className+"_copy() {\
-return new "+className+"(this.data,this.offset)\
-};\
-proto.pick=function "+className+"_pick(){\
-return TrivialArray(this.data);\
-};\
-proto.valueOf=proto.get=function "+className+"_get(){\
-return "+(useGetters ? "this.data.get(this.offset)" : "this.data[this.offset]")+
-"};\
-proto.set=function "+className+"_set(v){\
-return "+(useGetters ? "this.data.set(this.offset,v)" : "this.data[this.offset]=v")+"\
-};\
-return function construct_"+className+"(a,b,c,d){return new "+className+"(a,d)}"
-    var procedure = new Function("TrivialArray", code)
-    return procedure(CACHED_CONSTRUCTORS[dtype][0])
-  }
-
-  var code = ["'use strict'"]
-
-  //Create constructor for view
-  var indices = iota(dimension)
-  var args = indices.map(function(i) { return "i"+i })
-  var index_str = "this.offset+" + indices.map(function(i) {
-        return "this.stride[" + i + "]*i" + i
-      }).join("+")
-  var shapeArg = indices.map(function(i) {
-      return "b"+i
-    }).join(",")
-  var strideArg = indices.map(function(i) {
-      return "c"+i
-    }).join(",")
-  code.push(
-    "function "+className+"(a," + shapeArg + "," + strideArg + ",d){this.data=a",
-      "this.shape=[" + shapeArg + "]",
-      "this.stride=[" + strideArg + "]",
-      "this.offset=d|0}",
-    "var proto="+className+".prototype",
-    "proto.dtype='"+dtype+"'",
-    "proto.dimension="+dimension)
-
-  //view.size:
-  code.push("Object.defineProperty(proto,'size',{get:function "+className+"_size(){\
-return "+indices.map(function(i) { return "this.shape["+i+"]" }).join("*"),
-"}})")
-
-  //view.order:
-  if(dimension === 1) {
-    code.push("proto.order=[0]")
-  } else {
-    code.push("Object.defineProperty(proto,'order',{get:")
-    if(dimension < 4) {
-      code.push("function "+className+"_order(){")
-      if(dimension === 2) {
-        code.push("return (Math.abs(this.stride[0])>Math.abs(this.stride[1]))?[1,0]:[0,1]}})")
-      } else if(dimension === 3) {
-        code.push(
-"var s0=Math.abs(this.stride[0]),s1=Math.abs(this.stride[1]),s2=Math.abs(this.stride[2]);\
-if(s0>s1){\
-if(s1>s2){\
-return [2,1,0];\
-}else if(s0>s2){\
-return [1,2,0];\
-}else{\
-return [1,0,2];\
-}\
-}else if(s0>s2){\
-return [2,0,1];\
-}else if(s2>s1){\
-return [0,1,2];\
-}else{\
-return [0,2,1];\
-}}})")
-      }
-    } else {
-      code.push("ORDER})")
-    }
-  }
-
-  //view.set(i0, ..., v):
-  code.push(
-"proto.set=function "+className+"_set("+args.join(",")+",v){")
-  if(useGetters) {
-    code.push("return this.data.set("+index_str+",v)}")
-  } else {
-    code.push("return this.data["+index_str+"]=v}")
-  }
-
-  //view.get(i0, ...):
-  code.push("proto.get=function "+className+"_get("+args.join(",")+"){")
-  if(useGetters) {
-    code.push("return this.data.get("+index_str+")}")
-  } else {
-    code.push("return this.data["+index_str+"]}")
-  }
-
-  //view.index:
-  code.push(
-    "proto.index=function "+className+"_index(", args.join(), "){return "+index_str+"}")
-
-  //view.hi():
-  code.push("proto.hi=function "+className+"_hi("+args.join(",")+"){return new "+className+"(this.data,"+
-    indices.map(function(i) {
-      return ["(typeof i",i,"!=='number'||i",i,"<0)?this.shape[", i, "]:i", i,"|0"].join("")
-    }).join(",")+","+
-    indices.map(function(i) {
-      return "this.stride["+i + "]"
-    }).join(",")+",this.offset)}")
-
-  //view.lo():
-  var a_vars = indices.map(function(i) { return "a"+i+"=this.shape["+i+"]" })
-  var c_vars = indices.map(function(i) { return "c"+i+"=this.stride["+i+"]" })
-  code.push("proto.lo=function "+className+"_lo("+args.join(",")+"){var b=this.offset,d=0,"+a_vars.join(",")+","+c_vars.join(","))
-  for(var i=0; i<dimension; ++i) {
-    code.push(
-"if(typeof i"+i+"==='number'&&i"+i+">=0){\
-d=i"+i+"|0;\
-b+=c"+i+"*d;\
-a"+i+"-=d}")
-  }
-  code.push("return new "+className+"(this.data,"+
-    indices.map(function(i) {
-      return "a"+i
-    }).join(",")+","+
-    indices.map(function(i) {
-      return "c"+i
-    }).join(",")+",b)}")
-
-  //view.step():
-  code.push("proto.step=function "+className+"_step("+args.join(",")+"){var "+
-    indices.map(function(i) {
-      return "a"+i+"=this.shape["+i+"]"
-    }).join(",")+","+
-    indices.map(function(i) {
-      return "b"+i+"=this.stride["+i+"]"
-    }).join(",")+",c=this.offset,d=0,ceil=Math.ceil")
-  for(var i=0; i<dimension; ++i) {
-    code.push(
-"if(typeof i"+i+"==='number'){\
-d=i"+i+"|0;\
-if(d<0){\
-c+=b"+i+"*(a"+i+"-1);\
-a"+i+"=ceil(-a"+i+"/d)\
-}else{\
-a"+i+"=ceil(a"+i+"/d)\
-}\
-b"+i+"*=d\
-}")
-  }
-  code.push("return new "+className+"(this.data,"+
-    indices.map(function(i) {
-      return "a" + i
-    }).join(",")+","+
-    indices.map(function(i) {
-      return "b" + i
-    }).join(",")+",c)}")
-
-  //view.transpose():
-  var tShape = new Array(dimension)
-  var tStride = new Array(dimension)
-  for(var i=0; i<dimension; ++i) {
-    tShape[i] = "a[i"+i+"]"
-    tStride[i] = "b[i"+i+"]"
-  }
-  code.push("proto.transpose=function "+className+"_transpose("+args+"){"+
-    args.map(function(n,idx) { return n + "=(" + n + "===undefined?" + idx + ":" + n + "|0)"}).join(";"),
-    "var a=this.shape,b=this.stride;return new "+className+"(this.data,"+tShape.join(",")+","+tStride.join(",")+",this.offset)}")
-
-  //view.pick():
-  code.push("proto.pick=function "+className+"_pick("+args+"){var a=[],b=[],c=this.offset")
-  for(var i=0; i<dimension; ++i) {
-    code.push("if(typeof i"+i+"==='number'&&i"+i+">=0){c=(c+this.stride["+i+"]*i"+i+")|0}else{a.push(this.shape["+i+"]);b.push(this.stride["+i+"])}")
-  }
-  code.push("var ctor=CTOR_LIST[a.length+1];return ctor(this.data,a,b,c)}")
-
-  //Add return statement
-  code.push("return function construct_"+className+"(data,shape,stride,offset){return new "+className+"(data,"+
-    indices.map(function(i) {
-      return "shape["+i+"]"
-    }).join(",")+","+
-    indices.map(function(i) {
-      return "stride["+i+"]"
-    }).join(",")+",offset)}")
-
-  //Compile procedure
-  var procedure = new Function("CTOR_LIST", "ORDER", code.join("\n"))
-  return procedure(CACHED_CONSTRUCTORS[dtype], order)
-}
-
-function arrayDType(data) {
-  if(isBuffer(data)) {
-    return "buffer"
-  }
-  if(hasTypedArrays) {
-    switch(Object.prototype.toString.call(data)) {
-      case "[object Float64Array]":
-        return "float64"
-      case "[object Float32Array]":
-        return "float32"
-      case "[object Int8Array]":
-        return "int8"
-      case "[object Int16Array]":
-        return "int16"
-      case "[object Int32Array]":
-        return "int32"
-      case "[object Uint8Array]":
-        return "uint8"
-      case "[object Uint16Array]":
-        return "uint16"
-      case "[object Uint32Array]":
-        return "uint32"
-      case "[object Uint8ClampedArray]":
-        return "uint8_clamped"
-      case "[object BigInt64Array]":
-        return "bigint64"
-      case "[object BigUint64Array]":
-        return "biguint64"
-    }
-  }
-  if(Array.isArray(data)) {
-    return "array"
-  }
-  return "generic"
-}
-
-var CACHED_CONSTRUCTORS = {
-  "float32":[],
-  "float64":[],
-  "int8":[],
-  "int16":[],
-  "int32":[],
-  "uint8":[],
-  "uint16":[],
-  "uint32":[],
-  "array":[],
-  "uint8_clamped":[],
-  "bigint64": [],
-  "biguint64": [],
-  "buffer":[],
-  "generic":[]
-}
-
-;(function() {
-  for(var id in CACHED_CONSTRUCTORS) {
-    CACHED_CONSTRUCTORS[id].push(compileConstructor(id, -1))
-  }
-});
-
-function wrappedNDArrayCtor(data, shape, stride, offset) {
-  if(data === undefined) {
-    var ctor = CACHED_CONSTRUCTORS.array[0]
-    return ctor([])
-  } else if(typeof data === "number") {
-    data = [data]
-  }
-  if(shape === undefined) {
-    shape = [ data.length ]
-  }
-  var d = shape.length
-  if(stride === undefined) {
-    stride = new Array(d)
-    for(var i=d-1, sz=1; i>=0; --i) {
-      stride[i] = sz
-      sz *= shape[i]
-    }
-  }
-  if(offset === undefined) {
-    offset = 0
-    for(var i=0; i<d; ++i) {
-      if(stride[i] < 0) {
-        offset -= (shape[i]-1)*stride[i]
-      }
-    }
-  }
-  var dtype = arrayDType(data)
-  var ctor_list = CACHED_CONSTRUCTORS[dtype]
-  while(ctor_list.length <= d+1) {
-    ctor_list.push(compileConstructor(dtype, ctor_list.length-1))
-  }
-  var ctor = ctor_list[d+1]
-  return ctor(data, shape, stride, offset)
-}
-
-module.exports = wrappedNDArrayCtor
-
-
-/***/ }),
-
-/***/ "./node_modules/omggif/omggif.js":
-/*!***************************************!*\
-  !*** ./node_modules/omggif/omggif.js ***!
-  \***************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-// (c) Dean McNamee <dean@gmail.com>, 2013.
-//
-// https://github.com/deanm/omggif
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to
-// deal in the Software without restriction, including without limitation the
-// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-// sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
-//
-// omggif is a JavaScript implementation of a GIF 89a encoder and decoder,
-// including animation and compression.  It does not rely on any specific
-// underlying system, so should run in the browser, Node, or Plask.
-
-
-
-function GifWriter(buf, width, height, gopts) {
-  var p = 0;
-
-  var gopts = gopts === undefined ? { } : gopts;
-  var loop_count = gopts.loop === undefined ? null : gopts.loop;
-  var global_palette = gopts.palette === undefined ? null : gopts.palette;
-
-  if (width <= 0 || height <= 0 || width > 65535 || height > 65535)
-    throw new Error("Width/Height invalid.");
-
-  function check_palette_and_num_colors(palette) {
-    var num_colors = palette.length;
-    if (num_colors < 2 || num_colors > 256 ||  num_colors & (num_colors-1)) {
-      throw new Error(
-          "Invalid code/color length, must be power of 2 and 2 .. 256.");
-    }
-    return num_colors;
-  }
-
-  // - Header.
-  buf[p++] = 0x47; buf[p++] = 0x49; buf[p++] = 0x46;  // GIF
-  buf[p++] = 0x38; buf[p++] = 0x39; buf[p++] = 0x61;  // 89a
-
-  // Handling of Global Color Table (palette) and background index.
-  var gp_num_colors_pow2 = 0;
-  var background = 0;
-  if (global_palette !== null) {
-    var gp_num_colors = check_palette_and_num_colors(global_palette);
-    while (gp_num_colors >>= 1) ++gp_num_colors_pow2;
-    gp_num_colors = 1 << gp_num_colors_pow2;
-    --gp_num_colors_pow2;
-    if (gopts.background !== undefined) {
-      background = gopts.background;
-      if (background >= gp_num_colors)
-        throw new Error("Background index out of range.");
-      // The GIF spec states that a background index of 0 should be ignored, so
-      // this is probably a mistake and you really want to set it to another
-      // slot in the palette.  But actually in the end most browsers, etc end
-      // up ignoring this almost completely (including for dispose background).
-      if (background === 0)
-        throw new Error("Background index explicitly passed as 0.");
-    }
-  }
-
-  // - Logical Screen Descriptor.
-  // NOTE(deanm): w/h apparently ignored by implementations, but set anyway.
-  buf[p++] = width & 0xff; buf[p++] = width >> 8 & 0xff;
-  buf[p++] = height & 0xff; buf[p++] = height >> 8 & 0xff;
-  // NOTE: Indicates 0-bpp original color resolution (unused?).
-  buf[p++] = (global_palette !== null ? 0x80 : 0) |  // Global Color Table Flag.
-             gp_num_colors_pow2;  // NOTE: No sort flag (unused?).
-  buf[p++] = background;  // Background Color Index.
-  buf[p++] = 0;  // Pixel aspect ratio (unused?).
-
-  // - Global Color Table
-  if (global_palette !== null) {
-    for (var i = 0, il = global_palette.length; i < il; ++i) {
-      var rgb = global_palette[i];
-      buf[p++] = rgb >> 16 & 0xff;
-      buf[p++] = rgb >> 8 & 0xff;
-      buf[p++] = rgb & 0xff;
-    }
-  }
-
-  if (loop_count !== null) {  // Netscape block for looping.
-    if (loop_count < 0 || loop_count > 65535)
-      throw new Error("Loop count invalid.")
-    // Extension code, label, and length.
-    buf[p++] = 0x21; buf[p++] = 0xff; buf[p++] = 0x0b;
-    // NETSCAPE2.0
-    buf[p++] = 0x4e; buf[p++] = 0x45; buf[p++] = 0x54; buf[p++] = 0x53;
-    buf[p++] = 0x43; buf[p++] = 0x41; buf[p++] = 0x50; buf[p++] = 0x45;
-    buf[p++] = 0x32; buf[p++] = 0x2e; buf[p++] = 0x30;
-    // Sub-block
-    buf[p++] = 0x03; buf[p++] = 0x01;
-    buf[p++] = loop_count & 0xff; buf[p++] = loop_count >> 8 & 0xff;
-    buf[p++] = 0x00;  // Terminator.
-  }
-
-
-  var ended = false;
-
-  this.addFrame = function(x, y, w, h, indexed_pixels, opts) {
-    if (ended === true) { --p; ended = false; }  // Un-end.
-
-    opts = opts === undefined ? { } : opts;
-
-    // TODO(deanm): Bounds check x, y.  Do they need to be within the virtual
-    // canvas width/height, I imagine?
-    if (x < 0 || y < 0 || x > 65535 || y > 65535)
-      throw new Error("x/y invalid.")
-
-    if (w <= 0 || h <= 0 || w > 65535 || h > 65535)
-      throw new Error("Width/Height invalid.")
-
-    if (indexed_pixels.length < w * h)
-      throw new Error("Not enough pixels for the frame size.");
-
-    var using_local_palette = true;
-    var palette = opts.palette;
-    if (palette === undefined || palette === null) {
-      using_local_palette = false;
-      palette = global_palette;
-    }
-
-    if (palette === undefined || palette === null)
-      throw new Error("Must supply either a local or global palette.");
-
-    var num_colors = check_palette_and_num_colors(palette);
-
-    // Compute the min_code_size (power of 2), destroying num_colors.
-    var min_code_size = 0;
-    while (num_colors >>= 1) ++min_code_size;
-    num_colors = 1 << min_code_size;  // Now we can easily get it back.
-
-    var delay = opts.delay === undefined ? 0 : opts.delay;
-
-    // From the spec:
-    //     0 -   No disposal specified. The decoder is
-    //           not required to take any action.
-    //     1 -   Do not dispose. The graphic is to be left
-    //           in place.
-    //     2 -   Restore to background color. The area used by the
-    //           graphic must be restored to the background color.
-    //     3 -   Restore to previous. The decoder is required to
-    //           restore the area overwritten by the graphic with
-    //           what was there prior to rendering the graphic.
-    //  4-7 -    To be defined.
-    // NOTE(deanm): Dispose background doesn't really work, apparently most
-    // browsers ignore the background palette index and clear to transparency.
-    var disposal = opts.disposal === undefined ? 0 : opts.disposal;
-    if (disposal < 0 || disposal > 3)  // 4-7 is reserved.
-      throw new Error("Disposal out of range.");
-
-    var use_transparency = false;
-    var transparent_index = 0;
-    if (opts.transparent !== undefined && opts.transparent !== null) {
-      use_transparency = true;
-      transparent_index = opts.transparent;
-      if (transparent_index < 0 || transparent_index >= num_colors)
-        throw new Error("Transparent color index.");
-    }
-
-    if (disposal !== 0 || use_transparency || delay !== 0) {
-      // - Graphics Control Extension
-      buf[p++] = 0x21; buf[p++] = 0xf9;  // Extension / Label.
-      buf[p++] = 4;  // Byte size.
-
-      buf[p++] = disposal << 2 | (use_transparency === true ? 1 : 0);
-      buf[p++] = delay & 0xff; buf[p++] = delay >> 8 & 0xff;
-      buf[p++] = transparent_index;  // Transparent color index.
-      buf[p++] = 0;  // Block Terminator.
-    }
-
-    // - Image Descriptor
-    buf[p++] = 0x2c;  // Image Seperator.
-    buf[p++] = x & 0xff; buf[p++] = x >> 8 & 0xff;  // Left.
-    buf[p++] = y & 0xff; buf[p++] = y >> 8 & 0xff;  // Top.
-    buf[p++] = w & 0xff; buf[p++] = w >> 8 & 0xff;
-    buf[p++] = h & 0xff; buf[p++] = h >> 8 & 0xff;
-    // NOTE: No sort flag (unused?).
-    // TODO(deanm): Support interlace.
-    buf[p++] = using_local_palette === true ? (0x80 | (min_code_size-1)) : 0;
-
-    // - Local Color Table
-    if (using_local_palette === true) {
-      for (var i = 0, il = palette.length; i < il; ++i) {
-        var rgb = palette[i];
-        buf[p++] = rgb >> 16 & 0xff;
-        buf[p++] = rgb >> 8 & 0xff;
-        buf[p++] = rgb & 0xff;
-      }
-    }
-
-    p = GifWriterOutputLZWCodeStream(
-            buf, p, min_code_size < 2 ? 2 : min_code_size, indexed_pixels);
-
-    return p;
-  };
-
-  this.end = function() {
-    if (ended === false) {
-      buf[p++] = 0x3b;  // Trailer.
-      ended = true;
-    }
-    return p;
-  };
-
-  this.getOutputBuffer = function() { return buf; };
-  this.setOutputBuffer = function(v) { buf = v; };
-  this.getOutputBufferPosition = function() { return p; };
-  this.setOutputBufferPosition = function(v) { p = v; };
-}
-
-// Main compression routine, palette indexes -> LZW code stream.
-// |index_stream| must have at least one entry.
-function GifWriterOutputLZWCodeStream(buf, p, min_code_size, index_stream) {
-  buf[p++] = min_code_size;
-  var cur_subblock = p++;  // Pointing at the length field.
-
-  var clear_code = 1 << min_code_size;
-  var code_mask = clear_code - 1;
-  var eoi_code = clear_code + 1;
-  var next_code = eoi_code + 1;
-
-  var cur_code_size = min_code_size + 1;  // Number of bits per code.
-  var cur_shift = 0;
-  // We have at most 12-bit codes, so we should have to hold a max of 19
-  // bits here (and then we would write out).
-  var cur = 0;
-
-  function emit_bytes_to_buffer(bit_block_size) {
-    while (cur_shift >= bit_block_size) {
-      buf[p++] = cur & 0xff;
-      cur >>= 8; cur_shift -= 8;
-      if (p === cur_subblock + 256) {  // Finished a subblock.
-        buf[cur_subblock] = 255;
-        cur_subblock = p++;
-      }
-    }
-  }
-
-  function emit_code(c) {
-    cur |= c << cur_shift;
-    cur_shift += cur_code_size;
-    emit_bytes_to_buffer(8);
-  }
-
-  // I am not an expert on the topic, and I don't want to write a thesis.
-  // However, it is good to outline here the basic algorithm and the few data
-  // structures and optimizations here that make this implementation fast.
-  // The basic idea behind LZW is to build a table of previously seen runs
-  // addressed by a short id (herein called output code).  All data is
-  // referenced by a code, which represents one or more values from the
-  // original input stream.  All input bytes can be referenced as the same
-  // value as an output code.  So if you didn't want any compression, you
-  // could more or less just output the original bytes as codes (there are
-  // some details to this, but it is the idea).  In order to achieve
-  // compression, values greater then the input range (codes can be up to
-  // 12-bit while input only 8-bit) represent a sequence of previously seen
-  // inputs.  The decompressor is able to build the same mapping while
-  // decoding, so there is always a shared common knowledge between the
-  // encoding and decoder, which is also important for "timing" aspects like
-  // how to handle variable bit width code encoding.
-  //
-  // One obvious but very important consequence of the table system is there
-  // is always a unique id (at most 12-bits) to map the runs.  'A' might be
-  // 4, then 'AA' might be 10, 'AAA' 11, 'AAAA' 12, etc.  This relationship
-  // can be used for an effecient lookup strategy for the code mapping.  We
-  // need to know if a run has been seen before, and be able to map that run
-  // to the output code.  Since we start with known unique ids (input bytes),
-  // and then from those build more unique ids (table entries), we can
-  // continue this chain (almost like a linked list) to always have small
-  // integer values that represent the current byte chains in the encoder.
-  // This means instead of tracking the input bytes (AAAABCD) to know our
-  // current state, we can track the table entry for AAAABC (it is guaranteed
-  // to exist by the nature of the algorithm) and the next character D.
-  // Therefor the tuple of (table_entry, byte) is guaranteed to also be
-  // unique.  This allows us to create a simple lookup key for mapping input
-  // sequences to codes (table indices) without having to store or search
-  // any of the code sequences.  So if 'AAAA' has a table entry of 12, the
-  // tuple of ('AAAA', K) for any input byte K will be unique, and can be our
-  // key.  This leads to a integer value at most 20-bits, which can always
-  // fit in an SMI value and be used as a fast sparse array / object key.
-
-  // Output code for the current contents of the index buffer.
-  var ib_code = index_stream[0] & code_mask;  // Load first input index.
-  var code_table = { };  // Key'd on our 20-bit "tuple".
-
-  emit_code(clear_code);  // Spec says first code should be a clear code.
-
-  // First index already loaded, process the rest of the stream.
-  for (var i = 1, il = index_stream.length; i < il; ++i) {
-    var k = index_stream[i] & code_mask;
-    var cur_key = ib_code << 8 | k;  // (prev, k) unique tuple.
-    var cur_code = code_table[cur_key];  // buffer + k.
-
-    // Check if we have to create a new code table entry.
-    if (cur_code === undefined) {  // We don't have buffer + k.
-      // Emit index buffer (without k).
-      // This is an inline version of emit_code, because this is the core
-      // writing routine of the compressor (and V8 cannot inline emit_code
-      // because it is a closure here in a different context).  Additionally
-      // we can call emit_byte_to_buffer less often, because we can have
-      // 30-bits (from our 31-bit signed SMI), and we know our codes will only
-      // be 12-bits, so can safely have 18-bits there without overflow.
-      // emit_code(ib_code);
-      cur |= ib_code << cur_shift;
-      cur_shift += cur_code_size;
-      while (cur_shift >= 8) {
-        buf[p++] = cur & 0xff;
-        cur >>= 8; cur_shift -= 8;
-        if (p === cur_subblock + 256) {  // Finished a subblock.
-          buf[cur_subblock] = 255;
-          cur_subblock = p++;
-        }
-      }
-
-      if (next_code === 4096) {  // Table full, need a clear.
-        emit_code(clear_code);
-        next_code = eoi_code + 1;
-        cur_code_size = min_code_size + 1;
-        code_table = { };
-      } else {  // Table not full, insert a new entry.
-        // Increase our variable bit code sizes if necessary.  This is a bit
-        // tricky as it is based on "timing" between the encoding and
-        // decoder.  From the encoders perspective this should happen after
-        // we've already emitted the index buffer and are about to create the
-        // first table entry that would overflow our current code bit size.
-        if (next_code >= (1 << cur_code_size)) ++cur_code_size;
-        code_table[cur_key] = next_code++;  // Insert into code table.
-      }
-
-      ib_code = k;  // Index buffer to single input k.
-    } else {
-      ib_code = cur_code;  // Index buffer to sequence in code table.
-    }
-  }
-
-  emit_code(ib_code);  // There will still be something in the index buffer.
-  emit_code(eoi_code);  // End Of Information.
-
-  // Flush / finalize the sub-blocks stream to the buffer.
-  emit_bytes_to_buffer(1);
-
-  // Finish the sub-blocks, writing out any unfinished lengths and
-  // terminating with a sub-block of length 0.  If we have already started
-  // but not yet used a sub-block it can just become the terminator.
-  if (cur_subblock + 1 === p) {  // Started but unused.
-    buf[cur_subblock] = 0;
-  } else {  // Started and used, write length and additional terminator block.
-    buf[cur_subblock] = p - cur_subblock - 1;
-    buf[p++] = 0;
-  }
-  return p;
-}
-
-function GifReader(buf) {
-  var p = 0;
-
-  // - Header (GIF87a or GIF89a).
-  if (buf[p++] !== 0x47 ||            buf[p++] !== 0x49 || buf[p++] !== 0x46 ||
-      buf[p++] !== 0x38 || (buf[p++]+1 & 0xfd) !== 0x38 || buf[p++] !== 0x61) {
-    throw new Error("Invalid GIF 87a/89a header.");
-  }
-
-  // - Logical Screen Descriptor.
-  var width = buf[p++] | buf[p++] << 8;
-  var height = buf[p++] | buf[p++] << 8;
-  var pf0 = buf[p++];  // <Packed Fields>.
-  var global_palette_flag = pf0 >> 7;
-  var num_global_colors_pow2 = pf0 & 0x7;
-  var num_global_colors = 1 << (num_global_colors_pow2 + 1);
-  var background = buf[p++];
-  buf[p++];  // Pixel aspect ratio (unused?).
-
-  var global_palette_offset = null;
-  var global_palette_size   = null;
-
-  if (global_palette_flag) {
-    global_palette_offset = p;
-    global_palette_size = num_global_colors;
-    p += num_global_colors * 3;  // Seek past palette.
-  }
-
-  var no_eof = true;
-
-  var frames = [ ];
-
-  var delay = 0;
-  var transparent_index = null;
-  var disposal = 0;  // 0 - No disposal specified.
-  var loop_count = null;
-
-  this.width = width;
-  this.height = height;
-
-  while (no_eof && p < buf.length) {
-    switch (buf[p++]) {
-      case 0x21:  // Graphics Control Extension Block
-        switch (buf[p++]) {
-          case 0xff:  // Application specific block
-            // Try if it's a Netscape block (with animation loop counter).
-            if (buf[p   ] !== 0x0b ||  // 21 FF already read, check block size.
-                // NETSCAPE2.0
-                buf[p+1 ] == 0x4e && buf[p+2 ] == 0x45 && buf[p+3 ] == 0x54 &&
-                buf[p+4 ] == 0x53 && buf[p+5 ] == 0x43 && buf[p+6 ] == 0x41 &&
-                buf[p+7 ] == 0x50 && buf[p+8 ] == 0x45 && buf[p+9 ] == 0x32 &&
-                buf[p+10] == 0x2e && buf[p+11] == 0x30 &&
-                // Sub-block
-                buf[p+12] == 0x03 && buf[p+13] == 0x01 && buf[p+16] == 0) {
-              p += 14;
-              loop_count = buf[p++] | buf[p++] << 8;
-              p++;  // Skip terminator.
-            } else {  // We don't know what it is, just try to get past it.
-              p += 12;
-              while (true) {  // Seek through subblocks.
-                var block_size = buf[p++];
-                // Bad block size (ex: undefined from an out of bounds read).
-                if (!(block_size >= 0)) throw Error("Invalid block size");
-                if (block_size === 0) break;  // 0 size is terminator
-                p += block_size;
-              }
-            }
-            break;
-
-          case 0xf9:  // Graphics Control Extension
-            if (buf[p++] !== 0x4 || buf[p+4] !== 0)
-              throw new Error("Invalid graphics extension block.");
-            var pf1 = buf[p++];
-            delay = buf[p++] | buf[p++] << 8;
-            transparent_index = buf[p++];
-            if ((pf1 & 1) === 0) transparent_index = null;
-            disposal = pf1 >> 2 & 0x7;
-            p++;  // Skip terminator.
-            break;
-
-          case 0xfe:  // Comment Extension.
-            while (true) {  // Seek through subblocks.
-              var block_size = buf[p++];
-              // Bad block size (ex: undefined from an out of bounds read).
-              if (!(block_size >= 0)) throw Error("Invalid block size");
-              if (block_size === 0) break;  // 0 size is terminator
-              // console.log(buf.slice(p, p+block_size).toString('ascii'));
-              p += block_size;
-            }
-            break;
-
-          default:
-            throw new Error(
-                "Unknown graphic control label: 0x" + buf[p-1].toString(16));
-        }
-        break;
-
-      case 0x2c:  // Image Descriptor.
-        var x = buf[p++] | buf[p++] << 8;
-        var y = buf[p++] | buf[p++] << 8;
-        var w = buf[p++] | buf[p++] << 8;
-        var h = buf[p++] | buf[p++] << 8;
-        var pf2 = buf[p++];
-        var local_palette_flag = pf2 >> 7;
-        var interlace_flag = pf2 >> 6 & 1;
-        var num_local_colors_pow2 = pf2 & 0x7;
-        var num_local_colors = 1 << (num_local_colors_pow2 + 1);
-        var palette_offset = global_palette_offset;
-        var palette_size = global_palette_size;
-        var has_local_palette = false;
-        if (local_palette_flag) {
-          var has_local_palette = true;
-          palette_offset = p;  // Override with local palette.
-          palette_size = num_local_colors;
-          p += num_local_colors * 3;  // Seek past palette.
-        }
-
-        var data_offset = p;
-
-        p++;  // codesize
-        while (true) {
-          var block_size = buf[p++];
-          // Bad block size (ex: undefined from an out of bounds read).
-          if (!(block_size >= 0)) throw Error("Invalid block size");
-          if (block_size === 0) break;  // 0 size is terminator
-          p += block_size;
-        }
-
-        frames.push({x: x, y: y, width: w, height: h,
-                     has_local_palette: has_local_palette,
-                     palette_offset: palette_offset,
-                     palette_size: palette_size,
-                     data_offset: data_offset,
-                     data_length: p - data_offset,
-                     transparent_index: transparent_index,
-                     interlaced: !!interlace_flag,
-                     delay: delay,
-                     disposal: disposal});
-        break;
-
-      case 0x3b:  // Trailer Marker (end of file).
-        no_eof = false;
-        break;
-
-      default:
-        throw new Error("Unknown gif block: 0x" + buf[p-1].toString(16));
-        break;
-    }
-  }
-
-  this.numFrames = function() {
-    return frames.length;
-  };
-
-  this.loopCount = function() {
-    return loop_count;
-  };
-
-  this.frameInfo = function(frame_num) {
-    if (frame_num < 0 || frame_num >= frames.length)
-      throw new Error("Frame index out of range.");
-    return frames[frame_num];
-  }
-
-  this.decodeAndBlitFrameBGRA = function(frame_num, pixels) {
-    var frame = this.frameInfo(frame_num);
-    var num_pixels = frame.width * frame.height;
-    var index_stream = new Uint8Array(num_pixels);  // At most 8-bit indices.
-    GifReaderLZWOutputIndexStream(
-        buf, frame.data_offset, index_stream, num_pixels);
-    var palette_offset = frame.palette_offset;
-
-    // NOTE(deanm): It seems to be much faster to compare index to 256 than
-    // to === null.  Not sure why, but CompareStub_EQ_STRICT shows up high in
-    // the profile, not sure if it's related to using a Uint8Array.
-    var trans = frame.transparent_index;
-    if (trans === null) trans = 256;
-
-    // We are possibly just blitting to a portion of the entire frame.
-    // That is a subrect within the framerect, so the additional pixels
-    // must be skipped over after we finished a scanline.
-    var framewidth  = frame.width;
-    var framestride = width - framewidth;
-    var xleft       = framewidth;  // Number of subrect pixels left in scanline.
-
-    // Output indicies of the top left and bottom right corners of the subrect.
-    var opbeg = ((frame.y * width) + frame.x) * 4;
-    var opend = ((frame.y + frame.height) * width + frame.x) * 4;
-    var op    = opbeg;
-
-    var scanstride = framestride * 4;
-
-    // Use scanstride to skip past the rows when interlacing.  This is skipping
-    // 7 rows for the first two passes, then 3 then 1.
-    if (frame.interlaced === true) {
-      scanstride += width * 4 * 7;  // Pass 1.
-    }
-
-    var interlaceskip = 8;  // Tracking the row interval in the current pass.
-
-    for (var i = 0, il = index_stream.length; i < il; ++i) {
-      var index = index_stream[i];
-
-      if (xleft === 0) {  // Beginning of new scan line
-        op += scanstride;
-        xleft = framewidth;
-        if (op >= opend) { // Catch the wrap to switch passes when interlacing.
-          scanstride = framestride * 4 + width * 4 * (interlaceskip-1);
-          // interlaceskip / 2 * 4 is interlaceskip << 1.
-          op = opbeg + (framewidth + framestride) * (interlaceskip << 1);
-          interlaceskip >>= 1;
-        }
-      }
-
-      if (index === trans) {
-        op += 4;
-      } else {
-        var r = buf[palette_offset + index * 3];
-        var g = buf[palette_offset + index * 3 + 1];
-        var b = buf[palette_offset + index * 3 + 2];
-        pixels[op++] = b;
-        pixels[op++] = g;
-        pixels[op++] = r;
-        pixels[op++] = 255;
-      }
-      --xleft;
-    }
-  };
-
-  // I will go to copy and paste hell one day...
-  this.decodeAndBlitFrameRGBA = function(frame_num, pixels) {
-    var frame = this.frameInfo(frame_num);
-    var num_pixels = frame.width * frame.height;
-    var index_stream = new Uint8Array(num_pixels);  // At most 8-bit indices.
-    GifReaderLZWOutputIndexStream(
-        buf, frame.data_offset, index_stream, num_pixels);
-    var palette_offset = frame.palette_offset;
-
-    // NOTE(deanm): It seems to be much faster to compare index to 256 than
-    // to === null.  Not sure why, but CompareStub_EQ_STRICT shows up high in
-    // the profile, not sure if it's related to using a Uint8Array.
-    var trans = frame.transparent_index;
-    if (trans === null) trans = 256;
-
-    // We are possibly just blitting to a portion of the entire frame.
-    // That is a subrect within the framerect, so the additional pixels
-    // must be skipped over after we finished a scanline.
-    var framewidth  = frame.width;
-    var framestride = width - framewidth;
-    var xleft       = framewidth;  // Number of subrect pixels left in scanline.
-
-    // Output indicies of the top left and bottom right corners of the subrect.
-    var opbeg = ((frame.y * width) + frame.x) * 4;
-    var opend = ((frame.y + frame.height) * width + frame.x) * 4;
-    var op    = opbeg;
-
-    var scanstride = framestride * 4;
-
-    // Use scanstride to skip past the rows when interlacing.  This is skipping
-    // 7 rows for the first two passes, then 3 then 1.
-    if (frame.interlaced === true) {
-      scanstride += width * 4 * 7;  // Pass 1.
-    }
-
-    var interlaceskip = 8;  // Tracking the row interval in the current pass.
-
-    for (var i = 0, il = index_stream.length; i < il; ++i) {
-      var index = index_stream[i];
-
-      if (xleft === 0) {  // Beginning of new scan line
-        op += scanstride;
-        xleft = framewidth;
-        if (op >= opend) { // Catch the wrap to switch passes when interlacing.
-          scanstride = framestride * 4 + width * 4 * (interlaceskip-1);
-          // interlaceskip / 2 * 4 is interlaceskip << 1.
-          op = opbeg + (framewidth + framestride) * (interlaceskip << 1);
-          interlaceskip >>= 1;
-        }
-      }
-
-      if (index === trans) {
-        op += 4;
-      } else {
-        var r = buf[palette_offset + index * 3];
-        var g = buf[palette_offset + index * 3 + 1];
-        var b = buf[palette_offset + index * 3 + 2];
-        pixels[op++] = r;
-        pixels[op++] = g;
-        pixels[op++] = b;
-        pixels[op++] = 255;
-      }
-      --xleft;
-    }
-  };
-}
-
-function GifReaderLZWOutputIndexStream(code_stream, p, output, output_length) {
-  var min_code_size = code_stream[p++];
-
-  var clear_code = 1 << min_code_size;
-  var eoi_code = clear_code + 1;
-  var next_code = eoi_code + 1;
-
-  var cur_code_size = min_code_size + 1;  // Number of bits per code.
-  // NOTE: This shares the same name as the encoder, but has a different
-  // meaning here.  Here this masks each code coming from the code stream.
-  var code_mask = (1 << cur_code_size) - 1;
-  var cur_shift = 0;
-  var cur = 0;
-
-  var op = 0;  // Output pointer.
-
-  var subblock_size = code_stream[p++];
-
-  // TODO(deanm): Would using a TypedArray be any faster?  At least it would
-  // solve the fast mode / backing store uncertainty.
-  // var code_table = Array(4096);
-  var code_table = new Int32Array(4096);  // Can be signed, we only use 20 bits.
-
-  var prev_code = null;  // Track code-1.
-
-  while (true) {
-    // Read up to two bytes, making sure we always 12-bits for max sized code.
-    while (cur_shift < 16) {
-      if (subblock_size === 0) break;  // No more data to be read.
-
-      cur |= code_stream[p++] << cur_shift;
-      cur_shift += 8;
-
-      if (subblock_size === 1) {  // Never let it get to 0 to hold logic above.
-        subblock_size = code_stream[p++];  // Next subblock.
-      } else {
-        --subblock_size;
-      }
-    }
-
-    // TODO(deanm): We should never really get here, we should have received
-    // and EOI.
-    if (cur_shift < cur_code_size)
-      break;
-
-    var code = cur & code_mask;
-    cur >>= cur_code_size;
-    cur_shift -= cur_code_size;
-
-    // TODO(deanm): Maybe should check that the first code was a clear code,
-    // at least this is what you're supposed to do.  But actually our encoder
-    // now doesn't emit a clear code first anyway.
-    if (code === clear_code) {
-      // We don't actually have to clear the table.  This could be a good idea
-      // for greater error checking, but we don't really do any anyway.  We
-      // will just track it with next_code and overwrite old entries.
-
-      next_code = eoi_code + 1;
-      cur_code_size = min_code_size + 1;
-      code_mask = (1 << cur_code_size) - 1;
-
-      // Don't update prev_code ?
-      prev_code = null;
-      continue;
-    } else if (code === eoi_code) {
-      break;
-    }
-
-    // We have a similar situation as the decoder, where we want to store
-    // variable length entries (code table entries), but we want to do in a
-    // faster manner than an array of arrays.  The code below stores sort of a
-    // linked list within the code table, and then "chases" through it to
-    // construct the dictionary entries.  When a new entry is created, just the
-    // last byte is stored, and the rest (prefix) of the entry is only
-    // referenced by its table entry.  Then the code chases through the
-    // prefixes until it reaches a single byte code.  We have to chase twice,
-    // first to compute the length, and then to actually copy the data to the
-    // output (backwards, since we know the length).  The alternative would be
-    // storing something in an intermediate stack, but that doesn't make any
-    // more sense.  I implemented an approach where it also stored the length
-    // in the code table, although it's a bit tricky because you run out of
-    // bits (12 + 12 + 8), but I didn't measure much improvements (the table
-    // entries are generally not the long).  Even when I created benchmarks for
-    // very long table entries the complexity did not seem worth it.
-    // The code table stores the prefix entry in 12 bits and then the suffix
-    // byte in 8 bits, so each entry is 20 bits.
-
-    var chase_code = code < next_code ? code : prev_code;
-
-    // Chase what we will output, either {CODE} or {CODE-1}.
-    var chase_length = 0;
-    var chase = chase_code;
-    while (chase > clear_code) {
-      chase = code_table[chase] >> 8;
-      ++chase_length;
-    }
-
-    var k = chase;
-
-    var op_end = op + chase_length + (chase_code !== code ? 1 : 0);
-    if (op_end > output_length) {
-      console.log("Warning, gif stream longer than expected.");
-      return;
-    }
-
-    // Already have the first byte from the chase, might as well write it fast.
-    output[op++] = k;
-
-    op += chase_length;
-    var b = op;  // Track pointer, writing backwards.
-
-    if (chase_code !== code)  // The case of emitting {CODE-1} + k.
-      output[op++] = k;
-
-    chase = chase_code;
-    while (chase_length--) {
-      chase = code_table[chase];
-      output[--b] = chase & 0xff;  // Write backwards.
-      chase >>= 8;  // Pull down to the prefix code.
-    }
-
-    if (prev_code !== null && next_code < 4096) {
-      code_table[next_code++] = prev_code << 8 | k;
-      // TODO(deanm): Figure out this clearing vs code growth logic better.  I
-      // have an feeling that it should just happen somewhere else, for now it
-      // is awkward between when we grow past the max and then hit a clear code.
-      // For now just check if we hit the max 12-bits (then a clear code should
-      // follow, also of course encoded in 12-bits).
-      if (next_code >= code_mask+1 && cur_code_size < 12) {
-        ++cur_code_size;
-        code_mask = code_mask << 1 | 1;
-      }
-    }
-
-    prev_code = code;
-  }
-
-  if (op !== output_length) {
-    console.log("Warning, gif stream shorter than expected.");
-  }
-
-  return output;
-}
-
-// CommonJS.
-try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
-
-
-/***/ }),
-
-/***/ "./node_modules/quantize/quantize.js":
-/*!*******************************************!*\
-  !*** ./node_modules/quantize/quantize.js ***!
-  \*******************************************/
+/***/ "./node_modules/mocha-js-delegate/index.js":
+/*!*************************************************!*\
+  !*** ./node_modules/mocha-js-delegate/index.js ***!
+  \*************************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-/*
- * quantize.js Copyright 2008 Nick Rabinowitz
- * Ported to node.js by Olivier Lesnicki
- * Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
- */
+/* globals MOClassDescription, NSObject, NSSelectorFromString, NSClassFromString, MOPropertyDescription */
 
-// fill out a couple protovis dependencies
-/*
- * Block below copied from Protovis: http://mbostock.github.com/protovis/
- * Copyright 2010 Stanford Visualization Group
- * Licensed under the BSD License: http://www.opensource.org/licenses/bsd-license.php
- */
-if (!pv) {
-    var pv = {
-        map: function(array, f) {
-            var o = {};
-            return f ? array.map(function(d, i) {
-                o.index = i;
-                return f.call(o, d);
-            }) : array.slice();
-        },
-        naturalOrder: function(a, b) {
-            return (a < b) ? -1 : ((a > b) ? 1 : 0);
-        },
-        sum: function(array, f) {
-            var o = {};
-            return array.reduce(f ? function(p, d, i) {
-                o.index = i;
-                return p + f.call(o, d);
-            } : function(p, d) {
-                return p + d;
-            }, 0);
-        },
-        max: function(array, f) {
-            return Math.max.apply(null, f ? pv.map(array, f) : array);
-        }
+module.exports = function MochaDelegate(definition, superclass) {
+  var uniqueClassName =
+    'MochaJSDelegate_DynamicClass_' + NSUUID.UUID().UUIDString()
+
+  var delegateClassDesc = MOClassDescription.allocateDescriptionForClassWithName_superclass_(
+    uniqueClassName,
+    superclass || NSObject
+  )
+
+  // Storage
+  var handlers = {}
+  var ivars = {}
+
+  // Define an instance method
+  function setHandlerForSelector(selectorString, func) {
+    var handlerHasBeenSet = selectorString in handlers
+    var selector = NSSelectorFromString(selectorString)
+
+    handlers[selectorString] = func
+
+    /*
+      For some reason, Mocha acts weird about arguments: https://github.com/logancollins/Mocha/issues/28
+      We have to basically create a dynamic handler with a likewise dynamic number of predefined arguments.
+    */
+    if (!handlerHasBeenSet) {
+      var args = []
+      var regex = /:/g
+      while (regex.exec(selectorString)) {
+        args.push('arg' + args.length)
+      }
+
+      // eslint-disable-next-line no-eval
+      var dynamicFunction = eval(
+        '(function (' +
+          args.join(', ') +
+          ') { return handlers[selectorString].apply(this, arguments); })'
+      )
+
+      delegateClassDesc.addInstanceMethodWithSelector_function(
+        selector,
+        dynamicFunction
+      )
     }
+  }
+
+  // define a property
+  function setIvar(key, value) {
+    var ivarHasBeenSet = key in handlers
+
+    ivars[key] = value
+
+    if (!ivarHasBeenSet) {
+      delegateClassDesc.addInstanceVariableWithName_typeEncoding(key, '@')
+      var description = MOPropertyDescription.new()
+      description.name = key
+      description.typeEncoding = '@'
+      description.weak = true
+      description.ivarName = key
+      delegateClassDesc.addProperty(description)
+    }
+  }
+
+  this.getClass = function() {
+    return NSClassFromString(uniqueClassName)
+  }
+
+  this.getClassInstance = function(instanceVariables) {
+    var instance = NSClassFromString(uniqueClassName).new()
+    Object.keys(ivars).forEach(function(key) {
+      instance[key] = ivars[key]
+    })
+    Object.keys(instanceVariables || {}).forEach(function(key) {
+      instance[key] = instanceVariables[key]
+    })
+    return instance
+  }
+  // alias
+  this.new = this.getClassInstance
+
+  // Convenience
+  if (typeof definition === 'object') {
+    Object.keys(definition).forEach(
+      function(key) {
+        if (typeof definition[key] === 'function') {
+          setHandlerForSelector(key, definition[key])
+        } else {
+          setIvar(key, definition[key])
+        }
+      }
+    )
+  }
+
+  delegateClassDesc.registerClass()
 }
-
-/**
- * Basic Javascript port of the MMCQ (modified median cut quantization)
- * algorithm from the Leptonica library (http://www.leptonica.com/).
- * Returns a color map you can use to map original pixels to the reduced
- * palette. Still a work in progress.
- * 
- * @author Nick Rabinowitz
- * @example
- 
-// array of pixels as [R,G,B] arrays
-var myPixels = [[190,197,190], [202,204,200], [207,214,210], [211,214,211], [205,207,207]
-                // etc
-                ];
-var maxColors = 4;
- 
-var cmap = MMCQ.quantize(myPixels, maxColors);
-var newPalette = cmap.palette();
-var newPixels = myPixels.map(function(p) { 
-    return cmap.map(p); 
-});
- 
- */
-var MMCQ = (function() {
-    // private constants
-    var sigbits = 5,
-        rshift = 8 - sigbits,
-        maxIterations = 1000,
-        fractByPopulations = 0.75;
-
-    // get reduced-space color index for a pixel
-
-    function getColorIndex(r, g, b) {
-        return (r << (2 * sigbits)) + (g << sigbits) + b;
-    }
-
-    // Simple priority queue
-
-    function PQueue(comparator) {
-        var contents = [],
-            sorted = false;
-
-        function sort() {
-            contents.sort(comparator);
-            sorted = true;
-        }
-
-        return {
-            push: function(o) {
-                contents.push(o);
-                sorted = false;
-            },
-            peek: function(index) {
-                if (!sorted) sort();
-                if (index === undefined) index = contents.length - 1;
-                return contents[index];
-            },
-            pop: function() {
-                if (!sorted) sort();
-                return contents.pop();
-            },
-            size: function() {
-                return contents.length;
-            },
-            map: function(f) {
-                return contents.map(f);
-            },
-            debug: function() {
-                if (!sorted) sort();
-                return contents;
-            }
-        };
-    }
-
-    // 3d color space box
-
-    function VBox(r1, r2, g1, g2, b1, b2, histo) {
-        var vbox = this;
-        vbox.r1 = r1;
-        vbox.r2 = r2;
-        vbox.g1 = g1;
-        vbox.g2 = g2;
-        vbox.b1 = b1;
-        vbox.b2 = b2;
-        vbox.histo = histo;
-    }
-    VBox.prototype = {
-        volume: function(force) {
-            var vbox = this;
-            if (!vbox._volume || force) {
-                vbox._volume = ((vbox.r2 - vbox.r1 + 1) * (vbox.g2 - vbox.g1 + 1) * (vbox.b2 - vbox.b1 + 1));
-            }
-            return vbox._volume;
-        },
-        count: function(force) {
-            var vbox = this,
-                histo = vbox.histo;
-            if (!vbox._count_set || force) {
-                var npix = 0,
-                    i, j, k, index;
-                for (i = vbox.r1; i <= vbox.r2; i++) {
-                    for (j = vbox.g1; j <= vbox.g2; j++) {
-                        for (k = vbox.b1; k <= vbox.b2; k++) {
-                            index = getColorIndex(i, j, k);
-                            npix += (histo[index] || 0);
-                        }
-                    }
-                }
-                vbox._count = npix;
-                vbox._count_set = true;
-            }
-            return vbox._count;
-        },
-        copy: function() {
-            var vbox = this;
-            return new VBox(vbox.r1, vbox.r2, vbox.g1, vbox.g2, vbox.b1, vbox.b2, vbox.histo);
-        },
-        avg: function(force) {
-            var vbox = this,
-                histo = vbox.histo;
-            if (!vbox._avg || force) {
-                var ntot = 0,
-                    mult = 1 << (8 - sigbits),
-                    rsum = 0,
-                    gsum = 0,
-                    bsum = 0,
-                    hval,
-                    i, j, k, histoindex;
-                for (i = vbox.r1; i <= vbox.r2; i++) {
-                    for (j = vbox.g1; j <= vbox.g2; j++) {
-                        for (k = vbox.b1; k <= vbox.b2; k++) {
-                            histoindex = getColorIndex(i, j, k);
-                            hval = histo[histoindex] || 0;
-                            ntot += hval;
-                            rsum += (hval * (i + 0.5) * mult);
-                            gsum += (hval * (j + 0.5) * mult);
-                            bsum += (hval * (k + 0.5) * mult);
-                        }
-                    }
-                }
-                if (ntot) {
-                    vbox._avg = [~~(rsum / ntot), ~~ (gsum / ntot), ~~ (bsum / ntot)];
-                } else {
-                    //console.log('empty box');
-                    vbox._avg = [~~(mult * (vbox.r1 + vbox.r2 + 1) / 2), ~~ (mult * (vbox.g1 + vbox.g2 + 1) / 2), ~~ (mult * (vbox.b1 + vbox.b2 + 1) / 2)];
-                }
-            }
-            return vbox._avg;
-        },
-        contains: function(pixel) {
-            var vbox = this,
-                rval = pixel[0] >> rshift;
-            gval = pixel[1] >> rshift;
-            bval = pixel[2] >> rshift;
-            return (rval >= vbox.r1 && rval <= vbox.r2 &&
-                gval >= vbox.g1 && gval <= vbox.g2 &&
-                bval >= vbox.b1 && bval <= vbox.b2);
-        }
-    };
-
-    // Color map
-
-    function CMap() {
-        this.vboxes = new PQueue(function(a, b) {
-            return pv.naturalOrder(
-                a.vbox.count() * a.vbox.volume(),
-                b.vbox.count() * b.vbox.volume()
-            )
-        });;
-    }
-    CMap.prototype = {
-        push: function(vbox) {
-            this.vboxes.push({
-                vbox: vbox,
-                color: vbox.avg()
-            });
-        },
-        palette: function() {
-            return this.vboxes.map(function(vb) {
-                return vb.color
-            });
-        },
-        size: function() {
-            return this.vboxes.size();
-        },
-        map: function(color) {
-            var vboxes = this.vboxes;
-            for (var i = 0; i < vboxes.size(); i++) {
-                if (vboxes.peek(i).vbox.contains(color)) {
-                    return vboxes.peek(i).color;
-                }
-            }
-            return this.nearest(color);
-        },
-        nearest: function(color) {
-            var vboxes = this.vboxes,
-                d1, d2, pColor;
-            for (var i = 0; i < vboxes.size(); i++) {
-                d2 = Math.sqrt(
-                    Math.pow(color[0] - vboxes.peek(i).color[0], 2) +
-                    Math.pow(color[1] - vboxes.peek(i).color[1], 2) +
-                    Math.pow(color[2] - vboxes.peek(i).color[2], 2)
-                );
-                if (d2 < d1 || d1 === undefined) {
-                    d1 = d2;
-                    pColor = vboxes.peek(i).color;
-                }
-            }
-            return pColor;
-        },
-        forcebw: function() {
-            // XXX: won't  work yet
-            var vboxes = this.vboxes;
-            vboxes.sort(function(a, b) {
-                return pv.naturalOrder(pv.sum(a.color), pv.sum(b.color))
-            });
-
-            // force darkest color to black if everything < 5
-            var lowest = vboxes[0].color;
-            if (lowest[0] < 5 && lowest[1] < 5 && lowest[2] < 5)
-                vboxes[0].color = [0, 0, 0];
-
-            // force lightest color to white if everything > 251
-            var idx = vboxes.length - 1,
-                highest = vboxes[idx].color;
-            if (highest[0] > 251 && highest[1] > 251 && highest[2] > 251)
-                vboxes[idx].color = [255, 255, 255];
-        }
-    };
-
-    // histo (1-d array, giving the number of pixels in
-    // each quantized region of color space), or null on error
-
-    function getHisto(pixels) {
-        var histosize = 1 << (3 * sigbits),
-            histo = new Array(histosize),
-            index, rval, gval, bval;
-        pixels.forEach(function(pixel) {
-            rval = pixel[0] >> rshift;
-            gval = pixel[1] >> rshift;
-            bval = pixel[2] >> rshift;
-            index = getColorIndex(rval, gval, bval);
-            histo[index] = (histo[index] || 0) + 1;
-        });
-        return histo;
-    }
-
-    function vboxFromPixels(pixels, histo) {
-        var rmin = 1000000,
-            rmax = 0,
-            gmin = 1000000,
-            gmax = 0,
-            bmin = 1000000,
-            bmax = 0,
-            rval, gval, bval;
-        // find min/max
-        pixels.forEach(function(pixel) {
-            rval = pixel[0] >> rshift;
-            gval = pixel[1] >> rshift;
-            bval = pixel[2] >> rshift;
-            if (rval < rmin) rmin = rval;
-            else if (rval > rmax) rmax = rval;
-            if (gval < gmin) gmin = gval;
-            else if (gval > gmax) gmax = gval;
-            if (bval < bmin) bmin = bval;
-            else if (bval > bmax) bmax = bval;
-        });
-        return new VBox(rmin, rmax, gmin, gmax, bmin, bmax, histo);
-    }
-
-    function medianCutApply(histo, vbox) {
-        if (!vbox.count()) return;
-
-        var rw = vbox.r2 - vbox.r1 + 1,
-            gw = vbox.g2 - vbox.g1 + 1,
-            bw = vbox.b2 - vbox.b1 + 1,
-            maxw = pv.max([rw, gw, bw]);
-        // only one pixel, no split
-        if (vbox.count() == 1) {
-            return [vbox.copy()]
-        }
-        /* Find the partial sum arrays along the selected axis. */
-        var total = 0,
-            partialsum = [],
-            lookaheadsum = [],
-            i, j, k, sum, index;
-        if (maxw == rw) {
-            for (i = vbox.r1; i <= vbox.r2; i++) {
-                sum = 0;
-                for (j = vbox.g1; j <= vbox.g2; j++) {
-                    for (k = vbox.b1; k <= vbox.b2; k++) {
-                        index = getColorIndex(i, j, k);
-                        sum += (histo[index] || 0);
-                    }
-                }
-                total += sum;
-                partialsum[i] = total;
-            }
-        } else if (maxw == gw) {
-            for (i = vbox.g1; i <= vbox.g2; i++) {
-                sum = 0;
-                for (j = vbox.r1; j <= vbox.r2; j++) {
-                    for (k = vbox.b1; k <= vbox.b2; k++) {
-                        index = getColorIndex(j, i, k);
-                        sum += (histo[index] || 0);
-                    }
-                }
-                total += sum;
-                partialsum[i] = total;
-            }
-        } else { /* maxw == bw */
-            for (i = vbox.b1; i <= vbox.b2; i++) {
-                sum = 0;
-                for (j = vbox.r1; j <= vbox.r2; j++) {
-                    for (k = vbox.g1; k <= vbox.g2; k++) {
-                        index = getColorIndex(j, k, i);
-                        sum += (histo[index] || 0);
-                    }
-                }
-                total += sum;
-                partialsum[i] = total;
-            }
-        }
-        partialsum.forEach(function(d, i) {
-            lookaheadsum[i] = total - d
-        });
-
-        function doCut(color) {
-            var dim1 = color + '1',
-                dim2 = color + '2',
-                left, right, vbox1, vbox2, d2, count2 = 0;
-            for (i = vbox[dim1]; i <= vbox[dim2]; i++) {
-                if (partialsum[i] > total / 2) {
-                    vbox1 = vbox.copy();
-                    vbox2 = vbox.copy();
-                    left = i - vbox[dim1];
-                    right = vbox[dim2] - i;
-                    if (left <= right)
-                        d2 = Math.min(vbox[dim2] - 1, ~~ (i + right / 2));
-                    else d2 = Math.max(vbox[dim1], ~~ (i - 1 - left / 2));
-                    // avoid 0-count boxes
-                    while (!partialsum[d2]) d2++;
-                    count2 = lookaheadsum[d2];
-                    while (!count2 && partialsum[d2 - 1]) count2 = lookaheadsum[--d2];
-                    // set dimensions
-                    vbox1[dim2] = d2;
-                    vbox2[dim1] = vbox1[dim2] + 1;
-                    // console.log('vbox counts:', vbox.count(), vbox1.count(), vbox2.count());
-                    return [vbox1, vbox2];
-                }
-            }
-
-        }
-        // determine the cut planes
-        return maxw == rw ? doCut('r') :
-            maxw == gw ? doCut('g') :
-            doCut('b');
-    }
-
-    function quantize(pixels, maxcolors) {
-        // short-circuit
-        if (!pixels.length || maxcolors < 2 || maxcolors > 256) {
-            // console.log('wrong number of maxcolors');
-            return false;
-        }
-
-        // XXX: check color content and convert to grayscale if insufficient
-
-        var histo = getHisto(pixels),
-            histosize = 1 << (3 * sigbits);
-
-        // check that we aren't below maxcolors already
-        var nColors = 0;
-        histo.forEach(function() {
-            nColors++
-        });
-        if (nColors <= maxcolors) {
-            // XXX: generate the new colors from the histo and return
-        }
-
-        // get the beginning vbox from the colors
-        var vbox = vboxFromPixels(pixels, histo),
-            pq = new PQueue(function(a, b) {
-                return pv.naturalOrder(a.count(), b.count())
-            });
-        pq.push(vbox);
-
-        // inner function to do the iteration
-
-        function iter(lh, target) {
-            var ncolors = 1,
-                niters = 0,
-                vbox;
-            while (niters < maxIterations) {
-                vbox = lh.pop();
-                if (!vbox.count()) { /* just put it back */
-                    lh.push(vbox);
-                    niters++;
-                    continue;
-                }
-                // do the cut
-                var vboxes = medianCutApply(histo, vbox),
-                    vbox1 = vboxes[0],
-                    vbox2 = vboxes[1];
-
-                if (!vbox1) {
-                    // console.log("vbox1 not defined; shouldn't happen!");
-                    return;
-                }
-                lh.push(vbox1);
-                if (vbox2) { /* vbox2 can be null */
-                    lh.push(vbox2);
-                    ncolors++;
-                }
-                if (ncolors >= target) return;
-                if (niters++ > maxIterations) {
-                    // console.log("infinite loop; perhaps too few pixels!");
-                    return;
-                }
-            }
-        }
-
-        // first set of colors, sorted by population
-        iter(pq, fractByPopulations * maxcolors);
-        // console.log(pq.size(), pq.debug().length, pq.debug().slice());
-
-        // Re-sort by the product of pixel occupancy times the size in color space.
-        var pq2 = new PQueue(function(a, b) {
-            return pv.naturalOrder(a.count() * a.volume(), b.count() * b.volume())
-        });
-        while (pq.size()) {
-            pq2.push(pq.pop());
-        }
-
-        // next set - generate the median cuts using the (npix * vol) sorting.
-        iter(pq2, maxcolors - pq2.size());
-
-        // calculate the actual colors
-        var cmap = new CMap();
-        while (pq2.size()) {
-            cmap.push(pq2.pop());
-        }
-
-        return cmap;
-    }
-
-    return {
-        quantize: quantize
-    }
-})();
-
-module.exports = MMCQ.quantize
 
 
 /***/ }),
 
-/***/ "./node_modules/through/index.js":
-/*!***************************************!*\
-  !*** ./node_modules/through/index.js ***!
-  \***************************************/
+/***/ "./node_modules/sketch-module-web-view/lib/browser-api.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/browser-api.js ***!
+  \****************************************************************/
 /*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-var Stream = __webpack_require__(/*! stream */ "stream")
-
-// through
-//
-// a stream that does nothing but re-emit the input.
-// useful for aggregating a series of changing but not ending streams into one stream)
-
-exports = module.exports = through
-through.through = through
-
-//create a readable writable stream.
-
-function through (write, end, opts) {
-  write = write || function (data) { this.queue(data) }
-  end = end || function () { this.queue(null) }
-
-  var ended = false, destroyed = false, buffer = [], _ended = false
-  var stream = new Stream()
-  stream.readable = stream.writable = true
-  stream.paused = false
-
-//  stream.autoPause   = !(opts && opts.autoPause   === false)
-  stream.autoDestroy = !(opts && opts.autoDestroy === false)
-
-  stream.write = function (data) {
-    write.call(this, data)
-    return !stream.paused
+function parseHexColor(color) {
+  // Check the string for incorrect formatting.
+  if (!color || color[0] !== '#') {
+    if (
+      color &&
+      typeof color.isKindOfClass === 'function' &&
+      color.isKindOfClass(NSColor)
+    ) {
+      return color
+    }
+    throw new Error(
+      'Incorrect color formating. It should be an hex color: #RRGGBBAA'
+    )
   }
 
-  function drain() {
-    while(buffer.length && !stream.paused) {
-      var data = buffer.shift()
-      if(null === data)
-        return stream.emit('end')
-      else
-        stream.emit('data', data)
+  // append FF if alpha channel is not specified.
+  var source = color.substr(1)
+  if (source.length === 3) {
+    source += 'F'
+  } else if (source.length === 6) {
+    source += 'FF'
+  }
+  // Convert the string from #FFF format to #FFFFFF format.
+  var hex
+  if (source.length === 4) {
+    for (var i = 0; i < 4; i += 1) {
+      hex += source[i]
+      hex += source[i]
+    }
+  } else if (source.length === 8) {
+    hex = source
+  } else {
+    return NSColor.whiteColor()
+  }
+
+  var r = parseInt(hex.slice(0, 2), 16) / 255
+  var g = parseInt(hex.slice(2, 4), 16) / 255
+  var b = parseInt(hex.slice(4, 6), 16) / 255
+  var a = parseInt(hex.slice(6, 8), 16) / 255
+
+  return NSColor.colorWithSRGBRed_green_blue_alpha(r, g, b, a)
+}
+
+module.exports = function (browserWindow, panel, webview) {
+  // keep reference to the subviews
+  browserWindow._panel = panel
+  browserWindow._webview = webview
+  browserWindow._destroyed = false
+
+  browserWindow.destroy = function () {
+    return panel.close()
+  }
+
+  browserWindow.close = function () {
+    if (panel.delegate().utils && panel.delegate().utils.parentWindow) {
+      var shouldClose = true
+      browserWindow.emit('close', {
+        get defaultPrevented() {
+          return !shouldClose
+        },
+        preventDefault: function () {
+          shouldClose = false
+        },
+      })
+      if (shouldClose) {
+        panel.delegate().utils.parentWindow.endSheet(panel)
+      }
+      return
+    }
+
+    if (!browserWindow.isClosable()) {
+      return
+    }
+
+    panel.performClose(null)
+  }
+
+  function focus(focused) {
+    if (!browserWindow.isVisible()) {
+      return
+    }
+    if (focused) {
+      NSApplication.sharedApplication().activateIgnoringOtherApps(true)
+      panel.makeKeyAndOrderFront(null)
+    } else {
+      panel.orderBack(null)
+      NSApp.mainWindow().makeKeyAndOrderFront(null)
     }
   }
 
-  stream.queue = stream.push = function (data) {
-//    console.error(ended)
-    if(_ended) return stream
-    if(data === null) _ended = true
-    buffer.push(data)
-    drain()
-    return stream
+  browserWindow.focus = focus.bind(this, true)
+  browserWindow.blur = focus.bind(this, false)
+
+  browserWindow.isFocused = function () {
+    return panel.isKeyWindow()
   }
 
-  //this will be registered as the first 'end' listener
-  //must call destroy next tick, to make sure we're after any
-  //stream piped from here.
-  //this is only a problem if end is not emitted synchronously.
-  //a nicer way to do this is to make sure this is the last listener for 'end'
+  browserWindow.isDestroyed = function () {
+    return browserWindow._destroyed
+  }
 
-  stream.on('end', function () {
-    stream.readable = false
-    if(!stream.writable && stream.autoDestroy)
-      process.nextTick(function () {
-        stream.destroy()
+  browserWindow.show = function () {
+    // This method is supposed to put focus on window, however if the app does not
+    // have focus then "makeKeyAndOrderFront" will only show the window.
+    NSApp.activateIgnoringOtherApps(true)
+
+    if (panel.delegate().utils && panel.delegate().utils.parentWindow) {
+      return panel.delegate().utils.parentWindow.beginSheet_completionHandler(
+        panel,
+        __mocha__.createBlock_function('v16@?0q8', function () {
+          browserWindow.emit('closed')
+        })
+      )
+    }
+
+    return panel.makeKeyAndOrderFront(null)
+  }
+
+  browserWindow.showInactive = function () {
+    return panel.orderFrontRegardless()
+  }
+
+  browserWindow.hide = function () {
+    return panel.orderOut(null)
+  }
+
+  browserWindow.isVisible = function () {
+    return panel.isVisible()
+  }
+
+  browserWindow.isModal = function () {
+    return false
+  }
+
+  browserWindow.maximize = function () {
+    if (!browserWindow.isMaximized()) {
+      panel.zoom(null)
+    }
+  }
+  browserWindow.unmaximize = function () {
+    if (browserWindow.isMaximized()) {
+      panel.zoom(null)
+    }
+  }
+
+  browserWindow.isMaximized = function () {
+    if ((panel.styleMask() & NSResizableWindowMask) !== 0) {
+      return panel.isZoomed()
+    }
+    var rectScreen = NSScreen.mainScreen().visibleFrame()
+    var rectWindow = panel.frame()
+    return (
+      rectScreen.origin.x == rectWindow.origin.x &&
+      rectScreen.origin.y == rectWindow.origin.y &&
+      rectScreen.size.width == rectWindow.size.width &&
+      rectScreen.size.height == rectWindow.size.height
+    )
+  }
+
+  browserWindow.minimize = function () {
+    return panel.miniaturize(null)
+  }
+
+  browserWindow.restore = function () {
+    return panel.deminiaturize(null)
+  }
+
+  browserWindow.isMinimized = function () {
+    return panel.isMiniaturized()
+  }
+
+  browserWindow.setFullScreen = function (fullscreen) {
+    if (fullscreen !== browserWindow.isFullscreen()) {
+      panel.toggleFullScreen(null)
+    }
+  }
+
+  browserWindow.isFullscreen = function () {
+    return panel.styleMask() & NSFullScreenWindowMask
+  }
+
+  browserWindow.setAspectRatio = function (aspectRatio /* , extraSize */) {
+    // Reset the behaviour to default if aspect_ratio is set to 0 or less.
+    if (aspectRatio > 0.0) {
+      panel.setAspectRatio(NSMakeSize(aspectRatio, 1.0))
+    } else {
+      panel.setResizeIncrements(NSMakeSize(1.0, 1.0))
+    }
+  }
+
+  browserWindow.setBounds = function (bounds, animate) {
+    if (!bounds) {
+      return
+    }
+
+    // Do nothing if in fullscreen mode.
+    if (browserWindow.isFullscreen()) {
+      return
+    }
+
+    const newBounds = Object.assign(browserWindow.getBounds(), bounds)
+
+    // TODO: Check size constraints since setFrame does not check it.
+    // var size = bounds.size
+    // size.SetToMax(GetMinimumSize());
+    // gfx::Size max_size = GetMaximumSize();
+    // if (!max_size.IsEmpty())
+    //   size.SetToMin(max_size);
+
+    var cocoaBounds = NSMakeRect(
+      newBounds.x,
+      0,
+      newBounds.width,
+      newBounds.height
+    )
+    // Flip Y coordinates based on the primary screen
+    var screen = NSScreen.screens().firstObject()
+    cocoaBounds.origin.y = NSHeight(screen.frame()) - newBounds.y
+
+    panel.setFrame_display_animate(cocoaBounds, true, animate)
+  }
+
+  browserWindow.getBounds = function () {
+    const cocoaBounds = panel.frame()
+    var mainScreenRect = NSScreen.screens().firstObject().frame()
+    return {
+      x: cocoaBounds.origin.x,
+      y: Math.round(NSHeight(mainScreenRect) - cocoaBounds.origin.y),
+      width: cocoaBounds.size.width,
+      height: cocoaBounds.size.height,
+    }
+  }
+
+  browserWindow.setContentBounds = function (bounds, animate) {
+    // TODO:
+    browserWindow.setBounds(bounds, animate)
+  }
+
+  browserWindow.getContentBounds = function () {
+    // TODO:
+    return browserWindow.getBounds()
+  }
+
+  browserWindow.setSize = function (width, height, animate) {
+    // TODO: handle resizing around center
+    return browserWindow.setBounds({ width: width, height: height }, animate)
+  }
+
+  browserWindow.getSize = function () {
+    var bounds = browserWindow.getBounds()
+    return [bounds.width, bounds.height]
+  }
+
+  browserWindow.setContentSize = function (width, height, animate) {
+    // TODO: handle resizing around center
+    return browserWindow.setContentBounds(
+      { width: width, height: height },
+      animate
+    )
+  }
+
+  browserWindow.getContentSize = function () {
+    var bounds = browserWindow.getContentBounds()
+    return [bounds.width, bounds.height]
+  }
+
+  browserWindow.setMinimumSize = function (width, height) {
+    const minSize = CGSizeMake(width, height)
+    panel.setContentMinSize(minSize)
+  }
+
+  browserWindow.getMinimumSize = function () {
+    const size = panel.contentMinSize()
+    return [size.width, size.height]
+  }
+
+  browserWindow.setMaximumSize = function (width, height) {
+    const maxSize = CGSizeMake(width, height)
+    panel.setContentMaxSize(maxSize)
+  }
+
+  browserWindow.getMaximumSize = function () {
+    const size = panel.contentMaxSize()
+    return [size.width, size.height]
+  }
+
+  browserWindow.setResizable = function (resizable) {
+    return browserWindow._setStyleMask(resizable, NSResizableWindowMask)
+  }
+
+  browserWindow.isResizable = function () {
+    return panel.styleMask() & NSResizableWindowMask
+  }
+
+  browserWindow.setMovable = function (movable) {
+    return panel.setMovable(movable)
+  }
+  browserWindow.isMovable = function () {
+    return panel.isMovable()
+  }
+
+  browserWindow.setMinimizable = function (minimizable) {
+    return browserWindow._setStyleMask(minimizable, NSMiniaturizableWindowMask)
+  }
+
+  browserWindow.isMinimizable = function () {
+    return panel.styleMask() & NSMiniaturizableWindowMask
+  }
+
+  browserWindow.setMaximizable = function (maximizable) {
+    if (panel.standardWindowButton(NSWindowZoomButton)) {
+      panel.standardWindowButton(NSWindowZoomButton).setEnabled(maximizable)
+    }
+  }
+
+  browserWindow.isMaximizable = function () {
+    return (
+      panel.standardWindowButton(NSWindowZoomButton) &&
+      panel.standardWindowButton(NSWindowZoomButton).isEnabled()
+    )
+  }
+
+  browserWindow.setFullScreenable = function (fullscreenable) {
+    browserWindow._setCollectionBehavior(
+      fullscreenable,
+      NSWindowCollectionBehaviorFullScreenPrimary
+    )
+    // On EL Capitan this flag is required to hide fullscreen button.
+    browserWindow._setCollectionBehavior(
+      !fullscreenable,
+      NSWindowCollectionBehaviorFullScreenAuxiliary
+    )
+  }
+
+  browserWindow.isFullScreenable = function () {
+    var collectionBehavior = panel.collectionBehavior()
+    return collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary
+  }
+
+  browserWindow.setClosable = function (closable) {
+    browserWindow._setStyleMask(closable, NSClosableWindowMask)
+  }
+
+  browserWindow.isClosable = function () {
+    return panel.styleMask() & NSClosableWindowMask
+  }
+
+  browserWindow.setAlwaysOnTop = function (top, level, relativeLevel) {
+    var windowLevel = NSNormalWindowLevel
+    var maxWindowLevel = CGWindowLevelForKey(kCGMaximumWindowLevelKey)
+    var minWindowLevel = CGWindowLevelForKey(kCGMinimumWindowLevelKey)
+
+    if (top) {
+      if (level === 'normal') {
+        windowLevel = NSNormalWindowLevel
+      } else if (level === 'torn-off-menu') {
+        windowLevel = NSTornOffMenuWindowLevel
+      } else if (level === 'modal-panel') {
+        windowLevel = NSModalPanelWindowLevel
+      } else if (level === 'main-menu') {
+        windowLevel = NSMainMenuWindowLevel
+      } else if (level === 'status') {
+        windowLevel = NSStatusWindowLevel
+      } else if (level === 'pop-up-menu') {
+        windowLevel = NSPopUpMenuWindowLevel
+      } else if (level === 'screen-saver') {
+        windowLevel = NSScreenSaverWindowLevel
+      } else if (level === 'dock') {
+        // Deprecated by macOS, but kept for backwards compatibility
+        windowLevel = NSDockWindowLevel
+      } else {
+        windowLevel = NSFloatingWindowLevel
+      }
+    }
+
+    var newLevel = windowLevel + (relativeLevel || 0)
+    if (newLevel >= minWindowLevel && newLevel <= maxWindowLevel) {
+      panel.setLevel(newLevel)
+    } else {
+      throw new Error(
+        'relativeLevel must be between ' +
+          minWindowLevel +
+          ' and ' +
+          maxWindowLevel
+      )
+    }
+  }
+
+  browserWindow.isAlwaysOnTop = function () {
+    return panel.level() !== NSNormalWindowLevel
+  }
+
+  browserWindow.moveTop = function () {
+    return panel.orderFrontRegardless()
+  }
+
+  browserWindow.center = function () {
+    panel.center()
+  }
+
+  browserWindow.setPosition = function (x, y, animate) {
+    return browserWindow.setBounds({ x: x, y: y }, animate)
+  }
+
+  browserWindow.getPosition = function () {
+    var bounds = browserWindow.getBounds()
+    return [bounds.x, bounds.y]
+  }
+
+  browserWindow.setTitle = function (title) {
+    panel.setTitle(title)
+  }
+
+  browserWindow.getTitle = function () {
+    return String(panel.title())
+  }
+
+  var attentionRequestId = 0
+  browserWindow.flashFrame = function (flash) {
+    if (flash) {
+      attentionRequestId = NSApp.requestUserAttention(NSInformationalRequest)
+    } else {
+      NSApp.cancelUserAttentionRequest(attentionRequestId)
+      attentionRequestId = 0
+    }
+  }
+
+  browserWindow.getNativeWindowHandle = function () {
+    return panel
+  }
+
+  browserWindow.getNativeWebViewHandle = function () {
+    return webview
+  }
+
+  browserWindow.loadURL = function (url) {
+    // When frameLocation is a file, prefix it with the Sketch Resources path
+    if (/^(?!https?|file).*\.html?$/.test(url)) {
+      if (typeof __command !== 'undefined' && __command.pluginBundle()) {
+        url =
+          'file://' + __command.pluginBundle().urlForResourceNamed(url).path()
+      }
+    }
+
+    if (/^file:\/\/.*\.html?$/.test(url)) {
+      // ensure URLs containing spaces are properly handled
+      url = NSString.alloc().initWithString(url)
+      url = url.stringByAddingPercentEncodingWithAllowedCharacters(
+        NSCharacterSet.URLQueryAllowedCharacterSet()
+      )
+      webview.loadFileURL_allowingReadAccessToURL(
+        NSURL.URLWithString(url),
+        NSURL.URLWithString('file:///')
+      )
+      return
+    }
+
+    const properURL = NSURL.URLWithString(url)
+    const urlRequest = NSURLRequest.requestWithURL(properURL)
+
+    webview.loadRequest(urlRequest)
+  }
+
+  browserWindow.reload = function () {
+    webview.reload()
+  }
+
+  browserWindow.setHasShadow = function (hasShadow) {
+    return panel.setHasShadow(hasShadow)
+  }
+
+  browserWindow.hasShadow = function () {
+    return panel.hasShadow()
+  }
+
+  browserWindow.setOpacity = function (opacity) {
+    return panel.setAlphaValue(opacity)
+  }
+
+  browserWindow.getOpacity = function () {
+    return panel.alphaValue()
+  }
+
+  browserWindow.setVisibleOnAllWorkspaces = function (visible) {
+    return browserWindow._setCollectionBehavior(
+      visible,
+      NSWindowCollectionBehaviorCanJoinAllSpaces
+    )
+  }
+
+  browserWindow.isVisibleOnAllWorkspaces = function () {
+    var collectionBehavior = panel.collectionBehavior()
+    return collectionBehavior & NSWindowCollectionBehaviorCanJoinAllSpaces
+  }
+
+  browserWindow.setIgnoreMouseEvents = function (ignore) {
+    return panel.setIgnoresMouseEvents(ignore)
+  }
+
+  browserWindow.setContentProtection = function (enable) {
+    panel.setSharingType(enable ? NSWindowSharingNone : NSWindowSharingReadOnly)
+  }
+
+  browserWindow.setAutoHideCursor = function (autoHide) {
+    panel.setDisableAutoHideCursor(autoHide)
+  }
+
+  browserWindow.setVibrancy = function (type) {
+    var effectView = browserWindow._vibrantView
+
+    if (!type) {
+      if (effectView == null) {
+        return
+      }
+
+      effectView.removeFromSuperview()
+      panel.setVibrantView(null)
+      return
+    }
+
+    if (effectView == null) {
+      var contentView = panel.contentView()
+      effectView = NSVisualEffectView.alloc().initWithFrame(
+        contentView.bounds()
+      )
+      browserWindow._vibrantView = effectView
+
+      effectView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable)
+      effectView.setBlendingMode(NSVisualEffectBlendingModeBehindWindow)
+      effectView.setState(NSVisualEffectStateActive)
+      effectView.setFrame(contentView.bounds())
+      contentView.addSubview_positioned_relativeTo(
+        effectView,
+        NSWindowBelow,
+        null
+      )
+    }
+
+    var vibrancyType = NSVisualEffectMaterialLight
+
+    if (type === 'appearance-based') {
+      vibrancyType = NSVisualEffectMaterialAppearanceBased
+    } else if (type === 'light') {
+      vibrancyType = NSVisualEffectMaterialLight
+    } else if (type === 'dark') {
+      vibrancyType = NSVisualEffectMaterialDark
+    } else if (type === 'titlebar') {
+      vibrancyType = NSVisualEffectMaterialTitlebar
+    } else if (type === 'selection') {
+      vibrancyType = NSVisualEffectMaterialSelection
+    } else if (type === 'menu') {
+      vibrancyType = NSVisualEffectMaterialMenu
+    } else if (type === 'popover') {
+      vibrancyType = NSVisualEffectMaterialPopover
+    } else if (type === 'sidebar') {
+      vibrancyType = NSVisualEffectMaterialSidebar
+    } else if (type === 'medium-light') {
+      vibrancyType = NSVisualEffectMaterialMediumLight
+    } else if (type === 'ultra-dark') {
+      vibrancyType = NSVisualEffectMaterialUltraDark
+    }
+
+    effectView.setMaterial(vibrancyType)
+  }
+
+  browserWindow._setBackgroundColor = function (colorName) {
+    var color = parseHexColor(colorName)
+    webview.setValue_forKey(false, 'drawsBackground')
+    panel.backgroundColor = color
+  }
+
+  browserWindow._invalidate = function () {
+    panel.flushWindow()
+    panel.contentView().setNeedsDisplay(true)
+  }
+
+  browserWindow._setStyleMask = function (on, flag) {
+    var wasMaximizable = browserWindow.isMaximizable()
+    if (on) {
+      panel.setStyleMask(panel.styleMask() | flag)
+    } else {
+      panel.setStyleMask(panel.styleMask() & ~flag)
+    }
+    // Change style mask will make the zoom button revert to default, probably
+    // a bug of Cocoa or macOS.
+    browserWindow.setMaximizable(wasMaximizable)
+  }
+
+  browserWindow._setCollectionBehavior = function (on, flag) {
+    var wasMaximizable = browserWindow.isMaximizable()
+    if (on) {
+      panel.setCollectionBehavior(panel.collectionBehavior() | flag)
+    } else {
+      panel.setCollectionBehavior(panel.collectionBehavior() & ~flag)
+    }
+    // Change collectionBehavior will make the zoom button revert to default,
+    // probably a bug of Cocoa or macOS.
+    browserWindow.setMaximizable(wasMaximizable)
+  }
+
+  browserWindow._showWindowButton = function (button) {
+    var view = panel.standardWindowButton(button)
+    view.superview().addSubview_positioned_relative(view, NSWindowAbove, null)
+  }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/constants.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/constants.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = {
+  JS_BRIDGE: '__skpm_sketchBridge',
+  JS_BRIDGE_RESULT_SUCCESS: '__skpm_sketchBridge_success',
+  JS_BRIDGE_RESULT_ERROR: '__skpm_sketchBridge_error',
+  START_MOVING_WINDOW: '__skpm_startMovingWindow',
+  EXECUTE_JAVASCRIPT: '__skpm_executeJS',
+  EXECUTE_JAVASCRIPT_SUCCESS: '__skpm_executeJS_success_',
+  EXECUTE_JAVASCRIPT_ERROR: '__skpm_executeJS_error_',
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/dispatch-first-click.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/dispatch-first-click.js ***!
+  \*************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var tagsToFocus =
+  '["text", "textarea", "date", "datetime-local", "email", "number", "month", "password", "search", "tel", "time", "url", "week" ]'
+
+module.exports = function (webView, event) {
+  var point = webView.convertPoint_fromView(event.locationInWindow(), null)
+  return (
+    'var el = document.elementFromPoint(' + // get the DOM element that match the event
+    point.x +
+    ', ' +
+    point.y +
+    '); ' +
+    'if (el && el.tagName === "SELECT") {' + // select needs special handling
+    '  var event = document.createEvent("MouseEvents");' +
+    '  event.initMouseEvent("mousedown", true, true, window);' +
+    '  el.dispatchEvent(event);' +
+    '} else if (el && ' + // some tags need to be focused instead of clicked
+    tagsToFocus +
+    '.indexOf(el.type) >= 0 && ' +
+    'el.focus' +
+    ') {' +
+    'el.focus();' + // so focus them
+    '} else if (el) {' +
+    'el.dispatchEvent(new Event("click", {bubbles: true}))' + // click the others
+    '}'
+  )
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/execute-javascript.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/execute-javascript.js ***!
+  \***********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(Promise) {var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+module.exports = function (webview, browserWindow) {
+  function executeJavaScript(script, userGesture, callback) {
+    if (typeof userGesture === 'function') {
+      callback = userGesture
+      userGesture = false
+    }
+    var fiber = coscript.createFiber()
+
+    // if the webview is not ready yet, defer the execution until it is
+    if (
+      webview.navigationDelegate().state &&
+      webview.navigationDelegate().state.wasReady == 0
+    ) {
+      return new Promise(function (resolve, reject) {
+        browserWindow.once('ready-to-show', function () {
+          executeJavaScript(script, userGesture, callback)
+            .then(resolve)
+            .catch(reject)
+          fiber.cleanup()
+        })
       })
+    }
+
+    return new Promise(function (resolve, reject) {
+      var requestId = Math.random()
+
+      browserWindow.webContents.on(
+        CONSTANTS.EXECUTE_JAVASCRIPT_SUCCESS + requestId,
+        function (res) {
+          try {
+            if (callback) {
+              callback(null, res)
+            }
+            resolve(res)
+          } catch (err) {
+            reject(err)
+          }
+          fiber.cleanup()
+        }
+      )
+      browserWindow.webContents.on(
+        CONSTANTS.EXECUTE_JAVASCRIPT_ERROR + requestId,
+        function (err) {
+          try {
+            if (callback) {
+              callback(err)
+              resolve()
+            } else {
+              reject(err)
+            }
+          } catch (err2) {
+            reject(err2)
+          }
+          fiber.cleanup()
+        }
+      )
+
+      webview.evaluateJavaScript_completionHandler(
+        module.exports.wrapScript(script, requestId),
+        null
+      )
+    })
+  }
+
+  return executeJavaScript
+}
+
+module.exports.wrapScript = function (script, requestId) {
+  return (
+    'window.' +
+    CONSTANTS.EXECUTE_JAVASCRIPT +
+    '(' +
+    requestId +
+    ', ' +
+    JSON.stringify(script) +
+    ')'
+  )
+}
+
+module.exports.injectScript = function (webView) {
+  var source =
+    'window.' +
+    CONSTANTS.EXECUTE_JAVASCRIPT +
+    ' = function(id, script) {' +
+    '  try {' +
+    '    var res = eval(script);' +
+    '    if (res && typeof res.then === "function" && typeof res.catch === "function") {' +
+    '      res.then(function (res2) {' +
+    '        window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_SUCCESS +
+    '" + id, res2);' +
+    '      })' +
+    '      .catch(function (err) {' +
+    '        window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_ERROR +
+    '" + id, err);' +
+    '      })' +
+    '    } else {' +
+    '      window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_SUCCESS +
+    '" + id, res);' +
+    '    }' +
+    '  } catch (err) {' +
+    '    window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_ERROR +
+    '" + id, err);' +
+    '  }' +
+    '}'
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    source,
+    0,
+    true
+  )
+  webView.configuration().userContentController().addUserScript(script)
+}
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@skpm/promise/index.js */ "./node_modules/@skpm/promise/index.js")))
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/fitSubview.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/fitSubview.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function addEdgeConstraint(edge, subview, view, constant) {
+  view.addConstraint(
+    NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant(
+      subview,
+      edge,
+      NSLayoutRelationEqual,
+      view,
+      edge,
+      1,
+      constant
+    )
+  )
+}
+module.exports = function fitSubviewToView(subview, view, constants) {
+  constants = constants || []
+  subview.setTranslatesAutoresizingMaskIntoConstraints(false)
+
+  addEdgeConstraint(NSLayoutAttributeLeft, subview, view, constants[0] || 0)
+  addEdgeConstraint(NSLayoutAttributeTop, subview, view, constants[1] || 0)
+  addEdgeConstraint(NSLayoutAttributeRight, subview, view, constants[2] || 0)
+  addEdgeConstraint(NSLayoutAttributeBottom, subview, view, constants[3] || 0)
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/index.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/index.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* let's try to match the API from Electron's Browser window
+(https://github.com/electron/electron/blob/master/docs/api/browser-window.md) */
+var EventEmitter = __webpack_require__(/*! events */ "events")
+var buildBrowserAPI = __webpack_require__(/*! ./browser-api */ "./node_modules/sketch-module-web-view/lib/browser-api.js")
+var buildWebAPI = __webpack_require__(/*! ./webview-api */ "./node_modules/sketch-module-web-view/lib/webview-api.js")
+var fitSubviewToView = __webpack_require__(/*! ./fitSubview */ "./node_modules/sketch-module-web-view/lib/fitSubview.js")
+var dispatchFirstClick = __webpack_require__(/*! ./dispatch-first-click */ "./node_modules/sketch-module-web-view/lib/dispatch-first-click.js")
+var injectClientMessaging = __webpack_require__(/*! ./inject-client-messaging */ "./node_modules/sketch-module-web-view/lib/inject-client-messaging.js")
+var movableArea = __webpack_require__(/*! ./movable-area */ "./node_modules/sketch-module-web-view/lib/movable-area.js")
+var executeJavaScript = __webpack_require__(/*! ./execute-javascript */ "./node_modules/sketch-module-web-view/lib/execute-javascript.js")
+var setDelegates = __webpack_require__(/*! ./set-delegates */ "./node_modules/sketch-module-web-view/lib/set-delegates.js")
+
+function BrowserWindow(options) {
+  options = options || {}
+
+  var identifier = options.identifier || String(NSUUID.UUID().UUIDString())
+  var threadDictionary = NSThread.mainThread().threadDictionary()
+
+  var existingBrowserWindow = BrowserWindow.fromId(identifier)
+
+  // if we already have a window opened, reuse it
+  if (existingBrowserWindow) {
+    return existingBrowserWindow
+  }
+
+  var browserWindow = new EventEmitter()
+  browserWindow.id = identifier
+
+  if (options.modal && !options.parent) {
+    throw new Error('A modal needs to have a parent.')
+  }
+
+  // Long-running script
+  var fiber = coscript.createFiber()
+
+  // Window size
+  var width = options.width || 800
+  var height = options.height || 600
+  var mainScreenRect = NSScreen.screens().firstObject().frame()
+  var cocoaBounds = NSMakeRect(
+    typeof options.x !== 'undefined'
+      ? options.x
+      : Math.round((NSWidth(mainScreenRect) - width) / 2),
+    typeof options.y !== 'undefined'
+      ? NSHeight(mainScreenRect) - options.y
+      : Math.round((NSHeight(mainScreenRect) - height) / 2),
+    width,
+    height
+  )
+
+  if (options.titleBarStyle && options.titleBarStyle !== 'default') {
+    options.frame = false
+  }
+
+  var useStandardWindow = options.windowType !== 'textured'
+  var styleMask = NSTitledWindowMask
+
+  // this is commented out because the toolbar doesn't appear otherwise :thinking-face:
+  // if (!useStandardWindow || options.frame === false) {
+  //   styleMask = NSFullSizeContentViewWindowMask
+  // }
+  if (options.minimizable !== false) {
+    styleMask |= NSMiniaturizableWindowMask
+  }
+  if (options.closable !== false) {
+    styleMask |= NSClosableWindowMask
+  }
+  if (options.resizable !== false) {
+    styleMask |= NSResizableWindowMask
+  }
+  if (!useStandardWindow || options.transparent || options.frame === false) {
+    styleMask |= NSTexturedBackgroundWindowMask
+  }
+
+  var panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer(
+    cocoaBounds,
+    styleMask,
+    NSBackingStoreBuffered,
+    true
+  )
+
+  // this would be nice but it's crashing on macOS 11.0
+  // panel.releasedWhenClosed = true
+
+  var wkwebviewConfig = WKWebViewConfiguration.alloc().init()
+  var webView = WKWebView.alloc().initWithFrame_configuration(
+    CGRectMake(0, 0, options.width || 800, options.height || 600),
+    wkwebviewConfig
+  )
+  injectClientMessaging(webView)
+  webView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable)
+
+  buildBrowserAPI(browserWindow, panel, webView)
+  buildWebAPI(browserWindow, panel, webView)
+  setDelegates(browserWindow, panel, webView, options)
+
+  if (options.windowType === 'desktop') {
+    panel.setLevel(kCGDesktopWindowLevel - 1)
+    // panel.setCanBecomeKeyWindow(false)
+    panel.setCollectionBehavior(
+      NSWindowCollectionBehaviorCanJoinAllSpaces |
+        NSWindowCollectionBehaviorStationary |
+        NSWindowCollectionBehaviorIgnoresCycle
+    )
+  }
+
+  if (
+    typeof options.minWidth !== 'undefined' ||
+    typeof options.minHeight !== 'undefined'
+  ) {
+    browserWindow.setMinimumSize(options.minWidth || 0, options.minHeight || 0)
+  }
+
+  if (
+    typeof options.maxWidth !== 'undefined' ||
+    typeof options.maxHeight !== 'undefined'
+  ) {
+    browserWindow.setMaximumSize(
+      options.maxWidth || 10000,
+      options.maxHeight || 10000
+    )
+  }
+
+  // if (options.focusable === false) {
+  //   panel.setCanBecomeKeyWindow(false)
+  // }
+
+  if (options.transparent || options.frame === false) {
+    panel.titlebarAppearsTransparent = true
+    panel.titleVisibility = NSWindowTitleHidden
+    panel.setOpaque(0)
+    panel.isMovableByWindowBackground = true
+    var toolbar2 = NSToolbar.alloc().initWithIdentifier(
+      'titlebarStylingToolbar'
+    )
+    toolbar2.setShowsBaselineSeparator(false)
+    panel.setToolbar(toolbar2)
+  }
+
+  if (options.titleBarStyle === 'hiddenInset') {
+    var toolbar = NSToolbar.alloc().initWithIdentifier('titlebarStylingToolbar')
+    toolbar.setShowsBaselineSeparator(false)
+    panel.setToolbar(toolbar)
+  }
+
+  if (options.frame === false || !options.useContentSize) {
+    browserWindow.setSize(width, height)
+  }
+
+  if (options.center) {
+    browserWindow.center()
+  }
+
+  if (options.alwaysOnTop) {
+    browserWindow.setAlwaysOnTop(true)
+  }
+
+  if (options.fullscreen) {
+    browserWindow.setFullScreen(true)
+  }
+  browserWindow.setFullScreenable(!!options.fullscreenable)
+
+  let title = options.title
+  if (options.frame === false) {
+    title = undefined
+  } else if (
+    typeof title === 'undefined' &&
+    typeof __command !== 'undefined' &&
+    __command.pluginBundle()
+  ) {
+    title = __command.pluginBundle().name()
+  }
+
+  if (title) {
+    browserWindow.setTitle(title)
+  }
+
+  var backgroundColor = options.backgroundColor
+  if (options.transparent) {
+    backgroundColor = NSColor.clearColor()
+  }
+  if (!backgroundColor && options.frame === false && options.vibrancy) {
+    backgroundColor = NSColor.clearColor()
+  }
+
+  browserWindow._setBackgroundColor(
+    backgroundColor || NSColor.windowBackgroundColor()
+  )
+
+  if (options.hasShadow === false) {
+    browserWindow.setHasShadow(false)
+  }
+
+  if (typeof options.opacity !== 'undefined') {
+    browserWindow.setOpacity(options.opacity)
+  }
+
+  options.webPreferences = options.webPreferences || {}
+
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(
+      options.webPreferences.devTools !== false,
+      'developerExtrasEnabled'
+    )
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(
+      options.webPreferences.javascript !== false,
+      'javaScriptEnabled'
+    )
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(!!options.webPreferences.plugins, 'plugInsEnabled')
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(
+      options.webPreferences.minimumFontSize || 0,
+      'minimumFontSize'
+    )
+
+  if (options.webPreferences.zoomFactor) {
+    webView.setMagnification(options.webPreferences.zoomFactor)
+  }
+
+  var contentView = panel.contentView()
+
+  if (options.frame !== false) {
+    webView.setFrame(contentView.bounds())
+    contentView.addSubview(webView)
+  } else {
+    // In OSX 10.10, adding subviews to the root view for the NSView hierarchy
+    // produces warnings. To eliminate the warnings, we resize the contentView
+    // to fill the window, and add subviews to that.
+    // http://crbug.com/380412
+    contentView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable)
+    fitSubviewToView(contentView, contentView.superview())
+
+    webView.setFrame(contentView.bounds())
+    contentView.addSubview(webView)
+
+    // The fullscreen button should always be hidden for frameless window.
+    if (panel.standardWindowButton(NSWindowFullScreenButton)) {
+      panel.standardWindowButton(NSWindowFullScreenButton).setHidden(true)
+    }
+
+    if (!options.titleBarStyle || options.titleBarStyle === 'default') {
+      // Hide the window buttons.
+      panel.standardWindowButton(NSWindowZoomButton).setHidden(true)
+      panel.standardWindowButton(NSWindowMiniaturizeButton).setHidden(true)
+      panel.standardWindowButton(NSWindowCloseButton).setHidden(true)
+
+      // Some third-party macOS utilities check the zoom button's enabled state to
+      // determine whether to show custom UI on hover, so we disable it here to
+      // prevent them from doing so in a frameless app window.
+      panel.standardWindowButton(NSWindowZoomButton).setEnabled(false)
+    }
+  }
+
+  if (options.vibrancy) {
+    browserWindow.setVibrancy(options.vibrancy)
+  }
+
+  // Set maximizable state last to ensure zoom button does not get reset
+  // by calls to other APIs.
+  browserWindow.setMaximizable(options.maximizable !== false)
+
+  panel.setHidesOnDeactivate(options.hidesOnDeactivate !== false)
+
+  if (options.remembersWindowFrame) {
+    panel.setFrameAutosaveName(identifier)
+    panel.setFrameUsingName_force(panel.frameAutosaveName(), false)
+  }
+
+  if (options.acceptsFirstMouse) {
+    browserWindow.on('focus', function (event) {
+      if (event.type() === NSEventTypeLeftMouseDown) {
+        browserWindow.webContents
+          .executeJavaScript(dispatchFirstClick(webView, event))
+          .catch(() => {})
+      }
+    })
+  }
+
+  executeJavaScript.injectScript(webView)
+  movableArea.injectScript(webView)
+  movableArea.setupHandler(browserWindow)
+
+  if (options.show !== false) {
+    browserWindow.show()
+  }
+
+  browserWindow.on('closed', function () {
+    browserWindow._destroyed = true
+    threadDictionary.removeObjectForKey(identifier)
+    var observer = threadDictionary[identifier + '.themeObserver']
+    if (observer) {
+      NSApplication.sharedApplication().removeObserver_forKeyPath(
+        observer,
+        'effectiveAppearance'
+      )
+      threadDictionary.removeObjectForKey(identifier + '.themeObserver')
+    }
+    fiber.cleanup()
   })
 
-  function _end () {
-    stream.writable = false
-    end.call(stream)
-    if(!stream.readable && stream.autoDestroy)
-      stream.destroy()
-  }
+  threadDictionary[identifier] = panel
 
-  stream.end = function (data) {
-    if(ended) return
-    ended = true
-    if(arguments.length) stream.write(data)
-    _end() // will emit or queue
-    return stream
-  }
-
-  stream.destroy = function () {
-    if(destroyed) return
-    destroyed = true
-    ended = true
-    buffer.length = 0
-    stream.writable = stream.readable = false
-    stream.emit('close')
-    return stream
-  }
-
-  stream.pause = function () {
-    if(stream.paused) return
-    stream.paused = true
-    return stream
-  }
-
-  stream.resume = function () {
-    if(stream.paused) {
-      stream.paused = false
-      stream.emit('resume')
+  fiber.onCleanup(function () {
+    if (!browserWindow._destroyed) {
+      browserWindow.destroy()
     }
-    drain()
-    //may have become paused again,
-    //as drain emits 'data'.
-    if(!stream.paused)
-      stream.emit('drain')
-    return stream
-  }
-  return stream
+  })
+
+  return browserWindow
 }
 
+BrowserWindow.fromId = function (identifier) {
+  var threadDictionary = NSThread.mainThread().threadDictionary()
+
+  if (threadDictionary[identifier]) {
+    return BrowserWindow.fromPanel(threadDictionary[identifier], identifier)
+  }
+
+  return undefined
+}
+
+BrowserWindow.fromPanel = function (panel, identifier) {
+  var browserWindow = new EventEmitter()
+  browserWindow.id = identifier
+
+  if (!panel || !panel.contentView) {
+    throw new Error('needs to pass an NSPanel')
+  }
+
+  var webView = null
+  var subviews = panel.contentView().subviews()
+  for (var i = 0; i < subviews.length; i += 1) {
+    if (
+      !webView &&
+      !subviews[i].isKindOfClass(WKInspectorWKWebView) &&
+      subviews[i].isKindOfClass(WKWebView)
+    ) {
+      webView = subviews[i]
+    }
+  }
+
+  if (!webView) {
+    throw new Error('The panel needs to have a webview')
+  }
+
+  buildBrowserAPI(browserWindow, panel, webView)
+  buildWebAPI(browserWindow, panel, webView)
+
+  return browserWindow
+}
+
+module.exports = BrowserWindow
 
 
 /***/ }),
 
-/***/ "./node_modules/uniq/uniq.js":
-/*!***********************************!*\
-  !*** ./node_modules/uniq/uniq.js ***!
-  \***********************************/
+/***/ "./node_modules/sketch-module-web-view/lib/inject-client-messaging.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/inject-client-messaging.js ***!
+  \****************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
+var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
 
-
-function unique_pred(list, compare) {
-  var ptr = 1
-    , len = list.length
-    , a=list[0], b=list[0]
-  for(var i=1; i<len; ++i) {
-    b = a
-    a = list[i]
-    if(compare(a, b)) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      list[ptr++] = a
-    }
-  }
-  list.length = ptr
-  return list
+module.exports = function (webView) {
+  var source =
+    'window.originalPostMessage = window.postMessage;' +
+    'window.postMessage = function(actionName) {' +
+    '  if (!actionName) {' +
+    "    throw new Error('missing action name')" +
+    '  }' +
+    '  var id = String(Math.random()).replace(".", "");' +
+    '    var args = [].slice.call(arguments);' +
+    '    args.unshift(id);' +
+    '  return new Promise(function (resolve, reject) {' +
+    '    window["' +
+    CONSTANTS.JS_BRIDGE_RESULT_SUCCESS +
+    '" + id] = resolve;' +
+    '    window["' +
+    CONSTANTS.JS_BRIDGE_RESULT_ERROR +
+    '" + id] = reject;' +
+    '    window.webkit.messageHandlers.' +
+    CONSTANTS.JS_BRIDGE +
+    '.postMessage(JSON.stringify(args));' +
+    '  });' +
+    '}'
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    source,
+    0,
+    true
+  )
+  webView.configuration().userContentController().addUserScript(script)
 }
-
-function unique_eq(list) {
-  var ptr = 1
-    , len = list.length
-    , a=list[0], b = list[0]
-  for(var i=1; i<len; ++i, b=a) {
-    b = a
-    a = list[i]
-    if(a !== b) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      list[ptr++] = a
-    }
-  }
-  list.length = ptr
-  return list
-}
-
-function unique(list, compare, sorted) {
-  if(list.length === 0) {
-    return list
-  }
-  if(compare) {
-    if(!sorted) {
-      list.sort(compare)
-    }
-    return unique_pred(list, compare)
-  }
-  if(!sorted) {
-    list.sort()
-  }
-  return unique_eq(list)
-}
-
-module.exports = unique
 
 
 /***/ }),
 
-/***/ "./src/script.js":
-/*!***********************!*\
-  !*** ./src/script.js ***!
-  \***********************/
-/*! exports provided: default */
+/***/ "./node_modules/sketch-module-web-view/lib/movable-area.js":
+/*!*****************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/movable-area.js ***!
+  \*****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+module.exports.injectScript = function (webView) {
+  var source =
+    '(function () {' +
+    "document.addEventListener('mousedown', onMouseDown);" +
+    '' +
+    'function shouldDrag(target) {' +
+    '  if (!target || (target.dataset || {}).appRegion === "no-drag") { return false }' +
+    '  if ((target.dataset || {}).appRegion === "drag") { return true }' +
+    '  return shouldDrag(target.parentElement)' +
+    '};' +
+    '' +
+    'function onMouseDown(e) {' +
+    '  if (e.button !== 0 || !shouldDrag(e.target)) { return }' +
+    '  window.postMessage("' +
+    CONSTANTS.START_MOVING_WINDOW +
+    '");' +
+    '};' +
+    '})()'
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    source,
+    0,
+    true
+  )
+  webView.configuration().userContentController().addUserScript(script)
+}
+
+module.exports.setupHandler = function (browserWindow) {
+  var initialMouseLocation = null
+  var initialWindowPosition = null
+  var interval = null
+
+  function moveWindow() {
+    // if the user released the button, stop moving the window
+    if (!initialWindowPosition || NSEvent.pressedMouseButtons() !== 1) {
+      clearInterval(interval)
+      initialMouseLocation = null
+      initialWindowPosition = null
+      return
+    }
+
+    var mouse = NSEvent.mouseLocation()
+    browserWindow.setPosition(
+      initialWindowPosition.x + (mouse.x - initialMouseLocation.x),
+      initialWindowPosition.y + (initialMouseLocation.y - mouse.y), // y is inverted
+      false
+    )
+  }
+
+  browserWindow.webContents.on(CONSTANTS.START_MOVING_WINDOW, function () {
+    initialMouseLocation = NSEvent.mouseLocation()
+    var position = browserWindow.getPosition()
+    initialWindowPosition = {
+      x: position[0],
+      y: position[1],
+    }
+
+    interval = setInterval(moveWindow, 1000 / 60) // 60 fps
+  })
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/parseWebArguments.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/parseWebArguments.js ***!
+  \**********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (webArguments) {
+  var args = null
+  try {
+    args = JSON.parse(webArguments)
+  } catch (e) {
+    // malformed arguments
+  }
+
+  if (
+    !args ||
+    !args.constructor ||
+    args.constructor !== Array ||
+    args.length == 0
+  ) {
+    return null
+  }
+
+  return args
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/set-delegates.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/set-delegates.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(Promise) {var ObjCClass = __webpack_require__(/*! mocha-js-delegate */ "./node_modules/mocha-js-delegate/index.js")
+var parseWebArguments = __webpack_require__(/*! ./parseWebArguments */ "./node_modules/sketch-module-web-view/lib/parseWebArguments.js")
+var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+// We create one ObjC class for ourselves here
+var WindowDelegateClass
+var NavigationDelegateClass
+var WebScriptHandlerClass
+var ThemeObserverClass
+
+// TODO: events
+// - 'page-favicon-updated'
+// - 'new-window'
+// - 'did-navigate-in-page'
+// - 'will-prevent-unload'
+// - 'crashed'
+// - 'unresponsive'
+// - 'responsive'
+// - 'destroyed'
+// - 'before-input-event'
+// - 'certificate-error'
+// - 'found-in-page'
+// - 'media-started-playing'
+// - 'media-paused'
+// - 'did-change-theme-color'
+// - 'update-target-url'
+// - 'cursor-changed'
+// - 'context-menu'
+// - 'select-bluetooth-device'
+// - 'paint'
+// - 'console-message'
+
+module.exports = function (browserWindow, panel, webview, options) {
+  if (!ThemeObserverClass) {
+    ThemeObserverClass = new ObjCClass({
+      utils: null,
+
+      'observeValueForKeyPath:ofObject:change:context:': function (
+        keyPath,
+        object,
+        change
+      ) {
+        const newAppearance = change[NSKeyValueChangeNewKey]
+        const isDark =
+          String(
+            newAppearance.bestMatchFromAppearancesWithNames([
+              'NSAppearanceNameAqua',
+              'NSAppearanceNameDarkAqua',
+            ])
+          ) === 'NSAppearanceNameDarkAqua'
+
+        this.utils.executeJavaScript(
+          "document.body.classList.remove('__skpm-" +
+            (isDark ? 'light' : 'dark') +
+            "'); document.body.classList.add('__skpm-" +
+            (isDark ? 'dark' : 'light') +
+            "')"
+        )
+      },
+    })
+  }
+
+  if (!WindowDelegateClass) {
+    WindowDelegateClass = new ObjCClass({
+      utils: null,
+      panel: null,
+
+      'windowDidResize:': function () {
+        this.utils.emit('resize')
+      },
+
+      'windowDidMiniaturize:': function () {
+        this.utils.emit('minimize')
+      },
+
+      'windowDidDeminiaturize:': function () {
+        this.utils.emit('restore')
+      },
+
+      'windowDidEnterFullScreen:': function () {
+        this.utils.emit('enter-full-screen')
+      },
+
+      'windowDidExitFullScreen:': function () {
+        this.utils.emit('leave-full-screen')
+      },
+
+      'windowDidMove:': function () {
+        this.utils.emit('move')
+        this.utils.emit('moved')
+      },
+
+      'windowShouldClose:': function () {
+        var shouldClose = 1
+        this.utils.emit('close', {
+          get defaultPrevented() {
+            return !shouldClose
+          },
+          preventDefault: function () {
+            shouldClose = 0
+          },
+        })
+        return shouldClose
+      },
+
+      'windowWillClose:': function () {
+        this.utils.emit('closed')
+      },
+
+      'windowDidBecomeKey:': function () {
+        this.utils.emit('focus', this.panel.currentEvent())
+      },
+
+      'windowDidResignKey:': function () {
+        this.utils.emit('blur')
+      },
+    })
+  }
+
+  if (!NavigationDelegateClass) {
+    NavigationDelegateClass = new ObjCClass({
+      state: {
+        wasReady: 0,
+      },
+      utils: null,
+
+      // // Called when the web view begins to receive web content.
+      'webView:didCommitNavigation:': function (webView) {
+        this.utils.emit('will-navigate', {}, String(String(webView.URL())))
+      },
+
+      // // Called when web content begins to load in a web view.
+      'webView:didStartProvisionalNavigation:': function () {
+        this.utils.emit('did-start-navigation')
+        this.utils.emit('did-start-loading')
+      },
+
+      // Called when a web view receives a server redirect.
+      'webView:didReceiveServerRedirectForProvisionalNavigation:': function () {
+        this.utils.emit('did-get-redirect-request')
+      },
+
+      // // Called when the web view needs to respond to an authentication challenge.
+      // 'webView:didReceiveAuthenticationChallenge:completionHandler:': function(
+      //   webView,
+      //   challenge,
+      //   completionHandler
+      // ) {
+      //   function callback(username, password) {
+      //     completionHandler(
+      //       0,
+      //       NSURLCredential.credentialWithUser_password_persistence(
+      //         username,
+      //         password,
+      //         1
+      //       )
+      //     )
+      //   }
+      //   var protectionSpace = challenge.protectionSpace()
+      //   this.utils.emit(
+      //     'login',
+      //     {},
+      //     {
+      //       method: String(protectionSpace.authenticationMethod()),
+      //       url: 'not implemented', // TODO:
+      //       referrer: 'not implemented', // TODO:
+      //     },
+      //     {
+      //       isProxy: !!protectionSpace.isProxy(),
+      //       scheme: String(protectionSpace.protocol()),
+      //       host: String(protectionSpace.host()),
+      //       port: Number(protectionSpace.port()),
+      //       realm: String(protectionSpace.realm()),
+      //     },
+      //     callback
+      //   )
+      // },
+
+      // Called when an error occurs during navigation.
+      // 'webView:didFailNavigation:withError:': function(
+      //   webView,
+      //   navigation,
+      //   error
+      // ) {},
+
+      // Called when an error occurs while the web view is loading content.
+      'webView:didFailProvisionalNavigation:withError:': function (
+        webView,
+        navigation,
+        error
+      ) {
+        this.utils.emit('did-fail-load', error)
+      },
+
+      // Called when the navigation is complete.
+      'webView:didFinishNavigation:': function () {
+        if (this.state.wasReady == 0) {
+          this.state.wasReady = 1
+          this.utils.emitBrowserEvent('ready-to-show')
+        }
+        this.utils.emit('did-navigate')
+        this.utils.emit('did-frame-navigate')
+        this.utils.emit('did-stop-loading')
+        this.utils.emit('did-finish-load')
+        this.utils.emit('did-frame-finish-load')
+      },
+
+      // Called when the web view’s web content process is terminated.
+      'webViewWebContentProcessDidTerminate:': function () {
+        this.utils.emit('dom-ready')
+      },
+
+      // Decides whether to allow or cancel a navigation.
+      // webView:decidePolicyForNavigationAction:decisionHandler:
+
+      // Decides whether to allow or cancel a navigation after its response is known.
+      // webView:decidePolicyForNavigationResponse:decisionHandler:
+    })
+  }
+
+  if (!WebScriptHandlerClass) {
+    WebScriptHandlerClass = new ObjCClass({
+      utils: null,
+      'userContentController:didReceiveScriptMessage:': function (_, message) {
+        var args = this.utils.parseWebArguments(String(message.body()))
+        if (!args) {
+          return
+        }
+        if (!args[0] || typeof args[0] !== 'string') {
+          return
+        }
+        args[0] = String(args[0])
+
+        this.utils.emit.apply(this, args)
+      },
+    })
+  }
+
+  var themeObserver = ThemeObserverClass.new({
+    utils: {
+      executeJavaScript(script) {
+        webview.evaluateJavaScript_completionHandler(script, null)
+      },
+    },
+  })
+
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    "document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('__skpm-" +
+      (typeof MSTheme !== 'undefined' && MSTheme.sharedTheme().isDark()
+        ? 'dark'
+        : 'light') +
+      "') }, false)",
+    0,
+    true
+  )
+  webview.configuration().userContentController().addUserScript(script)
+
+  NSApplication.sharedApplication().addObserver_forKeyPath_options_context(
+    themeObserver,
+    'effectiveAppearance',
+    NSKeyValueObservingOptionNew,
+    null
+  )
+
+  var threadDictionary = NSThread.mainThread().threadDictionary()
+  threadDictionary[browserWindow.id + '.themeObserver'] = themeObserver
+
+  var navigationDelegate = NavigationDelegateClass.new({
+    utils: {
+      setTitle: browserWindow.setTitle.bind(browserWindow),
+      emitBrowserEvent() {
+        try {
+          browserWindow.emit.apply(browserWindow, arguments)
+        } catch (err) {
+          if (
+            typeof process !== 'undefined' &&
+            process.listenerCount &&
+            process.listenerCount('uncaughtException')
+          ) {
+            process.emit('uncaughtException', err, 'uncaughtException')
+          } else {
+            console.error(err)
+            throw err
+          }
+        }
+      },
+      emit() {
+        try {
+          browserWindow.webContents.emit.apply(
+            browserWindow.webContents,
+            arguments
+          )
+        } catch (err) {
+          if (
+            typeof process !== 'undefined' &&
+            process.listenerCount &&
+            process.listenerCount('uncaughtException')
+          ) {
+            process.emit('uncaughtException', err, 'uncaughtException')
+          } else {
+            console.error(err)
+            throw err
+          }
+        }
+      },
+    },
+    state: {
+      wasReady: 0,
+    },
+  })
+
+  webview.setNavigationDelegate(navigationDelegate)
+
+  var webScriptHandler = WebScriptHandlerClass.new({
+    utils: {
+      emit(id, type) {
+        if (!type) {
+          webview.evaluateJavaScript_completionHandler(
+            CONSTANTS.JS_BRIDGE_RESULT_SUCCESS + id + '()',
+            null
+          )
+          return
+        }
+
+        var args = []
+        for (var i = 2; i < arguments.length; i += 1) args.push(arguments[i])
+
+        var listeners = browserWindow.webContents.listeners(type)
+
+        Promise.all(
+          listeners.map(function (l) {
+            return Promise.resolve().then(function () {
+              return l.apply(l, args)
+            })
+          })
+        )
+          .then(function (res) {
+            webview.evaluateJavaScript_completionHandler(
+              CONSTANTS.JS_BRIDGE_RESULT_SUCCESS +
+                id +
+                '(' +
+                JSON.stringify(res) +
+                ')',
+              null
+            )
+          })
+          .catch(function (err) {
+            webview.evaluateJavaScript_completionHandler(
+              CONSTANTS.JS_BRIDGE_RESULT_ERROR +
+                id +
+                '(' +
+                JSON.stringify(err) +
+                ')',
+              null
+            )
+          })
+      },
+      parseWebArguments: parseWebArguments,
+    },
+  })
+
+  webview
+    .configuration()
+    .userContentController()
+    .addScriptMessageHandler_name(webScriptHandler, CONSTANTS.JS_BRIDGE)
+
+  var utils = {
+    emit() {
+      try {
+        browserWindow.emit.apply(browserWindow, arguments)
+      } catch (err) {
+        if (
+          typeof process !== 'undefined' &&
+          process.listenerCount &&
+          process.listenerCount('uncaughtException')
+        ) {
+          process.emit('uncaughtException', err, 'uncaughtException')
+        } else {
+          console.error(err)
+          throw err
+        }
+      }
+    },
+  }
+  if (options.modal) {
+    // find the window of the document
+    var msdocument
+    if (options.parent.type === 'Document') {
+      msdocument = options.parent.sketchObject
+    } else {
+      msdocument = options.parent
+    }
+    if (msdocument && String(msdocument.class()) === 'MSDocumentData') {
+      // we only have an MSDocumentData instead of a MSDocument
+      // let's try to get back to the MSDocument
+      msdocument = msdocument.delegate()
+    }
+    utils.parentWindow = msdocument.windowForSheet()
+  }
+
+  var windowDelegate = WindowDelegateClass.new({
+    utils: utils,
+    panel: panel,
+  })
+
+  panel.setDelegate(windowDelegate)
+}
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@skpm/promise/index.js */ "./node_modules/@skpm/promise/index.js")))
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/webview-api.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/webview-api.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var EventEmitter = __webpack_require__(/*! events */ "events")
+var executeJavaScript = __webpack_require__(/*! ./execute-javascript */ "./node_modules/sketch-module-web-view/lib/execute-javascript.js")
+
+// let's try to match https://github.com/electron/electron/blob/master/docs/api/web-contents.md
+module.exports = function buildAPI(browserWindow, panel, webview) {
+  var webContents = new EventEmitter()
+
+  webContents.loadURL = browserWindow.loadURL
+
+  webContents.loadFile = function (/* filePath */) {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  webContents.downloadURL = function (/* filePath */) {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  webContents.getURL = function () {
+    return String(webview.URL())
+  }
+
+  webContents.getTitle = function () {
+    return String(webview.title())
+  }
+
+  webContents.isDestroyed = function () {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  webContents.focus = browserWindow.focus
+  webContents.isFocused = browserWindow.isFocused
+
+  webContents.isLoading = function () {
+    return !!webview.loading()
+  }
+
+  webContents.isLoadingMainFrame = function () {
+    // TODO:
+    return !!webview.loading()
+  }
+
+  webContents.isWaitingForResponse = function () {
+    return !webview.loading()
+  }
+
+  webContents.stop = function () {
+    webview.stopLoading()
+  }
+  webContents.reload = function () {
+    webview.reload()
+  }
+  webContents.reloadIgnoringCache = function () {
+    webview.reloadFromOrigin()
+  }
+  webContents.canGoBack = function () {
+    return !!webview.canGoBack()
+  }
+  webContents.canGoForward = function () {
+    return !!webview.canGoForward()
+  }
+  webContents.canGoToOffset = function (offset) {
+    return !!webview.backForwardList().itemAtIndex(offset)
+  }
+  webContents.clearHistory = function () {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.goBack = function () {
+    webview.goBack()
+  }
+  webContents.goForward = function () {
+    webview.goForward()
+  }
+  webContents.goToIndex = function (index) {
+    var backForwardList = webview.backForwardList()
+    var backList = backForwardList.backList()
+    var backListLength = backList.count()
+    if (backListLength > index) {
+      webview.loadRequest(NSURLRequest.requestWithURL(backList[index]))
+      return
+    }
+    var forwardList = backForwardList.forwardList()
+    if (forwardList.count() > index - backListLength) {
+      webview.loadRequest(
+        NSURLRequest.requestWithURL(forwardList[index - backListLength])
+      )
+      return
+    }
+    throw new Error('Cannot go to index ' + index)
+  }
+  webContents.goToOffset = function (offset) {
+    if (!webContents.canGoToOffset(offset)) {
+      throw new Error('Cannot go to offset ' + offset)
+    }
+    webview.loadRequest(
+      NSURLRequest.requestWithURL(webview.backForwardList().itemAtIndex(offset))
+    )
+  }
+  webContents.isCrashed = function () {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setUserAgent = function (/* userAgent */) {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.getUserAgent = function () {
+    const userAgent = webview.customUserAgent()
+    return userAgent ? String(userAgent) : undefined
+  }
+  webContents.insertCSS = function (css) {
+    var source =
+      "var style = document.createElement('style'); style.innerHTML = " +
+      css.replace(/"/, '\\"') +
+      '; document.head.appendChild(style);'
+    var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+      source,
+      0,
+      true
+    )
+    webview.configuration().userContentController().addUserScript(script)
+  }
+  webContents.insertJS = function (source) {
+    var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+      source,
+      0,
+      true
+    )
+    webview.configuration().userContentController().addUserScript(script)
+  }
+  webContents.executeJavaScript = executeJavaScript(webview, browserWindow)
+  webContents.setIgnoreMenuShortcuts = function () {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setAudioMuted = function (/* muted */) {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.isAudioMuted = function () {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setZoomFactor = function (factor) {
+    webview.setMagnification_centeredAtPoint(factor, CGPointMake(0, 0))
+  }
+  webContents.getZoomFactor = function (callback) {
+    callback(Number(webview.magnification()))
+  }
+  webContents.setZoomLevel = function (level) {
+    // eslint-disable-next-line no-restricted-properties
+    webContents.setZoomFactor(Math.pow(1.2, level))
+  }
+  webContents.getZoomLevel = function (callback) {
+    // eslint-disable-next-line no-restricted-properties
+    callback(Math.log(Number(webview.magnification())) / Math.log(1.2))
+  }
+  webContents.setVisualZoomLevelLimits = function (/* minimumLevel, maximumLevel */) {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setLayoutZoomLevelLimits = function (/* minimumLevel, maximumLevel */) {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  // TODO:
+  // webContents.undo = function() {
+  //   webview.undoManager().undo()
+  // }
+  // webContents.redo = function() {
+  //   webview.undoManager().redo()
+  // }
+  // webContents.cut = webview.cut
+  // webContents.copy = webview.copy
+  // webContents.paste = webview.paste
+  // webContents.pasteAndMatchStyle = webview.pasteAsRichText
+  // webContents.delete = webview.delete
+  // webContents.replace = webview.replaceSelectionWithText
+
+  webContents.send = function () {
+    const script =
+      'window.postMessage({' +
+      'isSketchMessage: true,' +
+      "origin: '" +
+      String(__command.identifier()) +
+      "'," +
+      'args: ' +
+      JSON.stringify([].slice.call(arguments)) +
+      '}, "*")'
+    webview.evaluateJavaScript_completionHandler(script, null)
+  }
+
+  webContents.getNativeWebview = function () {
+    return webview
+  }
+
+  browserWindow.webContents = webContents
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/remote.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/remote.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* globals NSThread */
+var threadDictionary = NSThread.mainThread().threadDictionary()
+
+module.exports.getWebview = function (identifier) {
+  return __webpack_require__(/*! ./lib */ "./node_modules/sketch-module-web-view/lib/index.js").fromId(identifier) // eslint-disable-line
+}
+
+module.exports.isWebviewPresent = function isWebviewPresent(identifier) {
+  return !!threadDictionary[identifier]
+}
+
+module.exports.sendToWebview = function sendToWebview(identifier, evalString) {
+  if (!module.exports.isWebviewPresent(identifier)) {
+    return
+  }
+
+  var panel = threadDictionary[identifier]
+  var webview = null
+  var subviews = panel.contentView().subviews()
+  for (var i = 0; i < subviews.length; i += 1) {
+    if (
+      !webview &&
+      !subviews[i].isKindOfClass(WKInspectorWKWebView) &&
+      subviews[i].isKindOfClass(WKWebView)
+    ) {
+      webview = subviews[i]
+    }
+  }
+
+  if (!webview || !webview.evaluateJavaScript_completionHandler) {
+    throw new Error('Webview ' + identifier + ' not found')
+  }
+
+  webview.evaluateJavaScript_completionHandler(evalString, null)
+}
+
+
+/***/ }),
+
+/***/ "./src/dynamicPalette.js":
+/*!*******************************!*\
+  !*** ./src/dynamicPalette.js ***!
+  \*******************************/
+/*! exports provided: default, onShutdown */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "onShutdown", function() { return onShutdown; });
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/toConsumableArray.js");
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @material/material-color-utilities */ "./node_modules/@material/material-color-utilities/dist/index.js");
-/* harmony import */ var hex_rgb__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! hex-rgb */ "./node_modules/hex-rgb/index.js");
-/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! colorcolor */ "./node_modules/colorcolor/src/colorcolor.js");
-/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(colorcolor__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! is-hexcolor */ "./node_modules/is-hexcolor/index.js");
-/* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(is_hexcolor__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! sketch-module-web-view */ "./node_modules/sketch-module-web-view/lib/index.js");
+/* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! sketch-module-web-view/remote */ "./node_modules/sketch-module-web-view/remote.js");
+/* harmony import */ var sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @material/material-color-utilities */ "./node_modules/@material/material-color-utilities/dist/index.js");
+/* harmony import */ var hex_rgb__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! hex-rgb */ "./node_modules/hex-rgb/index.js");
+/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! colorcolor */ "./node_modules/colorcolor/src/colorcolor.js");
+/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(colorcolor__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! is-hexcolor */ "./node_modules/is-hexcolor/index.js");
+/* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(is_hexcolor__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! path */ "path");
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_7__);
 
-// 👇️ ts-nocheck disables type checking for entire file
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
+Mocha.sharedRuntime().loadFrameworkWithName("CoreFoundation");
+
+
+var webviewIdentifier = "dynamicPalette.webview"; // #region Node modules
+
 
 
 
 var cd = __webpack_require__(/*! color-difference */ "./node_modules/color-difference/lib/index.js");
 
 
- // 👇️ ts-ignore ignores any ts errors on the next line
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-
-var ColorThief = __webpack_require__(/*! color-extr-thief */ "./node_modules/color-extr-thief/dist/color-thief.js");
 
 
 
@@ -9277,15 +8560,14 @@ var os = __webpack_require__(/*! os */ "os");
 
 var path = __webpack_require__(/*! path */ "path");
 
-var desktopDir = path.join(os.homedir(), "Desktop"); // #region Sketch Items
+var desktopDir = path.join(os.homedir(), "Desktop"); // #endregion Node modules
+// #region Sketch Items
 
 var sketch = __webpack_require__(/*! sketch */ "sketch");
 
 var Swatch = sketch.Swatch;
 
-var Style = __webpack_require__(/*! sketch/dom */ "sketch/dom").Style;
-
-var identifier = __command.identifier(); // Document variables
+var Style = __webpack_require__(/*! sketch/dom */ "sketch/dom").Style; // Document variables
 
 
 var doc = context.document;
@@ -9331,51 +8613,49 @@ var textString = JSON.stringify(textStylesOrdered);
 var insertedTextStyles = []; // #endregion
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  var defaultColor = "#F9BB3C"; // const defaultColor = "#facaca";
+  /* Create the webview with the sizes */
+  var options = {
+    identifier: webviewIdentifier,
+    width: 421,
+    height: 570,
+    show: false
+  };
+  var browserWindow = new sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default.a(options);
+  console.log("here"); // only show the window when the page has loaded to avoid a white flash
 
-  var inputText = "Please, choose your Primary color (HEX value).";
-  var inputDefaultValue = "F9bb3c";
+  browserWindow.once("ready-to-show", function () {
+    // Send the list of Text Styles to the plugin webview
+    try {
+      browserWindow.show(); // browserWindow.loadURL(require("./resources/webview.html"));
+    } catch (createWebViewErr) {
+      console.log(createWebViewErr);
+    }
+  });
+  var webContents = browserWindow.webContents; // add a handler for a call from web content's javascript
 
-  if (identifier.includes("dynamic")) {
-    inputText = "Please, insert your image path";
-    inputDefaultValue = "path/to/file";
-  }
-
-  sketch.UI.getInputFromUser(inputText, {
-    initialValue: inputDefaultValue
-  }, function (err, value) {
-    if (err) {
-      // most likely the user canceled the input
-      return;
-    } else {
+  webContents.on("nativeLog", function (parameters) {
+    try {
       // #region Theme
       var theme;
+      var value = parameters.mainColor; // #region Theme
 
-      if (!is_hexcolor__WEBPACK_IMPORTED_MODULE_4___default()("#" + value)) {
-        console.log("not valid");
-        sketch.UI.alert("Color value not valid", "Please insert a valid HEX color");
-      } else {
-        defaultColor = value; // #region Theme
-
-        theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(defaultColor), [// {
-        //     name: "custom-1",
-        //     value: argbFromHex("#ff0000"),
-        //     blend: true,
-        // },
-        {}]);
-      } // #endregion Theme
+      theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["argbFromHex"])(value), [// {
+      //     name: "custom-1",
+      //     value: argbFromHex("#ff0000"),
+      //     blend: true,
+      // },
+      {}]); // #endregion Theme
       // #region Colors and palettes creation
 
-
-      var primary = ["Primary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primary)];
-      var secondary = ["Secondary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary)];
-      var tertiary = ["Tertiary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary)];
-      var error = ["Error", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error)];
-      var neutral = ["Neutral", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutral)];
-      var neutralVariant = ["Neutral Variant", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.neutralVariant)];
-      var shadow = ["Shadow", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow)];
-      var scrim = ["Scrim", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim)];
-      var surface = ["Surface", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surface)];
+      var primary = ["Primary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.primary)];
+      var secondary = ["Secondary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.secondary)];
+      var tertiary = ["Tertiary", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.tertiary)];
+      var error = ["Error", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.error)];
+      var neutral = ["Neutral", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.neutral)];
+      var neutralVariant = ["Neutral Variant", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.neutralVariant)];
+      var shadow = ["Shadow", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.shadow)];
+      var scrim = ["Scrim", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.scrim)];
+      var surface = ["Surface", Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.surface)];
       var primaryPalette = colorPalette(primary[1], primary[0]);
       paletteToColorVariables(primaryPalette, "Primary");
       var secondaryPalette = colorPalette(secondary[1], secondary[0]);
@@ -9396,66 +8676,66 @@ var insertedTextStyles = []; // #endregion
       paletteToColorVariables(surfacePalette, "Surface"); // #endregion Colors and palettes creation
       // #region Light theme
 
-      var lightTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primary);
-      var lightTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimary);
-      var lightTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.primaryContainer);
-      var lightTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onPrimaryContainer);
-      var lightTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondary);
-      var lightTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondary);
-      var lightTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.secondaryContainer);
-      var lightTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSecondaryContainer);
-      var lightTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiary);
-      var lightTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiary);
-      var lightTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.tertiaryContainer);
-      var lightTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onTertiaryContainer);
-      var lightTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.error);
-      var lightTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onError);
-      var lightTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.errorContainer);
-      var lightTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onErrorContainer);
-      var lightTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.background);
-      var lightTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
-      var lightTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surface);
-      var lightTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurface);
-      var lightTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onbackground);
-      var lightTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.surfaceVariant);
-      var lightTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.onSurfaceVariant);
-      var lightTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.shadow);
-      var lightTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.scrim);
-      var lightTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseSurface);
-      var lightTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inverseOnSurface);
-      var lightTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.light.inversePrimary);
+      var lightTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.primary);
+      var lightTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onPrimary);
+      var lightTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.primaryContainer);
+      var lightTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onPrimaryContainer);
+      var lightTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.secondary);
+      var lightTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onSecondary);
+      var lightTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.secondaryContainer);
+      var lightTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onSecondaryContainer);
+      var lightTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.tertiary);
+      var lightTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onTertiary);
+      var lightTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.tertiaryContainer);
+      var lightTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onTertiaryContainer);
+      var lightTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.error);
+      var lightTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onError);
+      var lightTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.errorContainer);
+      var lightTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onErrorContainer);
+      var lightTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.background);
+      var lightTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onbackground);
+      var lightTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.surface);
+      var lightTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onSurface);
+      var lightTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onbackground);
+      var lightTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.surfaceVariant);
+      var lightTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.onSurfaceVariant);
+      var lightTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.shadow);
+      var lightTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.scrim);
+      var lightTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.inverseSurface);
+      var lightTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.inverseOnSurface);
+      var lightTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.light.inversePrimary);
       var lightTheme = [["Primary", lightTheme_primary, true, false, true, true, false, "Primary"], ["onPrimary", lightTheme_onPrimary, true, false, true, true, true, "Neutral"], ["primaryContainer", lightTheme_primaryContainer, true, false, true, false, false, "Primary"], ["onPrimaryContainer", lightTheme_onPrimaryContainer, true, false, true, true, false, "Neutral"], ["secondary", lightTheme_secondary, true, false, true, true, false, "Secondary"], ["onSecondary", lightTheme_onSecondary, true, false, true, true, false, "Neutral"], ["secondaryContainer", lightTheme_secondaryContainer, true, false, true, false, false, "Secondary"], ["onSecondaryContainer", lightTheme_onSecondaryContainer, true, false, true, true, false, "Neutral"], ["tertiary", lightTheme_tertiary, true, false, true, true, false, "Tertiary"], ["onTertiary", lightTheme_onTertiary, true, false, true, true, false, "Neutral"], ["tertiaryContainer", lightTheme_tertiaryContainer, true, false, true, false, false, "Tertiary"], ["onTertiaryContainer", lightTheme_onTertiaryContainer, true, false, true, true, false, "Neutral"], ["error", lightTheme_error, true, false, true, true, false, "Error"], ["onError", lightTheme_onError, true, false, true, true, true, "Neutral"], ["errorContainer", lightTheme_errorContainer, true, false, true, false, false, "Error"], ["onErrorContainer", lightTheme_onErrorContainer, true, false, true, true, false, "Neutral"], ["background", lightTheme_background, true, false, true, false, false, "Neutral"], ["onbackground", lightTheme_onbackground, true, false, true, true, true, "Neutral"], ["surface", lightTheme_surface, true, false, true, false, false, "Surface"], ["onSurface", lightTheme_onSurface, true, false, true, true, true, "Surface"], ["outline", lightTheme_outline, false, true, true, false, false, "Neutral"], ["surfacevariant", lightTheme_surfacevariant, true, false, true, false, false, "Surface"], ["onSurfaceVariant", lightTheme_onSurfaceVariant, true, false, true, true, true, "Surface"], ["shadow", lightTheme_shadow, true, false, true, false, false, "Shadow"], // ["scrim", lightTheme_scrim,false],
       ["inverseSurface", lightTheme_inverseSurface, true, false, true, false, false, "Surface"], ["inverseOnSurface", lightTheme_inverseOnSurface, true, false, true, true, true, "Surface"], ["inversePrimary", lightTheme_inversePrimary, true, false, true, true, false, "Primary"]]; // #endregion Light Theme
       // #region Dark theme
 
-      var darkTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primary);
-      var darkTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimary);
-      var darkTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.primaryContainer);
-      var darkTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onPrimaryContainer);
-      var darkTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondary);
-      var darkTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondary);
-      var darkTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.secondaryContainer);
-      var darkTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSecondaryContainer);
-      var darkTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiary);
-      var darkTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiary);
-      var darkTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.tertiaryContainer);
-      var darkTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onTertiaryContainer);
-      var darkTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.error);
-      var darkTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onError);
-      var darkTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.errorContainer);
-      var darkTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onErrorContainer);
-      var darkTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.background);
-      var darkTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
-      var darkTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surface);
-      var darkTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurface);
-      var darkTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onbackground);
-      var darkTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.surfaceVariant);
-      var darkTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.onSurfaceVariant);
-      var darkTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.shadow);
-      var darkTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.scrim);
-      var darkTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseSurface);
-      var darkTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inverseOnSurface);
-      var darkTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(theme.schemes.dark.inversePrimary);
+      var darkTheme_primary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.primary);
+      var darkTheme_onPrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onPrimary);
+      var darkTheme_primaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.primaryContainer);
+      var darkTheme_onPrimaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onPrimaryContainer);
+      var darkTheme_secondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.secondary);
+      var darkTheme_onSecondary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onSecondary);
+      var darkTheme_secondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.secondaryContainer);
+      var darkTheme_onSecondaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onSecondaryContainer);
+      var darkTheme_tertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.tertiary);
+      var darkTheme_onTertiary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onTertiary);
+      var darkTheme_tertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.tertiaryContainer);
+      var darkTheme_onTertiaryContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onTertiaryContainer);
+      var darkTheme_error = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.error);
+      var darkTheme_onError = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onError);
+      var darkTheme_errorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.errorContainer);
+      var darkTheme_onErrorContainer = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onErrorContainer);
+      var darkTheme_background = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.background);
+      var darkTheme_onbackground = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onbackground);
+      var darkTheme_surface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.surface);
+      var darkTheme_onSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onSurface);
+      var darkTheme_outline = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onbackground);
+      var darkTheme_surfacevariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.surfaceVariant);
+      var darkTheme_onSurfaceVariant = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.onSurfaceVariant);
+      var darkTheme_shadow = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.shadow);
+      var darkTheme_scrim = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.scrim);
+      var darkTheme_inverseSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.inverseSurface);
+      var darkTheme_inverseOnSurface = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.inverseOnSurface);
+      var darkTheme_inversePrimary = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(theme.schemes.dark.inversePrimary);
       var darkTheme = [["Primary", darkTheme_primary, true, false, true, true, false, "Primary"], ["onPrimary", darkTheme_onPrimary, true, false, true, true, true, "Neutral"], ["primaryContainer", darkTheme_primaryContainer, true, false, true, false, false, "Primary"], ["onPrimaryContainer", darkTheme_onPrimaryContainer, true, false, true, true, false, "Neutral"], ["secondary", darkTheme_secondary, true, false, true, true, false, "Secondary"], ["onSecondary", darkTheme_onSecondary, true, false, true, true, false, "Neutral"], ["secondaryContainer", darkTheme_secondaryContainer, true, false, true, false, false, "Secondary"], ["onSecondaryContainer", darkTheme_onSecondaryContainer, true, false, true, true, false, "Neutral"], ["tertiary", darkTheme_tertiary, true, false, true, true, false, "Tertiary"], ["onTertiary", darkTheme_onTertiary, true, false, true, true, false, "Neutral"], ["tertiaryContainer", darkTheme_tertiaryContainer, true, false, true, false, false, "Tertiary"], ["onTertiaryContainer", darkTheme_onTertiaryContainer, true, false, true, true, false, "Neutral"], ["error", darkTheme_error, true, false, true, true, false, "Error"], ["onError", darkTheme_onError, true, false, true, true, true, "Neutral"], ["errorContainer", darkTheme_errorContainer, true, false, true, false, false, "Error"], ["onErrorContainer", darkTheme_onErrorContainer, true, false, true, true, false, "Neutral"], ["background", darkTheme_background, true, false, true, false, false, "Neutral"], ["onbackground", darkTheme_onbackground, true, false, true, true, true, "Neutral"], ["surface", darkTheme_surface, true, false, true, false, false, "Surface"], ["onSurface", darkTheme_onSurface, true, false, true, true, true, "Surface"], ["outline", darkTheme_outline, false, true, true, false, false, "Neutral"], ["surfacevariant", darkTheme_surfacevariant, true, false, true, false, false, "Surface"], ["onSurfaceVariant", darkTheme_onSurfaceVariant, true, false, true, true, true, "Surface"], ["shadow", darkTheme_shadow, true, false, true, false, false, "Shadow"], // ["scrim", darkTheme_scrim,false],
       ["inverseSurface", darkTheme_inverseSurface, true, false, true, false, false, "Surface"], ["inverseOnSurface", darkTheme_inverseOnSurface, true, false, true, true, true, "Surface"], ["inversePrimary", darkTheme_inversePrimary, true, false, true, true, false, "Primary"]]; // #endregion Dark Theme
       // #region Create Styles
@@ -9576,6 +8856,8 @@ var insertedTextStyles = []; // #endregion
 
         updateTextStyles();
       }); // #endregion Connect Color Variables
+    } catch (pluginErr) {
+      console.log(pluginErr);
     }
   }); // console.log(JSON.stringify(theme, null, 2));
 
@@ -9615,7 +8897,7 @@ function colorPalette(color) {
 
   for (var n = 0; n < tones.length; n++) {
     var valueName = name + " " + tones[n].toString();
-    palette.push([valueName, Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["hexFromArgb"])(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["TonalPalette"].fromInt(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_1__["argbFromHex"])(color)).tone(tones[n]))]);
+    palette.push([valueName, Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["hexFromArgb"])(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["TonalPalette"].fromInt(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["argbFromHex"])(color)).tone(tones[n]))]);
   }
 
   return palette;
@@ -9690,8 +8972,8 @@ function matchColorVariables(color, name) {
     var variableName = variable.name.toString().toUpperCase();
     var variableColor = variable.color.toString().toUpperCase();
     color = color.toString().toUpperCase();
-    var variableColorHEX = colorcolor__WEBPACK_IMPORTED_MODULE_3___default()(variableColor, "hex");
-    var colorHEX = colorcolor__WEBPACK_IMPORTED_MODULE_3___default()(color, "hex");
+    var variableColorHEX = colorcolor__WEBPACK_IMPORTED_MODULE_5___default()(variableColor, "hex");
+    var colorHEX = colorcolor__WEBPACK_IMPORTED_MODULE_5___default()(color, "hex");
     var colorMatch = false;
 
     if (cd.compare(variableColorHEX, colorHEX) < 3) {
@@ -9888,6 +9170,18 @@ function getPath() {
   } else {
     return null;
   }
+} // ******************************************************************* //
+// When the plugin is shutdown by Sketch (for example when the user    //
+// disable the plugin) we need to close the webview if it's open       //
+// ******************************************************************* //
+
+
+function onShutdown() {
+  var existingWebview = Object(sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_2__["getWebview"])(webviewIdentifier);
+
+  if (existingWebview) {
+    existingWebview.close();
+  }
 }
 
 /***/ }),
@@ -9900,6 +9194,17 @@ function getPath() {
 /***/ (function(module, exports) {
 
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ "events":
+/*!*************************!*\
+  !*** external "events" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("events");
 
 /***/ }),
 
@@ -9947,17 +9252,6 @@ module.exports = require("sketch/dom");
 
 /***/ }),
 
-/***/ "stream":
-/*!*************************!*\
-  !*** external "stream" ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("stream");
-
-/***/ }),
-
 /***/ "util":
 /*!***********************!*\
   !*** external "util" ***!
@@ -9988,4 +9282,4 @@ module.exports = require("util");
 globalThis['onRun'] = __skpm_run.bind(this, 'default');
 globalThis['onShutdown'] = __skpm_run.bind(this, 'onShutdown')
 
-//# sourceMappingURL=__script.js.map
+//# sourceMappingURL=__dynamicPalette.js.map

@@ -1,3 +1,7 @@
+// 👇️ ts-nocheck disables type checking for entire file
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 import {
     argbFromHex,
     hexFromArgb,
@@ -5,11 +9,16 @@ import {
     applyTheme,
     TonalPalette,
     HCT,
+    themeFromImage,
 } from "@material/material-color-utilities";
 import hexRgb from "hex-rgb";
 var cd = require("color-difference");
 import colorcolor from "colorcolor";
 import isHexcolor from "is-hexcolor";
+// 👇️ ts-ignore ignores any ts errors on the next line
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const ColorThief = require("color-extr-thief");
 
 import { resolve } from "path";
 const fs = require("@skpm/fs");
@@ -21,6 +30,7 @@ const desktopDir = path.join(os.homedir(), "Desktop");
 const sketch = require("sketch");
 const Swatch = sketch.Swatch;
 const Style = require("sketch/dom").Style;
+var identifier = __command.identifier();
 
 // Document variables
 var doc = context.document;
@@ -28,7 +38,6 @@ var document = sketch.getSelectedDocument();
 var firstSelectedLayer = document.selectedLayers.layers[0];
 var artboard = sketch.Artboard;
 var data = document.sketchObject.documentData();
-var image = sketch.Image;
 // #endregion
 
 // #region Styles Variables
@@ -62,18 +71,26 @@ var insertedTextStyles = [];
 export default function () {
     let defaultColor = "#F9BB3C";
     // const defaultColor = "#facaca";
+    let inputText = "Please, choose your Primary color (HEX value).";
+    let inputDefaultValue = "F9bb3c";
+    if (identifier.includes("dynamic")) {
+        inputText = "Please, insert your image path";
+        inputDefaultValue = "path/to/file";
+    }
 
     sketch.UI.getInputFromUser(
-        "Choose your Primary color (HEX value).",
+        inputText,
         {
-            initialValue: "F9bb3c",
+            initialValue: inputDefaultValue,
         },
         (err, value) => {
             if (err) {
                 // most likely the user canceled the input
                 return;
             } else {
-                if (!isHexcolor(value)) {
+                // #region Theme
+                var theme;
+                if (!isHexcolor("#" + value)) {
                     console.log("not valid");
                     sketch.UI.alert(
                         "Color value not valid",
@@ -82,970 +99,942 @@ export default function () {
                 } else {
                     defaultColor = value;
                     // #region Theme
-                    const theme = themeFromSourceColor(
-                        argbFromHex(defaultColor),
-                        [
-                            // {
-                            //     name: "custom-1",
-                            //     value: argbFromHex("#ff0000"),
-                            //     blend: true,
-                            // },
-                            {},
-                        ]
-                    );
-                    // #endregion Theme
+                    theme = themeFromSourceColor(argbFromHex(defaultColor), [
+                        // {
+                        //     name: "custom-1",
+                        //     value: argbFromHex("#ff0000"),
+                        //     blend: true,
+                        // },
+                        {},
+                    ]);
+                }
+                // #endregion Theme
 
-                    // #region Colors and palettes creation
-                    const primary = [
+                // #region Colors and palettes creation
+                const primary = [
+                    "Primary",
+                    hexFromArgb(theme.schemes.light.primary),
+                ];
+                const secondary = [
+                    "Secondary",
+                    hexFromArgb(theme.schemes.light.secondary),
+                ];
+                const tertiary = [
+                    "Tertiary",
+                    hexFromArgb(theme.schemes.light.tertiary),
+                ];
+                const error = ["Error", hexFromArgb(theme.schemes.light.error)];
+                const neutral = [
+                    "Neutral",
+                    hexFromArgb(theme.schemes.light.neutral),
+                ];
+                const neutralVariant = [
+                    "Neutral Variant",
+                    hexFromArgb(theme.schemes.light.neutralVariant),
+                ];
+                const shadow = [
+                    "Shadow",
+                    hexFromArgb(theme.schemes.light.shadow),
+                ];
+                const scrim = ["Scrim", hexFromArgb(theme.schemes.light.scrim)];
+                const surface = [
+                    "Surface",
+                    hexFromArgb(theme.schemes.light.surface),
+                ];
+
+                const primaryPalette = colorPalette(primary[1], primary[0]);
+                paletteToColorVariables(primaryPalette, "Primary");
+                const secondaryPalette = colorPalette(
+                    secondary[1],
+                    secondary[0]
+                );
+                paletteToColorVariables(secondaryPalette, "Secondary");
+                const tertiaryPalette = colorPalette(tertiary[1], tertiary[0]);
+
+                paletteToColorVariables(tertiaryPalette, "Tertiary");
+                const errorPalette = colorPalette(error[1], error[0]);
+                paletteToColorVariables(errorPalette, "Error");
+                const neutralPalette = colorPalette(neutral[1], neutral[0]);
+                paletteToColorVariables(neutralPalette, "Neutral");
+                const neutralVariantPalette = colorPalette(
+                    neutralVariant[1],
+                    neutralVariant[0]
+                );
+                paletteToColorVariables(
+                    neutralVariantPalette,
+                    "Neutral Variant"
+                );
+                const shadowPalette = colorPalette(shadow[1], shadow[0]);
+                paletteToColorVariables(shadowPalette, "Shadow");
+                const scrimPalette = colorPalette(scrim[1], scrim[0]);
+                paletteToColorVariables(scrimPalette, "Scrim");
+                const surfacePalette = colorPalette(surface[1], surface[0]);
+                paletteToColorVariables(surfacePalette, "Surface");
+                // #endregion Colors and palettes creation
+
+                // #region Light theme
+                const lightTheme_primary = hexFromArgb(
+                    theme.schemes.light.primary
+                );
+                const lightTheme_onPrimary = hexFromArgb(
+                    theme.schemes.light.onPrimary
+                );
+                const lightTheme_primaryContainer = hexFromArgb(
+                    theme.schemes.light.primaryContainer
+                );
+                const lightTheme_onPrimaryContainer = hexFromArgb(
+                    theme.schemes.light.onPrimaryContainer
+                );
+                const lightTheme_secondary = hexFromArgb(
+                    theme.schemes.light.secondary
+                );
+                const lightTheme_onSecondary = hexFromArgb(
+                    theme.schemes.light.onSecondary
+                );
+                const lightTheme_secondaryContainer = hexFromArgb(
+                    theme.schemes.light.secondaryContainer
+                );
+                const lightTheme_onSecondaryContainer = hexFromArgb(
+                    theme.schemes.light.onSecondaryContainer
+                );
+                const lightTheme_tertiary = hexFromArgb(
+                    theme.schemes.light.tertiary
+                );
+                const lightTheme_onTertiary = hexFromArgb(
+                    theme.schemes.light.onTertiary
+                );
+                const lightTheme_tertiaryContainer = hexFromArgb(
+                    theme.schemes.light.tertiaryContainer
+                );
+                const lightTheme_onTertiaryContainer = hexFromArgb(
+                    theme.schemes.light.onTertiaryContainer
+                );
+                const lightTheme_error = hexFromArgb(theme.schemes.light.error);
+                const lightTheme_onError = hexFromArgb(
+                    theme.schemes.light.onError
+                );
+                const lightTheme_errorContainer = hexFromArgb(
+                    theme.schemes.light.errorContainer
+                );
+                const lightTheme_onErrorContainer = hexFromArgb(
+                    theme.schemes.light.onErrorContainer
+                );
+                const lightTheme_background = hexFromArgb(
+                    theme.schemes.light.background
+                );
+                const lightTheme_onbackground = hexFromArgb(
+                    theme.schemes.light.onbackground
+                );
+                const lightTheme_surface = hexFromArgb(
+                    theme.schemes.light.surface
+                );
+                const lightTheme_onSurface = hexFromArgb(
+                    theme.schemes.light.onSurface
+                );
+                const lightTheme_outline = hexFromArgb(
+                    theme.schemes.light.onbackground
+                );
+                const lightTheme_surfacevariant = hexFromArgb(
+                    theme.schemes.light.surfaceVariant
+                );
+                const lightTheme_onSurfaceVariant = hexFromArgb(
+                    theme.schemes.light.onSurfaceVariant
+                );
+                const lightTheme_shadow = hexFromArgb(
+                    theme.schemes.light.shadow
+                );
+                const lightTheme_scrim = hexFromArgb(theme.schemes.light.scrim);
+                const lightTheme_inverseSurface = hexFromArgb(
+                    theme.schemes.light.inverseSurface
+                );
+                const lightTheme_inverseOnSurface = hexFromArgb(
+                    theme.schemes.light.inverseOnSurface
+                );
+                const lightTheme_inversePrimary = hexFromArgb(
+                    theme.schemes.light.inversePrimary
+                );
+
+                const lightTheme = [
+                    [
                         "Primary",
-                        hexFromArgb(theme.schemes.light.primary),
-                    ];
-                    const secondary = [
-                        "Secondary",
-                        hexFromArgb(theme.schemes.light.secondary),
-                    ];
-                    const tertiary = [
-                        "Tertiary",
-                        hexFromArgb(theme.schemes.light.tertiary),
-                    ];
-                    const error = [
-                        "Error",
-                        hexFromArgb(theme.schemes.light.error),
-                    ];
-                    const neutral = [
+                        lightTheme_primary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Primary",
+                    ],
+                    [
+                        "onPrimary",
+                        lightTheme_onPrimary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
                         "Neutral",
-                        hexFromArgb(theme.schemes.light.neutral),
-                    ];
-                    const neutralVariant = [
-                        "Neutral Variant",
-                        hexFromArgb(theme.schemes.light.neutralVariant),
-                    ];
-                    const shadow = [
-                        "Shadow",
-                        hexFromArgb(theme.schemes.light.shadow),
-                    ];
-                    const scrim = [
-                        "Scrim",
-                        hexFromArgb(theme.schemes.light.scrim),
-                    ];
-                    const surface = [
+                    ],
+                    [
+                        "primaryContainer",
+                        lightTheme_primaryContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Primary",
+                    ],
+                    [
+                        "onPrimaryContainer",
+                        lightTheme_onPrimaryContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "secondary",
+                        lightTheme_secondary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Secondary",
+                    ],
+                    [
+                        "onSecondary",
+                        lightTheme_onSecondary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "secondaryContainer",
+                        lightTheme_secondaryContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Secondary",
+                    ],
+                    [
+                        "onSecondaryContainer",
+                        lightTheme_onSecondaryContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "tertiary",
+                        lightTheme_tertiary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Tertiary",
+                    ],
+                    [
+                        "onTertiary",
+                        lightTheme_onTertiary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "tertiaryContainer",
+                        lightTheme_tertiaryContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Tertiary",
+                    ],
+                    [
+                        "onTertiaryContainer",
+                        lightTheme_onTertiaryContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "error",
+                        lightTheme_error,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Error",
+                    ],
+                    [
+                        "onError",
+                        lightTheme_onError,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Neutral",
+                    ],
+                    [
+                        "errorContainer",
+                        lightTheme_errorContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Error",
+                    ],
+                    [
+                        "onErrorContainer",
+                        lightTheme_onErrorContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "background",
+                        lightTheme_background,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "onbackground",
+                        lightTheme_onbackground,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Neutral",
+                    ],
+                    [
+                        "surface",
+                        lightTheme_surface,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
                         "Surface",
-                        hexFromArgb(theme.schemes.light.surface),
-                    ];
+                    ],
+                    [
+                        "onSurface",
+                        lightTheme_onSurface,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Surface",
+                    ],
+                    [
+                        "outline",
+                        lightTheme_outline,
+                        false,
+                        true,
+                        true,
+                        false,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "surfacevariant",
+                        lightTheme_surfacevariant,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Surface",
+                    ],
+                    [
+                        "onSurfaceVariant",
+                        lightTheme_onSurfaceVariant,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Surface",
+                    ],
+                    [
+                        "shadow",
+                        lightTheme_shadow,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Shadow",
+                    ],
+                    // ["scrim", lightTheme_scrim,false],
+                    [
+                        "inverseSurface",
+                        lightTheme_inverseSurface,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Surface",
+                    ],
+                    [
+                        "inverseOnSurface",
+                        lightTheme_inverseOnSurface,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Surface",
+                    ],
+                    [
+                        "inversePrimary",
+                        lightTheme_inversePrimary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Primary",
+                    ],
+                ];
+                // #endregion Light Theme
 
-                    const primaryPalette = colorPalette(primary[1], primary[0]);
-                    paletteToColorVariables(primaryPalette, "Primary");
-                    const secondaryPalette = colorPalette(
-                        secondary[1],
-                        secondary[0]
-                    );
-                    paletteToColorVariables(secondaryPalette, "Secondary");
-                    const tertiaryPalette = colorPalette(
-                        tertiary[1],
-                        tertiary[0]
-                    );
+                // #region Dark theme
+                const darkTheme_primary = hexFromArgb(
+                    theme.schemes.dark.primary
+                );
+                const darkTheme_onPrimary = hexFromArgb(
+                    theme.schemes.dark.onPrimary
+                );
+                const darkTheme_primaryContainer = hexFromArgb(
+                    theme.schemes.dark.primaryContainer
+                );
+                const darkTheme_onPrimaryContainer = hexFromArgb(
+                    theme.schemes.dark.onPrimaryContainer
+                );
+                const darkTheme_secondary = hexFromArgb(
+                    theme.schemes.dark.secondary
+                );
+                const darkTheme_onSecondary = hexFromArgb(
+                    theme.schemes.dark.onSecondary
+                );
+                const darkTheme_secondaryContainer = hexFromArgb(
+                    theme.schemes.dark.secondaryContainer
+                );
+                const darkTheme_onSecondaryContainer = hexFromArgb(
+                    theme.schemes.dark.onSecondaryContainer
+                );
+                const darkTheme_tertiary = hexFromArgb(
+                    theme.schemes.dark.tertiary
+                );
+                const darkTheme_onTertiary = hexFromArgb(
+                    theme.schemes.dark.onTertiary
+                );
+                const darkTheme_tertiaryContainer = hexFromArgb(
+                    theme.schemes.dark.tertiaryContainer
+                );
+                const darkTheme_onTertiaryContainer = hexFromArgb(
+                    theme.schemes.dark.onTertiaryContainer
+                );
+                const darkTheme_error = hexFromArgb(theme.schemes.dark.error);
+                const darkTheme_onError = hexFromArgb(
+                    theme.schemes.dark.onError
+                );
+                const darkTheme_errorContainer = hexFromArgb(
+                    theme.schemes.dark.errorContainer
+                );
+                const darkTheme_onErrorContainer = hexFromArgb(
+                    theme.schemes.dark.onErrorContainer
+                );
+                const darkTheme_background = hexFromArgb(
+                    theme.schemes.dark.background
+                );
+                const darkTheme_onbackground = hexFromArgb(
+                    theme.schemes.dark.onbackground
+                );
+                const darkTheme_surface = hexFromArgb(
+                    theme.schemes.dark.surface
+                );
+                const darkTheme_onSurface = hexFromArgb(
+                    theme.schemes.dark.onSurface
+                );
+                const darkTheme_outline = hexFromArgb(
+                    theme.schemes.dark.onbackground
+                );
+                const darkTheme_surfacevariant = hexFromArgb(
+                    theme.schemes.dark.surfaceVariant
+                );
+                const darkTheme_onSurfaceVariant = hexFromArgb(
+                    theme.schemes.dark.onSurfaceVariant
+                );
+                const darkTheme_shadow = hexFromArgb(theme.schemes.dark.shadow);
+                const darkTheme_scrim = hexFromArgb(theme.schemes.dark.scrim);
+                const darkTheme_inverseSurface = hexFromArgb(
+                    theme.schemes.dark.inverseSurface
+                );
+                const darkTheme_inverseOnSurface = hexFromArgb(
+                    theme.schemes.dark.inverseOnSurface
+                );
+                const darkTheme_inversePrimary = hexFromArgb(
+                    theme.schemes.dark.inversePrimary
+                );
 
-                    paletteToColorVariables(tertiaryPalette, "Tertiary");
-                    const errorPalette = colorPalette(error[1], error[0]);
-                    paletteToColorVariables(errorPalette, "Error");
-                    const neutralPalette = colorPalette(neutral[1], neutral[0]);
-                    paletteToColorVariables(neutralPalette, "Neutral");
-                    const neutralVariantPalette = colorPalette(
-                        neutralVariant[1],
-                        neutralVariant[0]
-                    );
-                    paletteToColorVariables(
-                        neutralVariantPalette,
-                        "Neutral Variant"
-                    );
-                    const shadowPalette = colorPalette(shadow[1], shadow[0]);
-                    paletteToColorVariables(shadowPalette, "Shadow");
-                    const scrimPalette = colorPalette(scrim[1], scrim[0]);
-                    paletteToColorVariables(scrimPalette, "Scrim");
-                    const surfacePalette = colorPalette(surface[1], surface[0]);
-                    paletteToColorVariables(surfacePalette, "Surface");
-                    // #endregion Colors and palettes creation
+                const darkTheme = [
+                    [
+                        "Primary",
+                        darkTheme_primary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Primary",
+                    ],
+                    [
+                        "onPrimary",
+                        darkTheme_onPrimary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Neutral",
+                    ],
+                    [
+                        "primaryContainer",
+                        darkTheme_primaryContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Primary",
+                    ],
+                    [
+                        "onPrimaryContainer",
+                        darkTheme_onPrimaryContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "secondary",
+                        darkTheme_secondary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Secondary",
+                    ],
+                    [
+                        "onSecondary",
+                        darkTheme_onSecondary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "secondaryContainer",
+                        darkTheme_secondaryContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Secondary",
+                    ],
+                    [
+                        "onSecondaryContainer",
+                        darkTheme_onSecondaryContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "tertiary",
+                        darkTheme_tertiary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Tertiary",
+                    ],
+                    [
+                        "onTertiary",
+                        darkTheme_onTertiary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "tertiaryContainer",
+                        darkTheme_tertiaryContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Tertiary",
+                    ],
+                    [
+                        "onTertiaryContainer",
+                        darkTheme_onTertiaryContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "error",
+                        darkTheme_error,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Error",
+                    ],
+                    [
+                        "onError",
+                        darkTheme_onError,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Neutral",
+                    ],
+                    [
+                        "errorContainer",
+                        darkTheme_errorContainer,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Error",
+                    ],
+                    [
+                        "onErrorContainer",
+                        darkTheme_onErrorContainer,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "background",
+                        darkTheme_background,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "onbackground",
+                        darkTheme_onbackground,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Neutral",
+                    ],
+                    [
+                        "surface",
+                        darkTheme_surface,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Surface",
+                    ],
+                    [
+                        "onSurface",
+                        darkTheme_onSurface,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Surface",
+                    ],
+                    [
+                        "outline",
+                        darkTheme_outline,
+                        false,
+                        true,
+                        true,
+                        false,
+                        false,
+                        "Neutral",
+                    ],
+                    [
+                        "surfacevariant",
+                        darkTheme_surfacevariant,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Surface",
+                    ],
+                    [
+                        "onSurfaceVariant",
+                        darkTheme_onSurfaceVariant,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Surface",
+                    ],
+                    [
+                        "shadow",
+                        darkTheme_shadow,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Shadow",
+                    ],
+                    // ["scrim", darkTheme_scrim,false],
+                    [
+                        "inverseSurface",
+                        darkTheme_inverseSurface,
+                        true,
+                        false,
+                        true,
+                        false,
+                        false,
+                        "Surface",
+                    ],
+                    [
+                        "inverseOnSurface",
+                        darkTheme_inverseOnSurface,
+                        true,
+                        false,
+                        true,
+                        true,
+                        true,
+                        "Surface",
+                    ],
+                    [
+                        "inversePrimary",
+                        darkTheme_inversePrimary,
+                        true,
+                        false,
+                        true,
+                        true,
+                        false,
+                        "Primary",
+                    ],
+                ];
+                // #endregion Dark Theme
 
-                    // #region Light theme
-                    const lightTheme_primary = hexFromArgb(
-                        theme.schemes.light.primary
-                    );
-                    const lightTheme_onPrimary = hexFromArgb(
-                        theme.schemes.light.onPrimary
-                    );
-                    const lightTheme_primaryContainer = hexFromArgb(
-                        theme.schemes.light.primaryContainer
-                    );
-                    const lightTheme_onPrimaryContainer = hexFromArgb(
-                        theme.schemes.light.onPrimaryContainer
-                    );
-                    const lightTheme_secondary = hexFromArgb(
-                        theme.schemes.light.secondary
-                    );
-                    const lightTheme_onSecondary = hexFromArgb(
-                        theme.schemes.light.onSecondary
-                    );
-                    const lightTheme_secondaryContainer = hexFromArgb(
-                        theme.schemes.light.secondaryContainer
-                    );
-                    const lightTheme_onSecondaryContainer = hexFromArgb(
-                        theme.schemes.light.onSecondaryContainer
-                    );
-                    const lightTheme_tertiary = hexFromArgb(
-                        theme.schemes.light.tertiary
-                    );
-                    const lightTheme_onTertiary = hexFromArgb(
-                        theme.schemes.light.onTertiary
-                    );
-                    const lightTheme_tertiaryContainer = hexFromArgb(
-                        theme.schemes.light.tertiaryContainer
-                    );
-                    const lightTheme_onTertiaryContainer = hexFromArgb(
-                        theme.schemes.light.onTertiaryContainer
-                    );
-                    const lightTheme_error = hexFromArgb(
-                        theme.schemes.light.error
-                    );
-                    const lightTheme_onError = hexFromArgb(
-                        theme.schemes.light.onError
-                    );
-                    const lightTheme_errorContainer = hexFromArgb(
-                        theme.schemes.light.errorContainer
-                    );
-                    const lightTheme_onErrorContainer = hexFromArgb(
-                        theme.schemes.light.onErrorContainer
-                    );
-                    const lightTheme_background = hexFromArgb(
-                        theme.schemes.light.background
-                    );
-                    const lightTheme_onbackground = hexFromArgb(
-                        theme.schemes.light.onbackground
-                    );
-                    const lightTheme_surface = hexFromArgb(
-                        theme.schemes.light.surface
-                    );
-                    const lightTheme_onSurface = hexFromArgb(
-                        theme.schemes.light.onSurface
-                    );
-                    const lightTheme_outline = hexFromArgb(
-                        theme.schemes.light.onbackground
-                    );
-                    const lightTheme_surfacevariant = hexFromArgb(
-                        theme.schemes.light.surfaceVariant
-                    );
-                    const lightTheme_onSurfaceVariant = hexFromArgb(
-                        theme.schemes.light.onSurfaceVariant
-                    );
-                    const lightTheme_shadow = hexFromArgb(
-                        theme.schemes.light.shadow
-                    );
-                    const lightTheme_scrim = hexFromArgb(
-                        theme.schemes.light.scrim
-                    );
-                    const lightTheme_inverseSurface = hexFromArgb(
-                        theme.schemes.light.inverseSurface
-                    );
-                    const lightTheme_inverseOnSurface = hexFromArgb(
-                        theme.schemes.light.inverseOnSurface
-                    );
-                    const lightTheme_inversePrimary = hexFromArgb(
-                        theme.schemes.light.inversePrimary
-                    );
-
-                    const lightTheme = [
-                        [
-                            "Primary",
-                            lightTheme_primary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Primary",
-                        ],
-                        [
-                            "onPrimary",
-                            lightTheme_onPrimary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Neutral",
-                        ],
-                        [
-                            "primaryContainer",
-                            lightTheme_primaryContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Primary",
-                        ],
-                        [
-                            "onPrimaryContainer",
-                            lightTheme_onPrimaryContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "secondary",
-                            lightTheme_secondary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Secondary",
-                        ],
-                        [
-                            "onSecondary",
-                            lightTheme_onSecondary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "secondaryContainer",
-                            lightTheme_secondaryContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Secondary",
-                        ],
-                        [
-                            "onSecondaryContainer",
-                            lightTheme_onSecondaryContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "tertiary",
-                            lightTheme_tertiary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Tertiary",
-                        ],
-                        [
-                            "onTertiary",
-                            lightTheme_onTertiary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "tertiaryContainer",
-                            lightTheme_tertiaryContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Tertiary",
-                        ],
-                        [
-                            "onTertiaryContainer",
-                            lightTheme_onTertiaryContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "error",
-                            lightTheme_error,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Error",
-                        ],
-                        [
-                            "onError",
-                            lightTheme_onError,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Neutral",
-                        ],
-                        [
-                            "errorContainer",
-                            lightTheme_errorContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Error",
-                        ],
-                        [
-                            "onErrorContainer",
-                            lightTheme_onErrorContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "background",
-                            lightTheme_background,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "onbackground",
-                            lightTheme_onbackground,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Neutral",
-                        ],
-                        [
-                            "surface",
-                            lightTheme_surface,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Surface",
-                        ],
-                        [
-                            "onSurface",
-                            lightTheme_onSurface,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Surface",
-                        ],
-                        [
-                            "outline",
-                            lightTheme_outline,
-                            false,
-                            true,
-                            true,
-                            false,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "surfacevariant",
-                            lightTheme_surfacevariant,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Surface",
-                        ],
-                        [
-                            "onSurfaceVariant",
-                            lightTheme_onSurfaceVariant,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Surface",
-                        ],
-                        [
-                            "shadow",
-                            lightTheme_shadow,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Shadow",
-                        ],
-                        // ["scrim", lightTheme_scrim,false],
-                        [
-                            "inverseSurface",
-                            lightTheme_inverseSurface,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Surface",
-                        ],
-                        [
-                            "inverseOnSurface",
-                            lightTheme_inverseOnSurface,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Surface",
-                        ],
-                        [
-                            "inversePrimary",
-                            lightTheme_inversePrimary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Primary",
-                        ],
-                    ];
-                    // #endregion Light Theme
-
-                    // #region Dark theme
-                    const darkTheme_primary = hexFromArgb(
-                        theme.schemes.dark.primary
-                    );
-                    const darkTheme_onPrimary = hexFromArgb(
-                        theme.schemes.dark.onPrimary
-                    );
-                    const darkTheme_primaryContainer = hexFromArgb(
-                        theme.schemes.dark.primaryContainer
-                    );
-                    const darkTheme_onPrimaryContainer = hexFromArgb(
-                        theme.schemes.dark.onPrimaryContainer
-                    );
-                    const darkTheme_secondary = hexFromArgb(
-                        theme.schemes.dark.secondary
-                    );
-                    const darkTheme_onSecondary = hexFromArgb(
-                        theme.schemes.dark.onSecondary
-                    );
-                    const darkTheme_secondaryContainer = hexFromArgb(
-                        theme.schemes.dark.secondaryContainer
-                    );
-                    const darkTheme_onSecondaryContainer = hexFromArgb(
-                        theme.schemes.dark.onSecondaryContainer
-                    );
-                    const darkTheme_tertiary = hexFromArgb(
-                        theme.schemes.dark.tertiary
-                    );
-                    const darkTheme_onTertiary = hexFromArgb(
-                        theme.schemes.dark.onTertiary
-                    );
-                    const darkTheme_tertiaryContainer = hexFromArgb(
-                        theme.schemes.dark.tertiaryContainer
-                    );
-                    const darkTheme_onTertiaryContainer = hexFromArgb(
-                        theme.schemes.dark.onTertiaryContainer
-                    );
-                    const darkTheme_error = hexFromArgb(
-                        theme.schemes.dark.error
-                    );
-                    const darkTheme_onError = hexFromArgb(
-                        theme.schemes.dark.onError
-                    );
-                    const darkTheme_errorContainer = hexFromArgb(
-                        theme.schemes.dark.errorContainer
-                    );
-                    const darkTheme_onErrorContainer = hexFromArgb(
-                        theme.schemes.dark.onErrorContainer
-                    );
-                    const darkTheme_background = hexFromArgb(
-                        theme.schemes.dark.background
-                    );
-                    const darkTheme_onbackground = hexFromArgb(
-                        theme.schemes.dark.onbackground
-                    );
-                    const darkTheme_surface = hexFromArgb(
-                        theme.schemes.dark.surface
-                    );
-                    const darkTheme_onSurface = hexFromArgb(
-                        theme.schemes.dark.onSurface
-                    );
-                    const darkTheme_outline = hexFromArgb(
-                        theme.schemes.dark.onbackground
-                    );
-                    const darkTheme_surfacevariant = hexFromArgb(
-                        theme.schemes.dark.surfaceVariant
-                    );
-                    const darkTheme_onSurfaceVariant = hexFromArgb(
-                        theme.schemes.dark.onSurfaceVariant
-                    );
-                    const darkTheme_shadow = hexFromArgb(
-                        theme.schemes.dark.shadow
-                    );
-                    const darkTheme_scrim = hexFromArgb(
-                        theme.schemes.dark.scrim
-                    );
-                    const darkTheme_inverseSurface = hexFromArgb(
-                        theme.schemes.dark.inverseSurface
-                    );
-                    const darkTheme_inverseOnSurface = hexFromArgb(
-                        theme.schemes.dark.inverseOnSurface
-                    );
-                    const darkTheme_inversePrimary = hexFromArgb(
-                        theme.schemes.dark.inversePrimary
-                    );
-
-                    const darkTheme = [
-                        [
-                            "Primary",
-                            darkTheme_primary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Primary",
-                        ],
-                        [
-                            "onPrimary",
-                            darkTheme_onPrimary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Neutral",
-                        ],
-                        [
-                            "primaryContainer",
-                            darkTheme_primaryContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Primary",
-                        ],
-                        [
-                            "onPrimaryContainer",
-                            darkTheme_onPrimaryContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "secondary",
-                            darkTheme_secondary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Secondary",
-                        ],
-                        [
-                            "onSecondary",
-                            darkTheme_onSecondary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "secondaryContainer",
-                            darkTheme_secondaryContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Secondary",
-                        ],
-                        [
-                            "onSecondaryContainer",
-                            darkTheme_onSecondaryContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "tertiary",
-                            darkTheme_tertiary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Tertiary",
-                        ],
-                        [
-                            "onTertiary",
-                            darkTheme_onTertiary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "tertiaryContainer",
-                            darkTheme_tertiaryContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Tertiary",
-                        ],
-                        [
-                            "onTertiaryContainer",
-                            darkTheme_onTertiaryContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "error",
-                            darkTheme_error,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Error",
-                        ],
-                        [
-                            "onError",
-                            darkTheme_onError,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Neutral",
-                        ],
-                        [
-                            "errorContainer",
-                            darkTheme_errorContainer,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Error",
-                        ],
-                        [
-                            "onErrorContainer",
-                            darkTheme_onErrorContainer,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "background",
-                            darkTheme_background,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "onbackground",
-                            darkTheme_onbackground,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Neutral",
-                        ],
-                        [
-                            "surface",
-                            darkTheme_surface,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Surface",
-                        ],
-                        [
-                            "onSurface",
-                            darkTheme_onSurface,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Surface",
-                        ],
-                        [
-                            "outline",
-                            darkTheme_outline,
-                            false,
-                            true,
-                            true,
-                            false,
-                            false,
-                            "Neutral",
-                        ],
-                        [
-                            "surfacevariant",
-                            darkTheme_surfacevariant,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Surface",
-                        ],
-                        [
-                            "onSurfaceVariant",
-                            darkTheme_onSurfaceVariant,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Surface",
-                        ],
-                        [
-                            "shadow",
-                            darkTheme_shadow,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Shadow",
-                        ],
-                        // ["scrim", darkTheme_scrim,false],
-                        [
-                            "inverseSurface",
-                            darkTheme_inverseSurface,
-                            true,
-                            false,
-                            true,
-                            false,
-                            false,
-                            "Surface",
-                        ],
-                        [
-                            "inverseOnSurface",
-                            darkTheme_inverseOnSurface,
-                            true,
-                            false,
-                            true,
-                            true,
-                            true,
-                            "Surface",
-                        ],
-                        [
-                            "inversePrimary",
-                            darkTheme_inversePrimary,
-                            true,
-                            false,
-                            true,
-                            true,
-                            false,
-                            "Primary",
-                        ],
-                    ];
-                    // #endregion Dark Theme
-
-                    // #region Create Styles
-                    // Light and Dark theme arrays presents:
-                    // 0 = styleName
-                    // 1 = color
-                    // 2 = fill
-                    // 3 = border
-                    // 4 = layer style
-                    // 5 = text style
-                    // 6 = titles
-                    // 7 = palette of reference
-                    lightTheme.forEach((style) => {
-                        //  If layer style
-                        if (style[4]) {
-                            // Fill style
-                            if (style[2]) {
-                                createNewLayerStyle(
-                                    style,
-                                    "Light Theme/Fills/",
-                                    false,
-                                    style[7]
-                                );
-                            }
-                            //  Border Style
-                            if (style[3]) {
-                                createNewLayerStyle(
-                                    style,
-                                    "Light Theme/Borders/",
-                                    true,
-                                    style[7]
-                                );
-                            }
-                        }
-                        //  If text style
-                        if (style[5]) {
-                            createNewTextStyle(style, "Light Theme/", style[7]);
-                        }
-                    });
-
-                    darkTheme.forEach((style) => {
-                        //  If layer style
-                        if (style[4]) {
-                            // Fill style
-                            if (style[2]) {
-                                createNewLayerStyle(
-                                    style,
-                                    "Dark Theme/Fills/",
-                                    false,
-                                    style[7]
-                                );
-                            }
-                            //  Border Style
-                            if (style[3]) {
-                                createNewLayerStyle(
-                                    style,
-                                    "Dark Theme/Borders/",
-                                    true,
-                                    style[7]
-                                );
-                            }
-                        }
-                        //  If text style
-                        if (style[5]) {
-                            createNewTextStyle(style, "Dark Theme/", style[7]);
-                        }
-                    });
-                    // #endregion Create Styles
-
-                    // #region Connect Color Variables
-
-                    layerStyles.forEach((layerStyle) => {
-                        let styleName = layerStyle.name;
-                        let stylePalette = "";
-                        for (let n = 0; n < insertedLayerStyles.length; n++) {
-                            if (insertedLayerStyles[n][0] === styleName) {
-                                stylePalette = insertedLayerStyles[n][1];
-                                return;
-                            }
-                        }
-
-                        let styleFillColor = "";
-                        if (
-                            layerStyle.style.fills[0] !== "" &&
-                            layerStyle.style.fills[0] !== undefined
-                        ) {
-                            styleFillColor = layerStyle.style.fills[0].color;
-                        }
-
-                        let styleBorderColor = "";
-                        if (
-                            layerStyle.style.borders[0] !== "" &&
-                            layerStyle.style.borders[0] !== undefined
-                        ) {
-                            styleBorderColor =
-                                layerStyle.style.borders[0].color;
-                        }
-
-                        let message = "Style Name: " + styleName;
-                        message = message + " - Fill Color: " + styleFillColor;
-                        message =
-                            message + " - Border Color: " + styleBorderColor;
-                        // console.log(message);
-
-                        if (
-                            styleFillColor !== undefined &&
-                            styleFillColor !== ""
-                        ) {
-                            let colorVariable = matchColorVariables(
-                                styleFillColor,
-                                stylePalette
+                // #region Create Styles
+                // Light and Dark theme arrays presents:
+                // 0 = styleName
+                // 1 = color
+                // 2 = fill
+                // 3 = border
+                // 4 = layer style
+                // 5 = text style
+                // 6 = titles
+                // 7 = palette of reference
+                lightTheme.forEach((style) => {
+                    //  If layer style
+                    if (style[4]) {
+                        // Fill style
+                        if (style[2]) {
+                            createNewLayerStyle(
+                                style,
+                                "Light Theme/Fills/",
+                                false,
+                                style[7]
                             );
-                            if (colorVariable !== undefined) {
-                                layerStyle.style.fills[0].color =
-                                    colorVariable.referencingColor;
-                            }
-                            // console.log(colorVariable);
                         }
-                        if (
-                            styleBorderColor !== undefined &&
-                            styleBorderColor !== ""
-                        ) {
-                            let colorVariable = matchColorVariables(
-                                styleBorderColor,
-                                styleName
+                        //  Border Style
+                        if (style[3]) {
+                            createNewLayerStyle(
+                                style,
+                                "Light Theme/Borders/",
+                                true,
+                                style[7]
                             );
-                            if (colorVariable !== undefined) {
-                                layerStyle.style.borders[0].color =
-                                    colorVariable.referencingColor;
-                            }
-                            // console.log(colorVariable);
-                            updateLayerStyles();
                         }
-                    });
+                    }
+                    //  If text style
+                    if (style[5]) {
+                        createNewTextStyle(style, "Light Theme/", style[7]);
+                    }
+                });
 
-                    textStyles.forEach((textStyle) => {
-                        let styleName = textStyle.name;
-                        let stylePalette = "";
-                        for (let n = 0; n < insertedTextStyles.length; n++) {
-                            if (insertedTextStyles[n][0] === styleName) {
-                                stylePalette = insertedTextStyles[n][1];
-                                return;
-                            }
+                darkTheme.forEach((style) => {
+                    //  If layer style
+                    if (style[4]) {
+                        // Fill style
+                        if (style[2]) {
+                            createNewLayerStyle(
+                                style,
+                                "Dark Theme/Fills/",
+                                false,
+                                style[7]
+                            );
                         }
+                        //  Border Style
+                        if (style[3]) {
+                            createNewLayerStyle(
+                                style,
+                                "Dark Theme/Borders/",
+                                true,
+                                style[7]
+                            );
+                        }
+                    }
+                    //  If text style
+                    if (style[5]) {
+                        createNewTextStyle(style, "Dark Theme/", style[7]);
+                    }
+                });
+                // #endregion Create Styles
 
-                        let styleTextColor = textStyle.style.textColor;
+                // #region Connect Color Variables
+                layerStyles.forEach((layerStyle) => {
+                    let styleName = layerStyle.name;
+                    let stylePalette = "";
+                    for (let n = 0; n < insertedLayerStyles.length; n++) {
+                        if (insertedLayerStyles[n][0] === styleName) {
+                            stylePalette = insertedLayerStyles[n][1];
+                            return;
+                        }
+                    }
 
+                    let styleFillColor = "";
+                    if (
+                        layerStyle.style.fills[0] !== "" &&
+                        layerStyle.style.fills[0] !== undefined
+                    ) {
+                        styleFillColor = layerStyle.style.fills[0].color;
+                    }
+
+                    let styleBorderColor = "";
+                    if (
+                        layerStyle.style.borders[0] !== "" &&
+                        layerStyle.style.borders[0] !== undefined
+                    ) {
+                        styleBorderColor = layerStyle.style.borders[0].color;
+                    }
+
+                    let message = "Style Name: " + styleName;
+                    message = message + " - Fill Color: " + styleFillColor;
+                    message = message + " - Border Color: " + styleBorderColor;
+                    // console.log(message);
+
+                    if (styleFillColor !== undefined && styleFillColor !== "") {
                         let colorVariable = matchColorVariables(
-                            styleTextColor,
+                            styleFillColor,
                             stylePalette
                         );
                         if (colorVariable !== undefined) {
-                            textStyle.style.textColor =
+                            layerStyle.style.fills[0].color =
                                 colorVariable.referencingColor;
                         }
-                        updateTextStyles();
-                    });
+                        // console.log(colorVariable);
+                    }
+                    if (
+                        styleBorderColor !== undefined &&
+                        styleBorderColor !== ""
+                    ) {
+                        let colorVariable = matchColorVariables(
+                            styleBorderColor,
+                            styleName
+                        );
+                        if (colorVariable !== undefined) {
+                            layerStyle.style.borders[0].color =
+                                colorVariable.referencingColor;
+                        }
+                        // console.log(colorVariable);
+                        updateLayerStyles();
+                    }
+                });
 
-                    // #endregion Connect Color Variables
-                }
+                textStyles.forEach((textStyle) => {
+                    let styleName = textStyle.name;
+                    let stylePalette = "";
+                    for (let n = 0; n < insertedTextStyles.length; n++) {
+                        if (insertedTextStyles[n][0] === styleName) {
+                            stylePalette = insertedTextStyles[n][1];
+                            return;
+                        }
+                    }
+
+                    let styleTextColor = textStyle.style.textColor;
+
+                    let colorVariable = matchColorVariables(
+                        styleTextColor,
+                        stylePalette
+                    );
+                    if (colorVariable !== undefined) {
+                        textStyle.style.textColor =
+                            colorVariable.referencingColor;
+                    }
+                    updateTextStyles();
+                });
+
+                // #endregion Connect Color Variables
             }
         }
     );
@@ -1340,4 +1329,21 @@ function updateTextStyles() {
     arrayTextStyleStyles = textStyles.map(
         (sharedstyle) => sharedstyle["style"]
     );
+}
+
+function getPath(initialPath = "~/Documents") {
+    const panel = NSOpenPanel.openPanel();
+    panel.setCanChooseFiles(true);
+    panel.setCanChooseDirectories(true);
+    panel.setCanCreateDirectories(true);
+    panel.setAllowsMultipleSelection(false);
+    panel.setTitle("Select a file or folder");
+    panel.setPrompt("Select");
+    panel.setDirectoryURL(NSURL.fileURLWithPath(initialPath));
+    const result = panel.runModal();
+    if (result === NSFileHandlingPanelOKButton) {
+        return panel.URL().path();
+    } else {
+        return null;
+    }
 }
