@@ -9,7 +9,7 @@
     "skpm": {
         "name": "Sketch MD3 Color Palettes",
         "manifest": "src/manifest.json",
-        "main": "sketch-m3-color-palettes.sketchplugin",
+        "main": "sketch-md3-color-palettes.sketchplugin",
         "assets": [
             "assets/**/*"
         ],
@@ -34,6 +34,7 @@
     ],
     "dependencies": {
         "@material/material-color-utilities": "^0.2.0",
+        "@skpm/dialog": "^0.4.2",
         "@skpm/fs": "^0.2.6",
         "color-difference": "^0.3.4",
         "color-extr-thief": "^2.3.4",

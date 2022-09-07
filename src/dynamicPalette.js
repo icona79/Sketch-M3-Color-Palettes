@@ -79,7 +79,6 @@ export default function () {
     };
 
     const browserWindow = new BrowserWindow(options);
-    console.log("here");
     // only show the window when the page has loaded to avoid a white flash
     browserWindow.once("ready-to-show", () => {
         // Send the list of Text Styles to the plugin webview
@@ -1007,6 +1006,8 @@ export default function () {
             });
 
             // #endregion Connect Color Variables
+
+            browserWindow.close();
         } catch (pluginErr) {
             console.log(pluginErr);
         }
@@ -1055,7 +1056,7 @@ export default function () {
         });
     }
 
-    browserWindow.loadURL(require('../resources/webview.html'));
+    browserWindow.loadURL(require("../resources/webview.html"));
 }
 
 function colorPalette(color, name = "") {

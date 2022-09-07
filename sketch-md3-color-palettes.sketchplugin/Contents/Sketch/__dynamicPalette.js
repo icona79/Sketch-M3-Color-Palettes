@@ -6463,6 +6463,56 @@ module.exports = function MochaDelegate(definition, superclass) {
 
 /***/ }),
 
+/***/ "./node_modules/rgb-hex/index.js":
+/*!***************************************!*\
+  !*** ./node_modules/rgb-hex/index.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/* eslint-disable no-mixed-operators */
+module.exports = (red, green, blue, alpha) => {
+	const isPercent = (red + (alpha || '')).toString().includes('%');
+
+	if (typeof red === 'string') {
+		[red, green, blue, alpha] = red.match(/(0?\.?\d{1,3})%?\b/g).map(Number);
+	} else if (alpha !== undefined) {
+		alpha = parseFloat(alpha);
+	}
+
+	if (typeof red !== 'number' ||
+		typeof green !== 'number' ||
+		typeof blue !== 'number' ||
+		red > 255 ||
+		green > 255 ||
+		blue > 255
+	) {
+		throw new TypeError('Expected three numbers below 256');
+	}
+
+	if (typeof alpha === 'number') {
+		if (!isPercent && alpha >= 0 && alpha <= 1) {
+			alpha = Math.round(255 * alpha);
+		} else if (isPercent && alpha >= 0 && alpha <= 100) {
+			alpha = Math.round(255 * alpha / 100);
+		} else {
+			throw new TypeError(`Expected alpha value (${alpha}) as a fraction or percentage`);
+		}
+
+		alpha = (alpha | 1 << 8).toString(16).slice(1);
+	} else {
+		alpha = '';
+	}
+
+	return ((blue | green << 8 | red << 16) | 1 << 24).toString(16).slice(1) + alpha;
+};
+/* eslint-enable no-mixed-operators */
+
+
+/***/ }),
+
 /***/ "./node_modules/sketch-module-web-view/lib/browser-api.js":
 /*!****************************************************************!*\
   !*** ./node_modules/sketch-module-web-view/lib/browser-api.js ***!
@@ -8515,6 +8565,17 @@ module.exports.sendToWebview = function sendToWebview(identifier, evalString) {
 
 /***/ }),
 
+/***/ "./resources/webview.html":
+/*!********************************!*\
+  !*** ./resources/webview.html ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Contents/Sketch")[0] + ".sketchplugin/Contents/Resources/_webpack_resources/fb8fc0a1acb205f2facfdc5262277a78.html";
+
+/***/ }),
+
 /***/ "./src/dynamicPalette.js":
 /*!*******************************!*\
   !*** ./src/dynamicPalette.js ***!
@@ -8539,6 +8600,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var is_hexcolor__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(is_hexcolor__WEBPACK_IMPORTED_MODULE_6__);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! path */ "path");
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var rgb_hex__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! rgb-hex */ "./node_modules/rgb-hex/index.js");
+/* harmony import */ var rgb_hex__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(rgb_hex__WEBPACK_IMPORTED_MODULE_8__);
 
 Mocha.sharedRuntime().loadFrameworkWithName("CoreFoundation");
 
@@ -8549,6 +8612,7 @@ var webviewIdentifier = "dynamicPalette.webview"; // #region Node modules
 
 
 var cd = __webpack_require__(/*! color-difference */ "./node_modules/color-difference/lib/index.js");
+
 
 
 
@@ -8620,8 +8684,7 @@ var insertedTextStyles = []; // #endregion
     height: 570,
     show: false
   };
-  var browserWindow = new sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default.a(options);
-  console.log("here"); // only show the window when the page has loaded to avoid a white flash
+  var browserWindow = new sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default.a(options); // only show the window when the page has loaded to avoid a white flash
 
   browserWindow.once("ready-to-show", function () {
     // Send the list of Text Styles to the plugin webview
@@ -8637,7 +8700,7 @@ var insertedTextStyles = []; // #endregion
     try {
       // #region Theme
       var theme;
-      var value = parameters.mainColor; // #region Theme
+      var value = rgb_hex__WEBPACK_IMPORTED_MODULE_8___default()(parameters.mainColor); // #region Theme
 
       theme = Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["themeFromSourceColor"])(Object(_material_material_color_utilities__WEBPACK_IMPORTED_MODULE_3__["argbFromHex"])(value), [// {
       //     name: "custom-1",
@@ -8856,6 +8919,8 @@ var insertedTextStyles = []; // #endregion
 
         updateTextStyles();
       }); // #endregion Connect Color Variables
+
+      browserWindow.close();
     } catch (pluginErr) {
       console.log(pluginErr);
     }
@@ -8887,6 +8952,8 @@ var insertedTextStyles = []; // #endregion
       }
     });
   }
+
+  browserWindow.loadURL(__webpack_require__(/*! ../resources/webview.html */ "./resources/webview.html"));
 });
 
 function colorPalette(color) {
