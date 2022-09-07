@@ -1054,6 +1054,8 @@ export default function () {
             }
         });
     }
+
+    browserWindow.loadURL(require('../resources/webview.html'));
 }
 
 function colorPalette(color, name = "") {
