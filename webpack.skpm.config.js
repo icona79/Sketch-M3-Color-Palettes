@@ -33,4 +33,9 @@ module.exports = function (config, entry) {
             },
         ],
     });
+    config.module.rules.push({
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto',
+    });
 };
