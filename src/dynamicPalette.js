@@ -70,6 +70,38 @@ var insertedTextStyles = [];
 // #endregion
 
 export default function () {
+    // Select your picture
+    function getPath(initialPath = "~/Documents") {
+        const panel = NSOpenPanel.openPanel();
+        panel.setCanChooseFiles(true);
+        panel.setCanChooseDirectories(true);
+        panel.setCanCreateDirectories(true);
+        panel.setAllowsMultipleSelection(false);
+        panel.setTitle("Select a file or folder");
+        panel.setPrompt("Select");
+        panel.setDirectoryURL(NSURL.fileURLWithPath(initialPath));
+        const result = panel.runModal();
+        if (result === NSFileHandlingPanelOKButton) {
+            return panel.URL().path();
+        } else {
+            return null;
+        }
+    }
+
+    let sourceImagePath = getPath();
+    let fileExtension = sourceImagePath.split(".").pop();
+    let availableExtensions = ["png", "jpg", "jpeg", "svg", "webp", "gif"];
+    // close the
+    if (availableExtensions.indexOf(fileExtension) === -1) {
+        sketch.UI.alert(
+            "File Extension not supported",
+            "Please, select an image file"
+        );
+        return;
+    }
+    sourceImagePath = sourceImagePath.toString();
+    console.log(sourceImagePath);
+
     /* Create the webview with the sizes */
     const options = {
         identifier: webviewIdentifier,
@@ -81,8 +113,14 @@ export default function () {
     const browserWindow = new BrowserWindow(options);
     // only show the window when the page has loaded to avoid a white flash
     browserWindow.once("ready-to-show", () => {
-        // Send the list of Text Styles to the plugin webview
+        // Send the image path to the Webview
         try {
+            // browserWindow.webContents
+            //     .executeJavaScript(`imagePath(${sourceImagePath})`)
+            //     .then(() => {
+            //         // Once we're processing the styles on the webview, we can show it
+            //         browserWindow.show();
+            //     });
             browserWindow.show();
             // browserWindow.loadURL(require("./resources/webview.html"));
         } catch (createWebViewErr) {

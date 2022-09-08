@@ -8677,7 +8677,39 @@ var textString = JSON.stringify(textStylesOrdered);
 var insertedTextStyles = []; // #endregion
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
+  // Select your picture
+  function getPath() {
+    var initialPath = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "~/Documents";
+    var panel = NSOpenPanel.openPanel();
+    panel.setCanChooseFiles(true);
+    panel.setCanChooseDirectories(true);
+    panel.setCanCreateDirectories(true);
+    panel.setAllowsMultipleSelection(false);
+    panel.setTitle("Select a file or folder");
+    panel.setPrompt("Select");
+    panel.setDirectoryURL(NSURL.fileURLWithPath(initialPath));
+    var result = panel.runModal();
+
+    if (result === NSFileHandlingPanelOKButton) {
+      return panel.URL().path();
+    } else {
+      return null;
+    }
+  }
+
+  var sourceImagePath = getPath();
+  var fileExtension = sourceImagePath.split(".").pop();
+  var availableExtensions = ["png", "jpg", "jpeg", "svg", "webp", "gif"]; // close the
+
+  if (availableExtensions.indexOf(fileExtension) === -1) {
+    sketch.UI.alert("File Extension not supported", "Please, select an image file");
+    return;
+  }
+
+  sourceImagePath = sourceImagePath.toString();
+  console.log(sourceImagePath);
   /* Create the webview with the sizes */
+
   var options = {
     identifier: webviewIdentifier,
     width: 421,
@@ -8687,8 +8719,14 @@ var insertedTextStyles = []; // #endregion
   var browserWindow = new sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default.a(options); // only show the window when the page has loaded to avoid a white flash
 
   browserWindow.once("ready-to-show", function () {
-    // Send the list of Text Styles to the plugin webview
+    // Send the image path to the Webview
     try {
+      // browserWindow.webContents
+      //     .executeJavaScript(`imagePath(${sourceImagePath})`)
+      //     .then(() => {
+      //         // Once we're processing the styles on the webview, we can show it
+      //         browserWindow.show();
+      //     });
       browserWindow.show(); // browserWindow.loadURL(require("./resources/webview.html"));
     } catch (createWebViewErr) {
       console.log(createWebViewErr);

@@ -10451,90 +10451,41 @@ var uppercaseOnly = "/^[A-Z]+$/";
 var lowercaseOnly = "/^[a-z]+$/";
 var stringOnly = "/^[A-Za-z0-9]+$/";
 var imageSelected = false;
-document.getElementById("picField").addEventListener("click", function (evt) {
-  console.log("Select picture button clicked");
-  var imagePath = openFinder();
 
-  if (imagePath !== undefined && imagePath !== "") {
-    document.getElementById("img").src = imagePath;
+window.imagePath = function (sourceImagePath) {
+  if (sourceImagePath !== empty) {
+    console.log("here"); // document.getElementById("img").src = sourceImagePath;
+
     imageSelected = true;
-  } // var tgt = evt.target || window.event.srcElement,
-  //     files = tgt.files;
-  // if (FileReader && files && files.length) {
-  //     var fr = new FileReader();
-  //     fr.onload = function () {
-  //         document.getElementById("img").src = fr.result;
-  //     };
-  //     fr.readAsDataURL(files[0]);
-  // }
-  // // Not supported
-  // else {
-  //     console.log("Not available");
-  //     // fallback -- perhaps submit the input to an iframe and temporarily store
-  //     // them on the server until the user's session ends.
-  // }
+  }
+};
 
-});
 document.getElementById("parametersSubmit").addEventListener("click", function () {
-  console.log("Confirm button clicked"); // const img = document.querySelector("img");
-  // let color = "";
-  // let palette = [];
-  // if (imageSelected) {
-  //     if (img.complete) {
-  //         color = getColor(img);
-  //         palette = getPalette(img, 4);
-  //     } else {
-  //         image.addEventListener("load", function () {
-  //             getColor(img);
-  //         });
-  //     }
-  //     var parameters = {
-  //         mainColor: color,
-  //         palette: palette,
-  //     };
-  //     window.postMessage("nativeLog", parameters);
-  // } else {
+  console.log("Confirm button clicked");
+  var img = document.querySelector("img");
+  var color = "";
+  var palette = [];
 
-  window.postMessage("nativeLog", "ciao"); // }
-}); // function getPath(initialPath = "~/Documents") {
-//     console.log("inside");
-//     const panel = NSOpenPanel.openPanel();
-//     panel.setCanChooseFiles(true);
-//     panel.setCanChooseDirectories(true);
-//     panel.setCanCreateDirectories(true);
-//     panel.setAllowsMultipleSelection(false);
-//     panel.setTitle("Select a file or folder");
-//     panel.setPrompt("Select");
-//     panel.setDirectoryURL(NSURL.fileURLWithPath(initialPath));
-//     const result = panel.runModal();
-//     if (result === NSFileHandlingPanelOKButton) {
-//         return panel.URL().path();
-//     } else {
-//         return null;
-//     }
-// }
-// document.getElementById("my-element").remove()
-// document.getElementById("tag-id").innerHTML = "<ol><li>html data</li></ol>";
-// Function Dialog
-
-function openFinder() {
-  var filepath = "";
-  _skpm_dialog__WEBPACK_IMPORTED_MODULE_1___default.a.showOpenDialog({
-    filters: [{
-      name: "Images",
-      extensions: ["png", "jpg", "jpeg", "gif", "svg", "webp"]
-    }],
-    properties: ["openFile"]
-  }).then(function (result) {
-    filepath = result.filePaths[0];
-    var rawdata = Object(_skpm_fs__WEBPACK_IMPORTED_MODULE_2__["readFileSync"])(filepath);
-
-    if (!rawdata) {
-      UI.message("⚠️ File could not be read");
+  if (imageSelected) {
+    if (img.complete) {
+      color = Object(color_extr_thief__WEBPACK_IMPORTED_MODULE_0__["getColor"])(img);
+      palette = Object(color_extr_thief__WEBPACK_IMPORTED_MODULE_0__["getPalette"])(img, 4);
+    } else {
+      image.addEventListener("load", function () {
+        Object(color_extr_thief__WEBPACK_IMPORTED_MODULE_0__["getColor"])(img);
+      });
     }
-  });
-  return filepath;
-}
+
+    var parameters = {
+      mainColor: color,
+      palette: palette
+    };
+    window.postMessage("nativeLog", parameters);
+  } else {
+    console.log("Image Error");
+  }
+}); // document.getElementById("my-element").remove()
+// document.getElementById("tag-id").innerHTML = "<ol><li>html data</li></ol>";
 
 /***/ }),
 
