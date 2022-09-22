@@ -43,9 +43,12 @@
         "img": "^3.0.3",
         "is-hexcolor": "^1.0.0",
         "node-fetch": "^2.6.7",
+        "object-path": "^0.11.8",
+        "parse-json": "^6.0.2",
         "path": "0.12.7",
         "platform-folders": "^0.6.0",
         "quantize": "^1.0.2",
+        "react-zlib-js": "^1.0.5",
         "rgb-hex": "^3.0.0",
         "sketch-module-web-view": "^3.1.4",
         "sort-object": "^3.0.3"

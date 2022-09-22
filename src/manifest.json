@@ -14,9 +14,9 @@
             }
         },
         {
-            "name": "🖼 Dynamic theme from pictures",
-            "identifier": "palette-dynamic",
-            "script": "./dynamicPalette.js",
+            "name": "🤖 Import theme from MD3 Web tool design tokens",
+            "identifier": "palette-import",
+            "script": "./import-tokens.js",
             "handlers": {
                 "run": "onRun",
                 "actions": {
@@ -26,8 +26,9 @@
         }
     ],
     "menu": {
-        "title": "🤖 MD3 Color Palettes",
-        "items": ["palette-custom", "palette-dynamic"]
+        "title": "🤖 Import theme from MD3 Web tool design tokens",
+        "items": ["palette-import"],
+        "isRoot": true
     },
     "icon": "icon.png"
 }
