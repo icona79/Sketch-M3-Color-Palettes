@@ -6,6 +6,8 @@ const fs = require("@skpm/fs");
 const os = require("os");
 const path = require("path");
 const desktopDir = path.join(os.homedir(), "Desktop");
+// var sortObj = require("sort-object");
+var sort = require("smart-deep-sort");
 
 // #region Sketch Items
 const sketch = require("sketch");
@@ -18,6 +20,7 @@ var SharedStyle = require("sketch/dom").SharedStyle;
 
 // Document variables
 var document = sketch.getSelectedDocument();
+var doc = context.document;
 var firstSelectedLayer = document.selectedLayers.layers[0];
 var artboard = sketch.Artboard;
 // #endregion
@@ -48,13 +51,35 @@ var stylesString = JSON.stringify(layerStylesOrdered);
 var textString = JSON.stringify(textStylesOrdered);
 var insertedTextStyles = [];
 
+var colorVariables = document.swatches;
 // This array contains:
 // 0 = color variable name
 // 1 = color variable folder
 // 2 = color variable color (HEX)
 // 3 = color variable referencing color
 var colorVariablesArray = [];
+
+var MDPalettes = [];
+const MDPaletteChromaOptions = [
+    "0",
+    "10",
+    "20",
+    "30",
+    "40",
+    "50",
+    "60",
+    "70",
+    "80",
+    "90",
+    "95",
+    "99",
+    "100",
+];
 // #endregion
+
+// #region Visual variables
+const pageName = "Material Design Palettes";
+// #endregion Visual variables
 
 export default function () {
     let directoryFiles = getPath();
@@ -83,9 +108,7 @@ export default function () {
                         let name = entity.name.substring(
                             entity.name.lastIndexOf(".") + 1
                         );
-                        // console.log("Name: " + name);
                         let palette = name.replace(/[0-9]/g, "");
-                        // console.log("Palette: " + palette);
                         let color = entity.value;
                         let description = entity.description;
                         palettes.push([palette, name, color]);
@@ -105,6 +128,13 @@ export default function () {
                 }
             }
         });
+
+        let groupByCategory = palettes.reduce((group, palette) => {
+            const [category] = palette;
+            group[category] = group[category] ?? [];
+            group[category].push(palette);
+            return group;
+        }, {});
         // #endregion Color Tokens import
 
         // #region Text Tokens import
@@ -184,27 +214,91 @@ export default function () {
         // #endregion Connect Color Variables
 
         // #region Generates elements
-        let newPage = findOrCreatePage(document, "Material Design Palettes");
+        // 1. Remove the page if it exists
+        removeObjectsFromPage(document, pageName);
+        // 2. Create a new page for the Color explaination
+        let newPage = findOrCreatePage(document, pageName);
         // #region Tonal Palettes
+        // 3. Insert the Palette artboard
         let paletteArtboard = createArtboard(
             newPage,
             0,
             0,
-            1000,
-            100,
+            1636,
+            816,
             "Tonal Palettes"
         );
         let paletteTitle = createTextWithStyleName(
             paletteArtboard,
             32,
             16,
-            "light/headline/on-background/headline-large",
+            "light/display/on-background/display-large",
             "Tonal Palette",
             "Tonal Palette title"
         );
-        console.log(paletteTitle);
+        let palettesList = createPaletteInArboard(
+            paletteArtboard,
+            groupByCategory
+        );
         // #endregion Tonal Palettes
+        // #region Light theme
+        // 4. insert the light theme artboard
+        let lightThemeArtboard = createArtboard(
+            newPage,
+            1736,
+            0,
+            736,
+            816,
+            "Light theme"
+        );
+        let lightThemeTitle = createTextWithStyleName(
+            lightThemeArtboard,
+            32,
+            16,
+            "light/display/on-background/display-large",
+            "Light Theme",
+            "Light Theme title"
+        );
+        let lightThemeList = createThemeInArboard(
+            lightThemeArtboard,
+            "light",
+            generatedLayerStyles,
+            generatedTextStyles
+        );
+        // #endregion Light theme
+        // #region Dark theme
+        // 5. insert the dark theme artboard
+        let darkThemeArtboard = createArtboard(
+            newPage,
+            2572,
+            0,
+            736,
+            816,
+            "Dark theme"
+        );
+        let darkThemeTitle = createTextWithStyleName(
+            darkThemeArtboard,
+            32,
+            16,
+            "dark/display/on-background/display-large",
+            "Dark Theme",
+            "Dark Theme title"
+        );
+        let darkThemeList = createThemeInArboard(
+            darkThemeArtboard,
+            "dark",
+            generatedLayerStyles,
+            generatedTextStyles
+        );
+        // #endregion Dark theme
         // #endregion Generates elements
+        newPage.selected = true;
+        document.sketchObject.contentDrawView().centerLayersInCanvas();
+
+        // wait for animation to complete
+        setTimeout(function () {
+            newPage.selected = true;
+        }, 100);
     } else {
         sketch.UI.alert(
             "Select the correct file",
@@ -236,17 +330,20 @@ export default function () {
             ]);
             // Generate the new Color Variable if it doesn't exist
             if (arrayColorVarNames.length > 0) {
-                if (arrayColorVarNames.indexOf(colorName) === -1) {
+                let varIndex = arrayColorVarNames.indexOf(name);
+                if (varIndex === -1) {
                     document.swatches.push(newSwatch);
                 } else {
-                    var existingSwatch =
-                        document.swatches[
-                            arrayColorVarNames.indexOf(colorName)
-                        ];
-                    document.swatches[
-                        arrayColorVarNames.indexOf(colorName)
-                    ].sketchObject.updateWithColor(
-                        MSColor.colorWithHex_alpha(color[1].slice(0, 7), 1)
+                    var existingSwatch = document.swatches[varIndex];
+
+                    let newMSColor = MSColor.colorWithHex_alpha(color, 1);
+
+                    // document.swatches[varIndex].sketchObject.updateWithColor(
+                    //     MSColor.colorWithHex_alpha(color[1].slice(0, 7), 1)
+                    // );
+
+                    document.swatches[varIndex].sketchObject.updateWithColor(
+                        newMSColor
                     );
 
                     let swatchContainer = document.sketchObject
@@ -262,6 +359,152 @@ export default function () {
                 document.swatches.push(newSwatch);
             }
         });
+    }
+}
+
+function createPaletteInArboard(artboard, groupByCategory) {
+    let n = groupByCategory.length;
+    let xPos = 32;
+    let yPos = 132;
+    let width = 80;
+    let height = 80;
+
+    let ordered = sort(groupByCategory);
+
+    for (const [key, value] of Object.entries(ordered)) {
+        let paletteName = key;
+        let paletteTitle = createTextWithStyleName(
+            artboard,
+            xPos,
+            yPos,
+            "light/headline/on-background/headline-large",
+            paletteName,
+            "title-" + paletteName
+        );
+        xPos = 276;
+        yPos -= 20;
+
+        if (typeof value === "object") {
+            value.forEach((color) => {
+                let paletteFolder = color[1];
+                let paletteColorName = color[2];
+                let paletteColor = color[0];
+                createShapePathWithColorVariable(
+                    artboard,
+                    xPos,
+                    yPos,
+                    width,
+                    height,
+                    "Oval",
+                    paletteFolder + "/" + paletteColorName,
+                    paletteColorName
+                );
+                xPos += 104;
+            });
+        }
+
+        xPos = 32;
+        yPos += 132;
+    }
+}
+
+function createThemeInArboard(artboard, theme) {
+    let xPos = 32;
+    let yPos = 112;
+    let width = 168;
+    let height = 104;
+
+    const stylesTable = [
+        "primary",
+        "on-primary",
+        "primary-container",
+        "on-primary-container",
+        "secondary",
+        "on-secondary",
+        "secondary-container",
+        "on-secondary-container",
+        "tertiary",
+        "on-tertiary",
+        "tertiary-container",
+        "on-tertiary-container",
+        "error",
+        "on-error",
+        "error-container",
+        "on-error-container",
+        "background",
+        "on-background",
+        "surface",
+        "on-surface",
+        "surface-variant",
+        "on-surface-variant",
+        "outline",
+    ];
+
+    const styleTableLength = stylesTable.length;
+    let shapeStyle = "";
+    let shapeStyleID = "";
+    let textStyle = "";
+    let textStyleID = "";
+    for (let i = 0; i < styleTableLength; i++) {
+        let styleName = stylesTable[i];
+        shapeStyle = theme + "/fills/" + styleName;
+        let isContainer = false;
+        if (styleName.includes("-container")) {
+            isContainer = true;
+        }
+        let isOn = false;
+        if (styleName.includes("on-")) {
+            isOn = true;
+        }
+
+        if (isContainer && isOn) {
+            textStyle = theme + "/body/inverse-on-surface/body-large";
+        } else if (isContainer) {
+            textStyle =
+                theme +
+                "/body/" +
+                styleName.replace("on-", "").replace("-container", "") +
+                "/body-large";
+        } else if (
+            styleName.includes("on-background") ||
+            styleName.includes("on-surface")
+        ) {
+            textStyle = theme + "/body/inverse-on-surface/body-large";
+        } else if (styleName.includes("outline")) {
+            textStyle = theme + "/body/on-background/body-large";
+        } else if (isOn) {
+            textStyle =
+                theme + "/body/" + styleName.replace("on-", "") + "/body-large";
+        } else {
+            textStyle = theme + "/body/on-" + styleName + "/body-large";
+        }
+
+        let styleShape = createShapePathWithStyleName(
+            artboard,
+            xPos,
+            yPos,
+            width,
+            height,
+            "Rectangle",
+            shapeStyle,
+            styleName
+        );
+
+        let styleText = createTextWithStyleName(
+            artboard,
+            xPos,
+            yPos + 4,
+            textStyle,
+            styleName,
+            styleName
+        );
+        styleText.frame.x = xPos + width - styleText.frame.width - 4;
+        if (i % 4 !== 3 || i === 0) {
+            xPos += width;
+        } else {
+            xPos = 32;
+            yPos += height;
+        }
     }
 }
 
@@ -315,14 +558,13 @@ function getTextStyleIDFromName(name) {
 function createNewLayerStyle(theme = "", name = "", palette = "", color = "") {
     try {
         let generatedStyles = [];
-        let styleNameFill = theme + "/Fills/" + name;
-        let styleNameBorder = theme + "/Borders/" + name;
+        let styleNameFill = theme + "/fills/" + name;
+        let styleNameBorder = theme + "/borders/" + name;
         let styleColor = color + "ff".toUpperCase();
         let checkName = name.replace(/[0-9]/g, "").split("-");
 
-        let colorVariables = document.swatches;
+        // #region assign color variable
         let shouldSkip = false;
-
         colorVariables.forEach((variable) => {
             let variableColor = variable.color.toUpperCase();
             let variableName = variable.name;
@@ -405,7 +647,7 @@ function createNewLayerStyle(theme = "", name = "", palette = "", color = "") {
             if (existingStyleID !== "") {
                 let localIndex = arrayLayerStyleIDs.indexOf(existingStyleID);
                 let existingStyle = layerStyles[localIndex];
-                existingStyle.style.fills[0].color = fills[0].color;
+                existingStyle.style.border[0].color = border[0].color;
                 generatedStyles.push([styleNameBorder, palette]);
             }
         }
@@ -453,10 +695,9 @@ function createNewTextStyle(
         let styleColor = color + "ff".toUpperCase();
         let checkName = name.replace(/[0-9]/g, "").split("-");
 
-        let colorVariables = document.swatches;
+        // #region assign color variable
         let shouldSkip = false;
 
-        // #region assign color variable
         colorVariables.forEach((variable) => {
             let variableColor = variable.color.toUpperCase();
             let variableName = variable.name;
@@ -486,6 +727,7 @@ function createNewTextStyle(
             }
         });
         // #endregion assign color variable
+
         if (arrayTextStyleNames.indexOf(styleName) === -1) {
             let sharedStyle = textStyles.push({
                 name: styleName,
@@ -623,45 +865,18 @@ function findOrCreatePage(document, name) {
     }
 }
 
-function backgroundWithStyle(
-    parentLayer,
-    x,
-    y,
-    width,
-    height,
-    styleID,
-    cornerRadius
-) {
-    let xPosition = x;
-    let yPosition = y;
-    let backgroundWidth = width;
-    let backgroundHeight = height;
-    let backgroundColor = "#ffffff";
-    let backgroundBorder = "";
-    let backgroundStyleID = styleID;
-    let backgroundCornerRadius = cornerRadius;
+function findAndRemovePage(document, name, remove = false) {
+    const [page] = document.pages.filter((page) => page.name === name);
 
-    let index = arrayLayerStyleIDs.indexOf(backgroundStyleID);
-
-    buttonBackground = createShapePath(
-        parentLayer,
-        xPosition,
-        yPosition,
-        backgroundWidth,
-        backgroundHeight,
-        backgroundColor,
-        backgroundBorder,
-        buttonBackgroundName
-    );
-
-    buttonBackground.sharedStyleId = backgroundStyleID;
-    buttonBackground.style = layerStyles[index].style;
-    buttonBackground.points.forEach(
-        (point) => (point.cornerRadius = backgroundCornerRadius)
-    );
-    buttonBackground.sketchObject.setFixedRadius(backgroundCornerRadius);
-
-    buttonBackground.moveToBack();
+    let message = "";
+    if (page && !remove) {
+        return page;
+    } else if (page && remove) {
+        page.remove();
+    } else {
+        message = "Page do not exist";
+        return;
+    }
 }
 
 /* Manage the text */
@@ -701,6 +916,9 @@ function createTextWithStyleName(
     let textY = posY;
 
     let textStyleID = getTextStyleIDFromName(styleName);
+    // console.log("Text");
+    // console.log(styleName);
+    // console.log(textStyleID);
     let index = arrayTextStyleIDs.indexOf(textStyleID);
 
     let newText = new Text({
@@ -732,24 +950,37 @@ function createArtboard(parentLayer, x, y, width, height, name) {
             height: height,
         },
     });
+    if (name.includes("Dark")) {
+        artboard.background = {
+            enabled: true,
+            includedInExport: false,
+            color: "#000000ff",
+        };
+    }
 
     return artboard;
 }
 
-function createShapePath(
+function removeObjectsFromPage(document, pageName, id = "") {
+    const [page] = document.pages.filter((page) => page.name === pageName);
+    if (page) {
+        let items = sketch.find("*", page);
+        items.forEach((item) => {
+            item.remove();
+        });
+    }
+}
+
+function createShapePathWithColorVariable(
     parentLayer,
     x,
     y,
     width,
     height,
-    background,
-    border,
+    type,
+    colorName,
     name
 ) {
-    let borders = [];
-    if (border !== "") {
-        borders = border;
-    }
     let ShapePath = sketch.ShapePath;
     let newShape = new ShapePath({
         parent: parentLayer,
@@ -759,9 +990,55 @@ function createShapePath(
             width: width,
             height: height,
         },
-        style: { fills: [background], borders: borders },
+        shapeType: type,
         name: name,
     });
+    newShape.style.fills = [
+        {
+            color: matchingSwatchForName(colorName).referencingColor,
+            fillType: Style.FillType.Color,
+        },
+    ];
+    newShape.style.borders = [
+        {
+            color: "#c7c7c7",
+            fillType: Style.FillType.Color,
+            position: Style.BorderPosition.Inside,
+        },
+    ];
+
+    return newShape;
+}
+
+function createShapePathWithStyleName(
+    parentLayer,
+    x,
+    y,
+    width,
+    height,
+    type,
+    styleName,
+    name
+) {
+    let shapeStyleID = getLayerStyleIDFromName(styleName);
+    let index = arrayLayerStyleIDs.indexOf(shapeStyleID);
+
+    let ShapePath = sketch.ShapePath;
+    let newShape = new ShapePath({
+        parent: parentLayer,
+        frame: {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+        },
+        shapeType: type,
+
+        name: name,
+    });
+
+    newShape.sharedStyleId = shapeStyleID;
+    newShape.style = layerStyles[index].style;
 
     return newShape;
 }
@@ -778,5 +1055,30 @@ function createGroup(parentLayer, children, name) {
         return newGroup;
     } catch (errGroup) {
         console.log(errGroup);
+    }
+}
+
+//
+function matchingSwatchForName(name = "") {
+    const swatches = sketch.getSelectedDocument().swatches;
+    const matchingSwatches = swatches.filter((swatch) => swatch.name === name);
+    if (matchingSwatches.length == 0) {
+        return null;
+    }
+    if (matchingSwatches.length == 1) {
+        return matchingSwatches[0];
+    }
+}
+
+function matchingSwatchForColor(color = "") {
+    const swatches = sketch.getSelectedDocument().swatches;
+    const matchingSwatches = swatches.filter(
+        (swatch) => swatch.color === color
+    );
+    if (matchingSwatches.length == 0) {
+        return null;
+    }
+    if (matchingSwatches.length == 1) {
+        return matchingSwatches[0];
     }
 }

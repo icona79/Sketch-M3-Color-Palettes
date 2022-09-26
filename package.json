@@ -51,6 +51,7 @@
         "react-zlib-js": "^1.0.5",
         "rgb-hex": "^3.0.0",
         "sketch-module-web-view": "^3.1.4",
+        "smart-deep-sort": "^1.0.2",
         "sort-object": "^3.0.3"
     },
     "author": "Matteo Gratton <icona79@gmail.com>",
