@@ -83,227 +83,248 @@ const pageName = "Material Design Palettes";
 
 export default function () {
     let directoryFiles = getPath();
-    let folder =
-        directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/data/";
-    let fileName = path.basename(directoryFiles);
-    if (fileName === "dsp.json") {
-        let fontTokens = JSON.parse(fs.readFileSync(folder + "fonts.json"));
-        // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
-        let tokensTokens = JSON.parse(fs.readFileSync(folder + "tokens.json"));
+    console.log(directoryFiles);
+    if (directoryFiles !== undefined && directoryFiles !== null) {
+        let isMDTokens = true;
+        let fileName = path.basename(directoryFiles);
+        let folder = "";
+        if (fileName === "dsp.json") {
+            folder =
+                directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) +
+                "/data/";
+        } else if (
+            fileName === "components.json" ||
+            fileName === "docs.json" ||
+            fileName === "fonts.json" ||
+            fileName === "tokens.json"
+        ) {
+            folder =
+                directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) +
+                "/";
+        } else {
+            isMDTokens = false;
+        }
+        if (isMDTokens) {
+            let fontTokens = JSON.parse(fs.readFileSync(folder + "fonts.json"));
+            // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
+            let tokensTokens = JSON.parse(
+                fs.readFileSync(folder + "tokens.json")
+            );
 
-        // #region Color Tokens import
-        let palettes = [];
-        let themes_light = [];
-        let themes_dark = [];
-        const fillStyles = [];
-        const borderStyles = [];
-        tokensTokens.entities.forEach((entity) => {
-            let alias = false;
-            if (entity.type === "Alias") {
-                alias = true;
-            }
-            if (!alias) {
-                if (entity.category_id === "ref.palette") {
-                    if (!entity.name.includes("NaN")) {
-                        let name = entity.name.substring(
-                            entity.name.lastIndexOf(".") + 1
-                        );
-                        let palette = name.replace(/[0-9]/g, "");
-                        let color = entity.value;
-                        let description = entity.description;
-                        palettes.push([palette, name, color]);
-                    }
-                } else if (entity.category_id === "sys.color.light") {
-                    let theme = entity.tags[4];
-                    let name = entity.tags[3];
-                    let palette = entity.tags[3];
-                    let color = entity.value;
-                    themes_light.push([theme, name, palette, color]);
-                } else if (entity.category_id === "sys.color.dark") {
-                    let theme = entity.tags[4];
-                    let name = entity.tags[3];
-                    let palette = entity.tags[3];
-                    let color = entity.value;
-                    themes_dark.push([theme, name, palette, color]);
+            // #region Color Tokens import
+            let palettes = [];
+            let themes_light = [];
+            let themes_dark = [];
+            const fillStyles = [];
+            const borderStyles = [];
+            tokensTokens.entities.forEach((entity) => {
+                let alias = false;
+                if (entity.type === "Alias") {
+                    alias = true;
                 }
-            }
-        });
+                if (!alias) {
+                    if (entity.category_id === "ref.palette") {
+                        if (!entity.name.includes("NaN")) {
+                            let name = entity.name.substring(
+                                entity.name.lastIndexOf(".") + 1
+                            );
+                            let palette = name.replace(/[0-9]/g, "");
+                            let color = entity.value;
+                            let description = entity.description;
+                            palettes.push([palette, name, color]);
+                        }
+                    } else if (entity.category_id === "sys.color.light") {
+                        let theme = entity.tags[4];
+                        let name = entity.tags[3];
+                        let palette = entity.tags[3];
+                        let color = entity.value;
+                        themes_light.push([theme, name, palette, color]);
+                    } else if (entity.category_id === "sys.color.dark") {
+                        let theme = entity.tags[4];
+                        let name = entity.tags[3];
+                        let palette = entity.tags[3];
+                        let color = entity.value;
+                        themes_dark.push([theme, name, palette, color]);
+                    }
+                }
+            });
 
-        let groupByCategory = palettes.reduce((group, palette) => {
-            const [category] = palette;
-            group[category] = group[category] ?? [];
-            group[category].push(palette);
-            return group;
-        }, {});
-        // #endregion Color Tokens import
+            let groupByCategory = palettes.reduce((group, palette) => {
+                const [category] = palette;
+                group[category] = group[category] ?? [];
+                group[category].push(palette);
+                return group;
+            }, {});
+            // #endregion Color Tokens import
 
-        // #region Text Tokens import
-        const textMDStyles = [];
-        let styleName = "";
-        let fontFamily = "";
-        let fontSize = 0;
-        let fontLineHeight = 0;
-        let fontWeight = "Regular";
-        let fontKerning = 0;
-        fontTokens.entities.forEach((entity) => {
-            let alias = false;
-            if (entity.type === "Alias") {
-                alias = true;
-            }
-            if (!alias) {
-                styleName = entity.tags[0];
-                fontFamily = entity.tokens[0].value;
-                fontLineHeight = parseFloat(entity.tokens[1].value);
-                fontWeight = entity.tokens[2].value;
-                fontKerning = parseFloat(entity.tokens[3].value);
-                fontSize = parseFloat(entity.tokens[4].value);
-                textMDStyles.push([
-                    styleName,
-                    fontFamily,
-                    fontLineHeight,
-                    fontWeight,
-                    fontKerning,
-                    fontSize,
-                ]);
-            }
-        });
-        // #endregion Text Tokens import
+            // #region Text Tokens import
+            const textMDStyles = [];
+            let styleName = "";
+            let fontFamily = "";
+            let fontSize = 0;
+            let fontLineHeight = 0;
+            let fontWeight = "Regular";
+            let fontKerning = 0;
+            fontTokens.entities.forEach((entity) => {
+                let alias = false;
+                if (entity.type === "Alias") {
+                    alias = true;
+                }
+                if (!alias) {
+                    styleName = entity.tags[0];
+                    fontFamily = entity.tokens[0].value;
+                    fontLineHeight = parseFloat(entity.tokens[1].value);
+                    fontWeight = entity.tokens[2].value;
+                    fontKerning = parseFloat(entity.tokens[3].value);
+                    fontSize = parseFloat(entity.tokens[4].value);
+                    textMDStyles.push([
+                        styleName,
+                        fontFamily,
+                        fontLineHeight,
+                        fontWeight,
+                        fontKerning,
+                        fontSize,
+                    ]);
+                }
+            });
+            // #endregion Text Tokens import
 
-        let generatedLayerStyles = [];
-        let generatedTextStyles = [];
-        // Create color variables for each palette
-        let colorVariables = paletteToColorVariables(palettes);
+            let generatedLayerStyles = [];
+            let generatedTextStyles = [];
+            // Create color variables for each palette
+            let colorVariables = paletteToColorVariables(palettes);
 
-        // #region Connect Color Variables
-        // themes_light.forEach((style) => {
-        //     generatedLayerStyles.push(
-        //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-        //     );
-        //     if (availableTextStyles(style[1])) {
-        //         textMDStyles.forEach((textStyle) => {
-        //             generatedTextStyles.push(
-        //                 createNewTextStyle(
-        //                     style[0],
-        //                     style[1],
-        //                     style[2],
-        //                     style[3],
-        //                     textStyle
-        //                 )
-        //             );
-        //         });
-        //     }
-        // });
-        // themes_dark.forEach((style) => {
-        //     generatedLayerStyles.push(
-        //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-        //     );
-        //     if (availableTextStyles(style[1])) {
-        //         textMDStyles.forEach((textStyle) => {
-        //             generatedTextStyles.push(
-        //                 createNewTextStyle(
-        //                     style[0],
-        //                     style[1],
-        //                     style[2],
-        //                     style[3],
-        //                     textStyle
-        //                 )
-        //             );
-        //         });
-        //     }
-        // });
-        // #endregion Connect Color Variables
+            // #region Connect Color Variables
+            // themes_light.forEach((style) => {
+            //     generatedLayerStyles.push(
+            //         createNewLayerStyle(style[0], style[1], style[2], style[3])
+            //     );
+            //     if (availableTextStyles(style[1])) {
+            //         textMDStyles.forEach((textStyle) => {
+            //             generatedTextStyles.push(
+            //                 createNewTextStyle(
+            //                     style[0],
+            //                     style[1],
+            //                     style[2],
+            //                     style[3],
+            //                     textStyle
+            //                 )
+            //             );
+            //         });
+            //     }
+            // });
+            // themes_dark.forEach((style) => {
+            //     generatedLayerStyles.push(
+            //         createNewLayerStyle(style[0], style[1], style[2], style[3])
+            //     );
+            //     if (availableTextStyles(style[1])) {
+            //         textMDStyles.forEach((textStyle) => {
+            //             generatedTextStyles.push(
+            //                 createNewTextStyle(
+            //                     style[0],
+            //                     style[1],
+            //                     style[2],
+            //                     style[3],
+            //                     textStyle
+            //                 )
+            //             );
+            //         });
+            //     }
+            // });
+            // #endregion Connect Color Variables
 
-        // #region Generates elements
-        // 1. Remove the page if it exists
-        removeObjectsFromPage(document, pageName);
-        // 2. Create a new page for the Color explaination
-        let newPage = findOrCreatePage(document, pageName);
-        // #region Tonal Palettes
-        // 3. Insert the Palette artboard
-        let paletteArtboard = createArtboard(
-            newPage,
-            0,
-            0,
-            1636,
-            816,
-            "Tonal Palettes"
-        );
-        let paletteTitle = createTextWithStyleName(
-            paletteArtboard,
-            32,
-            16,
-            "light/display/on-background/display-large",
-            "Tonal Palette",
-            "Tonal Palette title"
-        );
-        let palettesList = createPaletteInArboard(
-            paletteArtboard,
-            groupByCategory
-        );
-        // #endregion Tonal Palettes
-        // #region Light theme
-        // 4. insert the light theme artboard
-        let lightThemeArtboard = createArtboard(
-            newPage,
-            1736,
-            0,
-            736,
-            816,
-            "Light theme"
-        );
-        let lightThemeTitle = createTextWithStyleName(
-            lightThemeArtboard,
-            32,
-            16,
-            "light/display/on-background/display-large",
-            "Light Theme",
-            "Light Theme title"
-        );
-        let lightThemeList = createThemeInArboard(
-            lightThemeArtboard,
-            "light",
-            generatedLayerStyles,
-            generatedTextStyles
-        );
-        // #endregion Light theme
-        // #region Dark theme
-        // 5. insert the dark theme artboard
-        let darkThemeArtboard = createArtboard(
-            newPage,
-            2572,
-            0,
-            736,
-            816,
-            "Dark theme"
-        );
-        let darkThemeTitle = createTextWithStyleName(
-            darkThemeArtboard,
-            32,
-            16,
-            "dark/display/on-background/display-large",
-            "Dark Theme",
-            "Dark Theme title"
-        );
-        let darkThemeList = createThemeInArboard(
-            darkThemeArtboard,
-            "dark",
-            generatedLayerStyles,
-            generatedTextStyles
-        );
-        // #endregion Dark theme
-        // #endregion Generates elements
-        newPage.selected = true;
-        document.sketchObject.contentDrawView().centerLayersInCanvas();
-
-        // wait for animation to complete
-        setTimeout(function () {
+            // #region Generates elements
+            // 1. Remove the page if it exists
+            removeObjectsFromPage(document, pageName);
+            // 2. Create a new page for the Color explaination
+            let newPage = findOrCreatePage(document, pageName);
+            // #region Tonal Palettes
+            // 3. Insert the Palette artboard
+            let paletteArtboard = createArtboard(
+                newPage,
+                0,
+                0,
+                1636,
+                816,
+                "Tonal Palettes"
+            );
+            let paletteTitle = createTextWithStyleName(
+                paletteArtboard,
+                32,
+                16,
+                "light/display/on-background/display-large",
+                "Tonal Palette",
+                "Tonal Palette title"
+            );
+            let palettesList = createPaletteInArboard(
+                paletteArtboard,
+                groupByCategory
+            );
+            // #endregion Tonal Palettes
+            // #region Light theme
+            // 4. insert the light theme artboard
+            let lightThemeArtboard = createArtboard(
+                newPage,
+                1736,
+                0,
+                736,
+                816,
+                "Light theme"
+            );
+            let lightThemeTitle = createTextWithStyleName(
+                lightThemeArtboard,
+                32,
+                16,
+                "light/display/on-background/display-large",
+                "Light Theme",
+                "Light Theme title"
+            );
+            let lightThemeList = createThemeInArboard(
+                lightThemeArtboard,
+                "light",
+                generatedLayerStyles,
+                generatedTextStyles
+            );
+            // #endregion Light theme
+            // #region Dark theme
+            // 5. insert the dark theme artboard
+            let darkThemeArtboard = createArtboard(
+                newPage,
+                2572,
+                0,
+                736,
+                816,
+                "Dark theme"
+            );
+            let darkThemeTitle = createTextWithStyleName(
+                darkThemeArtboard,
+                32,
+                16,
+                "dark/display/on-background/display-large",
+                "Dark Theme",
+                "Dark Theme title"
+            );
+            let darkThemeList = createThemeInArboard(
+                darkThemeArtboard,
+                "dark",
+                generatedLayerStyles,
+                generatedTextStyles
+            );
+            // #endregion Dark theme
+            // #endregion Generates elements
             newPage.selected = true;
-        }, 100);
-    } else {
-        sketch.UI.alert(
-            "Select the correct file",
-            "Please select the dsp.json file from your downloaded Material Design 3 token folder"
-        );
+            document.sketchObject.contentDrawView().centerLayersInCanvas();
+
+            // wait for animation to complete
+            setTimeout(function () {
+                newPage.selected = true;
+            }, 100);
+        } else {
+            sketch.UI.alert(
+                "Select the correct file",
+                "Please select one of the JSON files from your downloaded Material Design 3 token folder"
+            );
+        }
     }
 
     function paletteToColorVariables(palettes) {

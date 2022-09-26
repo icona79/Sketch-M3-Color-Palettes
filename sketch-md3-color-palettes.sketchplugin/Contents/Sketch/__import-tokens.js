@@ -9144,162 +9144,175 @@ var pageName = "Material Design Palettes"; // #endregion Visual variables
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
   var directoryFiles = getPath();
-  var folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/data/";
-  var fileName = path.basename(directoryFiles);
+  console.log(directoryFiles);
 
-  if (fileName === "dsp.json") {
-    var fontTokens = JSON.parse(fs.readFileSync(folder + "fonts.json")); // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
+  if (directoryFiles !== undefined && directoryFiles !== null) {
+    var isMDTokens = true;
+    var fileName = path.basename(directoryFiles);
+    var _folder = "";
 
-    var tokensTokens = JSON.parse(fs.readFileSync(folder + "tokens.json")); // #region Color Tokens import
+    if (fileName === "dsp.json") {
+      _folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/data/";
+    } else if (fileName === "components.json" || fileName === "docs.json" || fileName === "fonts.json" || fileName === "tokens.json") {
+      _folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/";
+    } else {
+      isMDTokens = false;
+    }
 
-    var palettes = [];
-    var themes_light = [];
-    var themes_dark = [];
-    var fillStyles = [];
-    var borderStyles = [];
-    tokensTokens.entities.forEach(function (entity) {
-      var alias = false;
+    if (isMDTokens) {
+      var fontTokens = JSON.parse(fs.readFileSync(_folder + "fonts.json")); // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
 
-      if (entity.type === "Alias") {
-        alias = true;
-      }
+      var tokensTokens = JSON.parse(fs.readFileSync(_folder + "tokens.json")); // #region Color Tokens import
 
-      if (!alias) {
-        if (entity.category_id === "ref.palette") {
-          if (!entity.name.includes("NaN")) {
-            var name = entity.name.substring(entity.name.lastIndexOf(".") + 1);
-            var palette = name.replace(/[0-9]/g, "");
-            var color = entity.value;
-            var description = entity.description;
-            palettes.push([palette, name, color]);
-          }
-        } else if (entity.category_id === "sys.color.light") {
-          var theme = entity.tags[4];
-          var _name = entity.tags[3];
-          var _palette = entity.tags[3];
-          var _color = entity.value;
-          themes_light.push([theme, _name, _palette, _color]);
-        } else if (entity.category_id === "sys.color.dark") {
-          var _theme = entity.tags[4];
-          var _name2 = entity.tags[3];
-          var _palette2 = entity.tags[3];
-          var _color2 = entity.value;
-          themes_dark.push([_theme, _name2, _palette2, _color2]);
+      var palettes = [];
+      var themes_light = [];
+      var themes_dark = [];
+      var fillStyles = [];
+      var borderStyles = [];
+      tokensTokens.entities.forEach(function (entity) {
+        var alias = false;
+
+        if (entity.type === "Alias") {
+          alias = true;
         }
-      }
-    });
-    var groupByCategory = palettes.reduce(function (group, palette) {
-      var _group$category;
 
-      var _palette3 = _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1___default()(palette, 1),
-          category = _palette3[0];
+        if (!alias) {
+          if (entity.category_id === "ref.palette") {
+            if (!entity.name.includes("NaN")) {
+              var name = entity.name.substring(entity.name.lastIndexOf(".") + 1);
+              var palette = name.replace(/[0-9]/g, "");
+              var color = entity.value;
+              var description = entity.description;
+              palettes.push([palette, name, color]);
+            }
+          } else if (entity.category_id === "sys.color.light") {
+            var theme = entity.tags[4];
+            var _name = entity.tags[3];
+            var _palette = entity.tags[3];
+            var _color = entity.value;
+            themes_light.push([theme, _name, _palette, _color]);
+          } else if (entity.category_id === "sys.color.dark") {
+            var _theme = entity.tags[4];
+            var _name2 = entity.tags[3];
+            var _palette2 = entity.tags[3];
+            var _color2 = entity.value;
+            themes_dark.push([_theme, _name2, _palette2, _color2]);
+          }
+        }
+      });
+      var groupByCategory = palettes.reduce(function (group, palette) {
+        var _group$category;
 
-      group[category] = (_group$category = group[category]) !== null && _group$category !== void 0 ? _group$category : [];
-      group[category].push(palette);
-      return group;
-    }, {}); // #endregion Color Tokens import
-    // #region Text Tokens import
+        var _palette3 = _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1___default()(palette, 1),
+            category = _palette3[0];
 
-    var textMDStyles = [];
-    var styleName = "";
-    var fontFamily = "";
-    var fontSize = 0;
-    var fontLineHeight = 0;
-    var fontWeight = "Regular";
-    var fontKerning = 0;
-    fontTokens.entities.forEach(function (entity) {
-      var alias = false;
+        group[category] = (_group$category = group[category]) !== null && _group$category !== void 0 ? _group$category : [];
+        group[category].push(palette);
+        return group;
+      }, {}); // #endregion Color Tokens import
+      // #region Text Tokens import
 
-      if (entity.type === "Alias") {
-        alias = true;
-      }
+      var textMDStyles = [];
+      var styleName = "";
+      var fontFamily = "";
+      var fontSize = 0;
+      var fontLineHeight = 0;
+      var fontWeight = "Regular";
+      var fontKerning = 0;
+      fontTokens.entities.forEach(function (entity) {
+        var alias = false;
 
-      if (!alias) {
-        styleName = entity.tags[0];
-        fontFamily = entity.tokens[0].value;
-        fontLineHeight = parseFloat(entity.tokens[1].value);
-        fontWeight = entity.tokens[2].value;
-        fontKerning = parseFloat(entity.tokens[3].value);
-        fontSize = parseFloat(entity.tokens[4].value);
-        textMDStyles.push([styleName, fontFamily, fontLineHeight, fontWeight, fontKerning, fontSize]);
-      }
-    }); // #endregion Text Tokens import
+        if (entity.type === "Alias") {
+          alias = true;
+        }
 
-    var generatedLayerStyles = [];
-    var generatedTextStyles = []; // Create color variables for each palette
+        if (!alias) {
+          styleName = entity.tags[0];
+          fontFamily = entity.tokens[0].value;
+          fontLineHeight = parseFloat(entity.tokens[1].value);
+          fontWeight = entity.tokens[2].value;
+          fontKerning = parseFloat(entity.tokens[3].value);
+          fontSize = parseFloat(entity.tokens[4].value);
+          textMDStyles.push([styleName, fontFamily, fontLineHeight, fontWeight, fontKerning, fontSize]);
+        }
+      }); // #endregion Text Tokens import
 
-    var _colorVariables = paletteToColorVariables(palettes); // #region Connect Color Variables
-    // themes_light.forEach((style) => {
-    //     generatedLayerStyles.push(
-    //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-    //     );
-    //     if (availableTextStyles(style[1])) {
-    //         textMDStyles.forEach((textStyle) => {
-    //             generatedTextStyles.push(
-    //                 createNewTextStyle(
-    //                     style[0],
-    //                     style[1],
-    //                     style[2],
-    //                     style[3],
-    //                     textStyle
-    //                 )
-    //             );
-    //         });
-    //     }
-    // });
-    // themes_dark.forEach((style) => {
-    //     generatedLayerStyles.push(
-    //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-    //     );
-    //     if (availableTextStyles(style[1])) {
-    //         textMDStyles.forEach((textStyle) => {
-    //             generatedTextStyles.push(
-    //                 createNewTextStyle(
-    //                     style[0],
-    //                     style[1],
-    //                     style[2],
-    //                     style[3],
-    //                     textStyle
-    //                 )
-    //             );
-    //         });
-    //     }
-    // });
-    // #endregion Connect Color Variables
-    // #region Generates elements
-    // 1. Remove the page if it exists
+      var generatedLayerStyles = [];
+      var generatedTextStyles = []; // Create color variables for each palette
+
+      var _colorVariables = paletteToColorVariables(palettes); // #region Connect Color Variables
+      // themes_light.forEach((style) => {
+      //     generatedLayerStyles.push(
+      //         createNewLayerStyle(style[0], style[1], style[2], style[3])
+      //     );
+      //     if (availableTextStyles(style[1])) {
+      //         textMDStyles.forEach((textStyle) => {
+      //             generatedTextStyles.push(
+      //                 createNewTextStyle(
+      //                     style[0],
+      //                     style[1],
+      //                     style[2],
+      //                     style[3],
+      //                     textStyle
+      //                 )
+      //             );
+      //         });
+      //     }
+      // });
+      // themes_dark.forEach((style) => {
+      //     generatedLayerStyles.push(
+      //         createNewLayerStyle(style[0], style[1], style[2], style[3])
+      //     );
+      //     if (availableTextStyles(style[1])) {
+      //         textMDStyles.forEach((textStyle) => {
+      //             generatedTextStyles.push(
+      //                 createNewTextStyle(
+      //                     style[0],
+      //                     style[1],
+      //                     style[2],
+      //                     style[3],
+      //                     textStyle
+      //                 )
+      //             );
+      //         });
+      //     }
+      // });
+      // #endregion Connect Color Variables
+      // #region Generates elements
+      // 1. Remove the page if it exists
 
 
-    removeObjectsFromPage(document, pageName); // 2. Create a new page for the Color explaination
+      removeObjectsFromPage(document, pageName); // 2. Create a new page for the Color explaination
 
-    var newPage = findOrCreatePage(document, pageName); // #region Tonal Palettes
-    // 3. Insert the Palette artboard
+      var newPage = findOrCreatePage(document, pageName); // #region Tonal Palettes
+      // 3. Insert the Palette artboard
 
-    var paletteArtboard = createArtboard(newPage, 0, 0, 1636, 816, "Tonal Palettes");
-    var paletteTitle = createTextWithStyleName(paletteArtboard, 32, 16, "light/display/on-background/display-large", "Tonal Palette", "Tonal Palette title");
-    var palettesList = createPaletteInArboard(paletteArtboard, groupByCategory); // #endregion Tonal Palettes
-    // #region Light theme
-    // 4. insert the light theme artboard
+      var paletteArtboard = createArtboard(newPage, 0, 0, 1636, 816, "Tonal Palettes");
+      var paletteTitle = createTextWithStyleName(paletteArtboard, 32, 16, "light/display/on-background/display-large", "Tonal Palette", "Tonal Palette title");
+      var palettesList = createPaletteInArboard(paletteArtboard, groupByCategory); // #endregion Tonal Palettes
+      // #region Light theme
+      // 4. insert the light theme artboard
 
-    var lightThemeArtboard = createArtboard(newPage, 1736, 0, 736, 816, "Light theme");
-    var lightThemeTitle = createTextWithStyleName(lightThemeArtboard, 32, 16, "light/display/on-background/display-large", "Light Theme", "Light Theme title");
-    var lightThemeList = createThemeInArboard(lightThemeArtboard, "light", generatedLayerStyles, generatedTextStyles); // #endregion Light theme
-    // #region Dark theme
-    // 5. insert the dark theme artboard
+      var lightThemeArtboard = createArtboard(newPage, 1736, 0, 736, 816, "Light theme");
+      var lightThemeTitle = createTextWithStyleName(lightThemeArtboard, 32, 16, "light/display/on-background/display-large", "Light Theme", "Light Theme title");
+      var lightThemeList = createThemeInArboard(lightThemeArtboard, "light", generatedLayerStyles, generatedTextStyles); // #endregion Light theme
+      // #region Dark theme
+      // 5. insert the dark theme artboard
 
-    var darkThemeArtboard = createArtboard(newPage, 2572, 0, 736, 816, "Dark theme");
-    var darkThemeTitle = createTextWithStyleName(darkThemeArtboard, 32, 16, "dark/display/on-background/display-large", "Dark Theme", "Dark Theme title");
-    var darkThemeList = createThemeInArboard(darkThemeArtboard, "dark", generatedLayerStyles, generatedTextStyles); // #endregion Dark theme
-    // #endregion Generates elements
+      var darkThemeArtboard = createArtboard(newPage, 2572, 0, 736, 816, "Dark theme");
+      var darkThemeTitle = createTextWithStyleName(darkThemeArtboard, 32, 16, "dark/display/on-background/display-large", "Dark Theme", "Dark Theme title");
+      var darkThemeList = createThemeInArboard(darkThemeArtboard, "dark", generatedLayerStyles, generatedTextStyles); // #endregion Dark theme
+      // #endregion Generates elements
 
-    newPage.selected = true;
-    document.sketchObject.contentDrawView().centerLayersInCanvas(); // wait for animation to complete
-
-    setTimeout(function () {
       newPage.selected = true;
-    }, 100);
-  } else {
-    sketch.UI.alert("Select the correct file", "Please select the dsp.json file from your downloaded Material Design 3 token folder");
+      document.sketchObject.contentDrawView().centerLayersInCanvas(); // wait for animation to complete
+
+      setTimeout(function () {
+        newPage.selected = true;
+      }, 100);
+    } else {
+      sketch.UI.alert("Select the correct file", "Please select one of the JSON files from your downloaded Material Design 3 token folder");
+    }
   }
 
   function paletteToColorVariables(palettes) {
