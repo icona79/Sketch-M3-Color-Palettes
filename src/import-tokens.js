@@ -101,11 +101,12 @@ export default function () {
             minimizable: false,
             maximizable: false,
             fullscreenable: false,
-            title: "👀 Plugin Guide",
+            title: "👀 Material Design theme importer - Plugin Guide",
         };
 
         if (options["title"] && isFirstLaunch) {
-            options["title"] = "🪄 Import theme";
+            options["title"] =
+                "🪄 Material Design theme importer - Import theme";
         }
 
         const browserWindow = new BrowserWindow(options);
