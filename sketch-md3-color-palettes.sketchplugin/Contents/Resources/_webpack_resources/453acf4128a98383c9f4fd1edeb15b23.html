@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>MD3 Color Palettes Dynamic Generation</title>
+        <link rel="stylesheet" href="d280c35219aacd1534eb2cb9c66201a7.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            #container {
+                display: flex; /* establish flex container */
+                flex-direction: row; /* default value; can be omitted */
+                flex-wrap: nowrap; /* default value; can be omitted */
+                justify-content: space-between; /* switched from default (flex-start, see below) */
+                margin-top: -52px;
+                margin-left: 80px;
+                margin-right: 80px;
+                position: relative;
+                z-index: 1;
+                opacity: 0.86;
+                background: #ffffff;
+                box-shadow: 0 5px 24px 0 rgba(186, 186, 186, 0.37);
+                border-radius: 24px;
+            }
+            #container > div {
+                width: 226px;
+                min-height: 104px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            #container > div span {
+                font-family: SanFranciscoDisplay-Bold;
+                font-size: 16px;
+                color: #434046;
+            }
+            #container > div div {
+                font-family: SanFranciscoDisplay-Bold;
+                font-size: 16px;
+                color: #434046;
+            }
+            #container > div span::before {
+                padding: 0 8px 0 0;
+                content: url(./material-design-tool.svg);
+                width: 22px;
+                height: 22px;
+                vertical-align: -25%;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="view">
+            <div style="max-width: 840px">
+                <iframe
+                    width="840"
+                    height="630"
+                    style="
+                        border-radius: 32px;
+                        border-color: RGBA(0, 0, 0, 0);
+                        position: relative;
+                        z-index: 0;
+                    "
+                    src="https://www.youtube.com/embed/UmxIZ6csBO8?autoplay=1&controls=0"
+                >
+                </iframe>
+                <div id="container">
+                    <div><span>Material Design Webtool</span></div>
+                    <div><span>Run the plugin</span></div>
+                    <div>
+                        <span>Enjoy your Color Variables and styles</span>
+                    </div>
+                </div>
+            </div>
+            <footer>
+                <div class="footer-background">
+                    <button class="primary" id="parametersSubmit">
+                        Confirm
+                    </button>
+                </div>
+            </footer>
+        </div>
+        <!-- notice the "../resources_" here. It's because webview.js will be compiled in a different folder with the prefix. -->
+        <script src="../resources_webview.js"></script>
+        <!-- Just to test it in a Browser -->
+        <!-- <script type="module" src="webview.js"></script> -->
+    </body>
+</html>

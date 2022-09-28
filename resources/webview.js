@@ -1,12 +1,7 @@
-// Import the color from image management script
-import { getColor, getPalette } from "color-extr-thief";
-import dialog from "@skpm/dialog";
-import { readFileSync } from "@skpm/fs";
-
 // Disable the context menu (eg. the right click menu) to have a more native feel
-// document.addEventListener("contextmenu", (e) => {
-//     e.preventDefault();
-// });
+document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+});
 
 // Enter Key = Click on Create Button button
 document.addEventListener("keyup", function (event) {
@@ -24,39 +19,33 @@ const uppercaseOnly = "/^[A-Z]+$/";
 const lowercaseOnly = "/^[a-z]+$/";
 const stringOnly = "/^[A-Za-z0-9]+$/";
 
-var imageSelected = false;
-window.imagePath = function (sourceImagePath) {
-    if (sourceImagePath !== empty) {
-        console.log("here");
-        // document.getElementById("img").src = sourceImagePath;
-        imageSelected = true;
-    }
-};
-
 document.getElementById("parametersSubmit").addEventListener("click", () => {
     console.log("Confirm button clicked");
-    const img = document.querySelector("img");
-    let color = "";
-    let palette = [];
-    if (imageSelected) {
-        if (img.complete) {
-            color = getColor(img);
-            palette = getPalette(img, 4);
-        } else {
-            image.addEventListener("load", function () {
-                getColor(img);
-            });
-        }
-
-        var parameters = {
-            mainColor: color,
-            palette: palette,
-        };
-        window.postMessage("nativeLog", parameters);
-    } else {
-        console.log("Image Error");
-    }
+    var parameters = {
+        submit: submit,
+    };
+    window.postMessage("nativeLog", parameters);
 });
 
-// document.getElementById("my-element").remove()
-// document.getElementById("tag-id").innerHTML = "<ol><li>html data</li></ol>";
+document.getElementById("webtool").addEventListener("click", () => {
+    console.log("Confirm button clicked");
+    var parameters = {
+        submit: "webtool",
+    };
+    window.postMessage("nativeLog", parameters);
+});
+
+document.addEventListener("DOMContentLoaded", function (event) {
+    document.getElementById("webtool").blur;
+    document.getElementById("webtool").style.cursor = "pointer";
+});
+
+window.firstLaunch = function (isFirstLaunch) {
+    if (isFirstLaunch === true) {
+        document.getElementById("parametersSubmit").innerHTML =
+            "Launch webtool and proceed";
+    } else {
+        document.getElementById("parametersSubmit").innerHTML = "Close";
+        document.getElementById("webtool").removeAttribute("hidden");
+    }
+};

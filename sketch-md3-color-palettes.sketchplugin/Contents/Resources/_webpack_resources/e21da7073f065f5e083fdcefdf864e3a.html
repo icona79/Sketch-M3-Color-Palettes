@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>MD3 Color Palettes Dynamic Generation</title>
+        <link rel="stylesheet" href="b32d6b1102d3fbd7c91af5df756cb65c.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style></style>
+    </head>
+
+    <body>
+        <div class="view">
+            <div style="max-width: 840px">
+                <iframe id="frame"
+                    width="420"
+                    height="315"
+                    style="
+                        border-radius: 32px;
+                        border-color: RGBA(0, 0, 0, 0);
+                        position: relative;
+                        z-index: 0;
+                    "
+                    src="https://www.youtube.com/embed/UmxIZ6csBO8?autoplay=1&controls=0"
+                >
+                </iframe>
+                <!-- <div id="container">
+                    <div>
+                        <div>Material Design webtool</div>
+                    </div>
+                    <div>
+                        <div>Run the plugin</div>
+                    </div>
+                    <div>
+                        <div>Enjoy your palettes</div>
+                    </div>
+                </div> -->
+                <div style="max-width: 840px">
+                    <h1>Plugin Guide</h1>
+                </div>
+                <div id="guide" style="max-width: 840px">
+                    <div>
+                        <h2 id"webtool">Material Design webtool</h2>
+                        <ul>
+                            <li>Go to the <a href="#" onclick="openWindow()">🔗 Material Design Web tool</a> and set your colors</li>
+                            <li>Download the Material Tokens (DSP) from the Export button</li>
+                            <li>Unzip the downloaded item in a folder of your choice</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2 id"plugin">Run the plugin</h2>
+                        <ul>
+                            <li>Select any JSON file in the unzipped folder</li>
+                            <li>Wait until the plugin finishes its work</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2 id"sketch">Enjoy your Color Variables and Styles</h2>
+                        <p>You can access all the generated Color Variables, Layer and Text Styles by going to the Component View (⌃2)</p>
+                        <ul>
+                            <li>Show Color Variables</li>
+                            <li>Show Layer Styles</li>
+                            <li>Show Text Styles</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <div class="footer-background">
+                    <button class="primary" id="parametersSubmit">
+                        Confirm
+                    </button>
+                </div>
+            </footer>
+        </div>
+        <!-- notice the "../resources_" here. It's because webview.js will be compiled in a different folder with the prefix. -->
+        <script src="../resources_webview.js"></script>
+        <!-- Just to test it in a Browser -->
+        <!-- <script type="module" src="webview.js"></script> -->
+        <script type="text/javascript">
+                var frame = document.getElementById("frame");
+
+                function openWindow(){
+                    frame.src="https://m3.material.io/theme-builder#/custom"
+                    // var win = window.open('https://m3.material.io/theme-builder#/custom');
+                    // win.focus();
+                }
+            
+        </script>
+    </body>
+</html>

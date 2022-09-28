@@ -1,11 +1,13 @@
-import colorcolor from "colorcolor";
-var cd = require("color-difference");
+Mocha.sharedRuntime().loadFrameworkWithName("CoreFoundation");
 
-import { resolve } from "path";
+import BrowserWindow from "sketch-module-web-view";
+import { getWebview } from "sketch-module-web-view/remote";
+
+const webviewIdentifier = "dynamicPalette.webview";
+
 const fs = require("@skpm/fs");
 const os = require("os");
 const path = require("path");
-const desktopDir = path.join(os.homedir(), "Desktop");
 // var sortObj = require("sort-object");
 var sort = require("smart-deep-sort");
 
@@ -14,15 +16,13 @@ const sketch = require("sketch");
 const Swatch = sketch.Swatch;
 const Style = require("sketch/dom").Style;
 import { Page } from "sketch/dom";
-var Group = require("sketch/dom").Group;
 var Text = require("sketch/dom").Text;
-var SharedStyle = require("sketch/dom").SharedStyle;
+var Settings = require("sketch/settings");
+var identifier = __command.identifier();
 
 // Document variables
 var document = sketch.getSelectedDocument();
 var doc = context.document;
-var firstSelectedLayer = document.selectedLayers.layers[0];
-var artboard = sketch.Artboard;
 // #endregion
 
 // #region Styles Variables
@@ -82,249 +82,353 @@ const pageName = "Material Design Palettes";
 // #endregion Visual variables
 
 export default function () {
-    let directoryFiles = getPath();
-    console.log(directoryFiles);
-    if (directoryFiles !== undefined && directoryFiles !== null) {
-        let isMDTokens = true;
-        let fileName = path.basename(directoryFiles);
-        let folder = "";
-        if (fileName === "dsp.json") {
-            folder =
-                directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) +
-                "/data/";
-        } else if (
-            fileName === "components.json" ||
-            fileName === "docs.json" ||
-            fileName === "fonts.json" ||
-            fileName === "tokens.json"
-        ) {
-            folder =
-                directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) +
-                "/";
-        } else {
-            isMDTokens = false;
-        }
-        if (isMDTokens) {
-            let fontTokens = JSON.parse(fs.readFileSync(folder + "fonts.json"));
-            // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
-            let tokensTokens = JSON.parse(
-                fs.readFileSync(folder + "tokens.json")
-            );
+    // Check if this is the first time the user launches the plugin
+    var isFirstLaunch = true;
+    if (Settings.settingForKey("launched") === true) {
+        isFirstLaunch = false;
+    }
 
-            // #region Color Tokens import
-            let palettes = [];
-            let themes_light = [];
-            let themes_dark = [];
-            const fillStyles = [];
-            const borderStyles = [];
-            tokensTokens.entities.forEach((entity) => {
-                let alias = false;
-                if (entity.type === "Alias") {
-                    alias = true;
-                }
-                if (!alias) {
-                    if (entity.category_id === "ref.palette") {
-                        if (!entity.name.includes("NaN")) {
-                            let name = entity.name.substring(
-                                entity.name.lastIndexOf(".") + 1
-                            );
-                            let palette = name.replace(/[0-9]/g, "");
-                            let color = entity.value;
-                            let description = entity.description;
-                            palettes.push([palette, name, color]);
-                        }
-                    } else if (entity.category_id === "sys.color.light") {
-                        let theme = entity.tags[4];
-                        let name = entity.tags[3];
-                        let palette = entity.tags[3];
-                        let color = entity.value;
-                        themes_light.push([theme, name, palette, color]);
-                    } else if (entity.category_id === "sys.color.dark") {
-                        let theme = entity.tags[4];
-                        let name = entity.tags[3];
-                        let palette = entity.tags[3];
-                        let color = entity.value;
-                        themes_dark.push([theme, name, palette, color]);
+    // If the user ask for the guide or it is the first launch, show the WebView
+    if (identifier.includes("tour") || isFirstLaunch) {
+        /* Create the webview with the sizes */
+        const options = {
+            identifier: webviewIdentifier,
+            width: 1024,
+            height: 620,
+            show: false,
+            resizable: false,
+            minimizable: false,
+            maximizable: false,
+            fullscreenable: false,
+            title: "👀 Plugin Guide",
+        };
+
+        if (options["title"] && isFirstLaunch) {
+            options["title"] = "🪄 Import theme";
+        }
+
+        const browserWindow = new BrowserWindow(options);
+
+        browserWindow.once("ready-to-show", () => {
+            try {
+                // browserWindow.show();
+                browserWindow.webContents
+                    .executeJavaScript(`firstLaunch(${isFirstLaunch})`)
+                    .then((result) => {
+                        // Once we're processing the styles on the webview, we can show it
+                        browserWindow.show();
+                    });
+            } catch (createWebViewErr) {
+                console.log(createWebViewErr);
+            }
+        });
+
+        const webContents = browserWindow.webContents;
+
+        // add a handler for a call from web content's javascript
+        webContents.on("nativeLog", (parameters) => {
+            try {
+                let fromWebContents = parameters;
+                // If it is the first launch, load the Material Design webtool and run the plugin
+                // If it is the guide, load the Material Design webtool only
+                setTimeout(function () {
+                    if (isFirstLaunch || fromWebContents.submit === "webtool")
+                        loadWebTool();
+                    if (isFirstLaunch) {
+                        runPlugin();
                     }
-                }
-            });
+                }, 180);
 
-            let groupByCategory = palettes.reduce((group, palette) => {
-                const [category] = palette;
-                group[category] = group[category] ?? [];
-                group[category].push(palette);
-                return group;
-            }, {});
-            // #endregion Color Tokens import
+                browserWindow.close();
+            } catch (pluginErr) {
+                console.log(pluginErr);
+            }
+        });
 
-            // #region Text Tokens import
-            const textMDStyles = [];
-            let styleName = "";
-            let fontFamily = "";
-            let fontSize = 0;
-            let fontLineHeight = 0;
-            let fontWeight = "Regular";
-            let fontKerning = 0;
-            fontTokens.entities.forEach((entity) => {
-                let alias = false;
-                if (entity.type === "Alias") {
-                    alias = true;
-                }
-                if (!alias) {
-                    styleName = entity.tags[0];
-                    fontFamily = entity.tokens[0].value;
-                    fontLineHeight = parseFloat(entity.tokens[1].value);
-                    fontWeight = entity.tokens[2].value;
-                    fontKerning = parseFloat(entity.tokens[3].value);
-                    fontSize = parseFloat(entity.tokens[4].value);
-                    textMDStyles.push([
-                        styleName,
-                        fontFamily,
-                        fontLineHeight,
-                        fontWeight,
-                        fontKerning,
-                        fontSize,
-                    ]);
-                }
-            });
-            // #endregion Text Tokens import
+        browserWindow.loadURL(require("../resources/webview.html"));
+        Settings.setSettingForKey("launched", true);
+    } else if (identifier.includes("webtool")) {
+        loadWebTool();
+    } else {
+        runPlugin();
+    }
 
-            let generatedLayerStyles = [];
-            let generatedTextStyles = [];
-            // Create color variables for each palette
-            let colorVariables = paletteToColorVariables(palettes);
+    function runPlugin() {
+        let directoryFiles = getPath();
+        console.log(directoryFiles);
+        if (directoryFiles !== undefined && directoryFiles !== null) {
+            // #region JSON files chacek
+            let isMDTokens = true;
+            let fileName = path.basename(directoryFiles);
+            let folder = "";
+            if (fileName === "dsp.json") {
+                folder =
+                    directoryFiles.substring(
+                        0,
+                        directoryFiles.lastIndexOf("/")
+                    ) + "/data/";
+            } else if (
+                fileName === "components.json" ||
+                fileName === "docs.json" ||
+                fileName === "fonts.json" ||
+                fileName === "tokens.json"
+            ) {
+                folder =
+                    directoryFiles.substring(
+                        0,
+                        directoryFiles.lastIndexOf("/")
+                    ) + "/";
+            } else {
+                isMDTokens = false;
+            }
+            // #endregion JSON files chacek
 
-            // #region Connect Color Variables
-            // themes_light.forEach((style) => {
-            //     generatedLayerStyles.push(
-            //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-            //     );
-            //     if (availableTextStyles(style[1])) {
-            //         textMDStyles.forEach((textStyle) => {
-            //             generatedTextStyles.push(
-            //                 createNewTextStyle(
-            //                     style[0],
-            //                     style[1],
-            //                     style[2],
-            //                     style[3],
-            //                     textStyle
-            //                 )
-            //             );
-            //         });
-            //     }
-            // });
-            // themes_dark.forEach((style) => {
-            //     generatedLayerStyles.push(
-            //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-            //     );
-            //     if (availableTextStyles(style[1])) {
-            //         textMDStyles.forEach((textStyle) => {
-            //             generatedTextStyles.push(
-            //                 createNewTextStyle(
-            //                     style[0],
-            //                     style[1],
-            //                     style[2],
-            //                     style[3],
-            //                     textStyle
-            //                 )
-            //             );
-            //         });
-            //     }
-            // });
-            // #endregion Connect Color Variables
+            // *********************************************************
+            // If the JSON selected file is correct, import MD3 Palettes
+            // *********************************************************
+            if (isMDTokens) {
+                let fontTokens = JSON.parse(
+                    fs.readFileSync(folder + "fonts.json")
+                );
+                // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
+                let tokensTokens = JSON.parse(
+                    fs.readFileSync(folder + "tokens.json")
+                );
 
-            // #region Generates elements
-            // 1. Remove the page if it exists
-            removeObjectsFromPage(document, pageName);
-            // 2. Create a new page for the Color explaination
-            let newPage = findOrCreatePage(document, pageName);
-            // #region Tonal Palettes
-            // 3. Insert the Palette artboard
-            let paletteArtboard = createArtboard(
-                newPage,
-                0,
-                0,
-                1636,
-                816,
-                "Tonal Palettes"
-            );
-            let paletteTitle = createTextWithStyleName(
-                paletteArtboard,
-                32,
-                16,
-                "light/display/on-background/display-large",
-                "Tonal Palette",
-                "Tonal Palette title"
-            );
-            let palettesList = createPaletteInArboard(
-                paletteArtboard,
-                groupByCategory
-            );
-            // #endregion Tonal Palettes
-            // #region Light theme
-            // 4. insert the light theme artboard
-            let lightThemeArtboard = createArtboard(
-                newPage,
-                1736,
-                0,
-                736,
-                816,
-                "Light theme"
-            );
-            let lightThemeTitle = createTextWithStyleName(
-                lightThemeArtboard,
-                32,
-                16,
-                "light/display/on-background/display-large",
-                "Light Theme",
-                "Light Theme title"
-            );
-            let lightThemeList = createThemeInArboard(
-                lightThemeArtboard,
-                "light",
-                generatedLayerStyles,
-                generatedTextStyles
-            );
-            // #endregion Light theme
-            // #region Dark theme
-            // 5. insert the dark theme artboard
-            let darkThemeArtboard = createArtboard(
-                newPage,
-                2572,
-                0,
-                736,
-                816,
-                "Dark theme"
-            );
-            let darkThemeTitle = createTextWithStyleName(
-                darkThemeArtboard,
-                32,
-                16,
-                "dark/display/on-background/display-large",
-                "Dark Theme",
-                "Dark Theme title"
-            );
-            let darkThemeList = createThemeInArboard(
-                darkThemeArtboard,
-                "dark",
-                generatedLayerStyles,
-                generatedTextStyles
-            );
-            // #endregion Dark theme
-            // #endregion Generates elements
-            newPage.selected = true;
-            document.sketchObject.contentDrawView().centerLayersInCanvas();
+                // #region Color Tokens import
+                let palettes = [];
+                let themes_light = [];
+                let themes_dark = [];
+                const fillStyles = [];
+                const borderStyles = [];
+                tokensTokens.entities.forEach((entity) => {
+                    let alias = false;
+                    if (entity.type === "Alias") {
+                        alias = true;
+                    }
+                    if (!alias) {
+                        if (entity.category_id === "ref.palette") {
+                            if (!entity.name.includes("NaN")) {
+                                let name = entity.name.substring(
+                                    entity.name.lastIndexOf(".") + 1
+                                );
+                                let palette = name.replace(/[0-9]/g, "");
+                                let color = entity.value;
+                                let description = entity.description;
+                                palettes.push([palette, name, color]);
+                            }
+                        } else if (entity.category_id === "sys.color.light") {
+                            let theme = entity.tags[4];
+                            let name = entity.tags[3];
+                            let palette = entity.tags[3];
+                            let color = entity.value;
+                            themes_light.push([theme, name, palette, color]);
+                        } else if (entity.category_id === "sys.color.dark") {
+                            let theme = entity.tags[4];
+                            let name = entity.tags[3];
+                            let palette = entity.tags[3];
+                            let color = entity.value;
+                            themes_dark.push([theme, name, palette, color]);
+                        }
+                    }
+                });
 
-            // wait for animation to complete
-            setTimeout(function () {
+                let groupByCategory = palettes.reduce((group, palette) => {
+                    const [category] = palette;
+                    group[category] = group[category] ?? [];
+                    group[category].push(palette);
+                    return group;
+                }, {});
+                // #endregion Color Tokens import
+
+                // #region Text Tokens import
+                const textMDStyles = [];
+                let styleName = "";
+                let fontFamily = "";
+                let fontSize = 0;
+                let fontLineHeight = 0;
+                let fontWeight = "Regular";
+                let fontKerning = 0;
+                fontTokens.entities.forEach((entity) => {
+                    let alias = false;
+                    if (entity.type === "Alias") {
+                        alias = true;
+                    }
+                    if (!alias) {
+                        styleName = entity.tags[0];
+                        fontFamily = entity.tokens[0].value;
+                        fontLineHeight = parseFloat(entity.tokens[1].value);
+                        fontWeight = entity.tokens[2].value;
+                        fontKerning = parseFloat(entity.tokens[3].value);
+                        fontSize = parseFloat(entity.tokens[4].value);
+                        textMDStyles.push([
+                            styleName,
+                            fontFamily,
+                            fontLineHeight,
+                            fontWeight,
+                            fontKerning,
+                            fontSize,
+                        ]);
+                    }
+                });
+                // #endregion Text Tokens import
+
+                let generatedLayerStyles = [];
+                let generatedTextStyles = [];
+                // Create color variables for each palette
+                let colorVariables = paletteToColorVariables(palettes);
+
+                // #region Connect Color Variables
+                themes_light.forEach((style) => {
+                    generatedLayerStyles.push(
+                        createNewLayerStyle(
+                            style[0],
+                            style[1],
+                            style[2],
+                            style[3]
+                        )
+                    );
+                    if (availableTextStyles(style[1])) {
+                        textMDStyles.forEach((textStyle) => {
+                            generatedTextStyles.push(
+                                createNewTextStyle(
+                                    style[0],
+                                    style[1],
+                                    style[2],
+                                    style[3],
+                                    textStyle
+                                )
+                            );
+                        });
+                    }
+                });
+                themes_dark.forEach((style) => {
+                    generatedLayerStyles.push(
+                        createNewLayerStyle(
+                            style[0],
+                            style[1],
+                            style[2],
+                            style[3]
+                        )
+                    );
+                    if (availableTextStyles(style[1])) {
+                        textMDStyles.forEach((textStyle) => {
+                            generatedTextStyles.push(
+                                createNewTextStyle(
+                                    style[0],
+                                    style[1],
+                                    style[2],
+                                    style[3],
+                                    textStyle
+                                )
+                            );
+                        });
+                    }
+                });
+                // #endregion Connect Color Variables
+
+                // #region Generates elements
+                // 1. Remove the page if it exists
+                removeObjectsFromPage(document, pageName);
+                // 2. Create a new page for the Color explaination
+                let newPage = findOrCreatePage(document, pageName);
+                // #region Tonal Palettes
+                // 3. Insert the Palette artboard
+                let paletteArtboard = createArtboard(
+                    newPage,
+                    0,
+                    0,
+                    1636,
+                    816,
+                    "Tonal Palettes"
+                );
+                let paletteTitle = createTextWithStyleName(
+                    paletteArtboard,
+                    32,
+                    16,
+                    "light/display/on-background/display-large",
+                    "Tonal Palette",
+                    "Tonal Palette title"
+                );
+                let palettesList = createPaletteInArboard(
+                    paletteArtboard,
+                    groupByCategory
+                );
+                // #endregion Tonal Palettes
+                // #region Light theme
+                // 4. insert the light theme artboard
+                let lightThemeArtboard = createArtboard(
+                    newPage,
+                    1736,
+                    0,
+                    736,
+                    816,
+                    "Light theme"
+                );
+                let lightThemeTitle = createTextWithStyleName(
+                    lightThemeArtboard,
+                    32,
+                    16,
+                    "light/display/on-background/display-large",
+                    "Light Theme",
+                    "Light Theme title"
+                );
+                let lightThemeList = createThemeInArboard(
+                    lightThemeArtboard,
+                    "light",
+                    generatedLayerStyles,
+                    generatedTextStyles
+                );
+                // #endregion Light theme
+                // #region Dark theme
+                // 5. insert the dark theme artboard
+                let darkThemeArtboard = createArtboard(
+                    newPage,
+                    2572,
+                    0,
+                    736,
+                    816,
+                    "Dark theme"
+                );
+                let darkThemeTitle = createTextWithStyleName(
+                    darkThemeArtboard,
+                    32,
+                    16,
+                    "dark/display/on-background/display-large",
+                    "Dark Theme",
+                    "Dark Theme title"
+                );
+                let darkThemeList = createThemeInArboard(
+                    darkThemeArtboard,
+                    "dark",
+                    generatedLayerStyles,
+                    generatedTextStyles
+                );
+                // #endregion Dark theme
+                // #endregion Generates elements
                 newPage.selected = true;
-            }, 100);
-        } else {
-            sketch.UI.alert(
-                "Select the correct file",
-                "Please select one of the JSON files from your downloaded Material Design 3 token folder"
-            );
+                document.sketchObject.contentDrawView().centerLayersInCanvas();
+
+                // wait for animation to complete
+                setTimeout(function () {
+                    newPage.selected = true;
+                }, 100);
+
+                sketch.UI.alert(
+                    "Material Design palette imported!",
+                    "💎 Your Color Variables and Layer and Text styles are waiting for you! 💎"
+                );
+            } else {
+                sketch.UI.alert(
+                    "Select the correct file",
+                    "Please select one of the JSON files from your downloaded Material Design 3 token folder"
+                );
+            }
         }
+    }
+
+    function loadWebTool() {
+        openUrl("https://links.gratton.design/material-design-webtool");
     }
 
     function paletteToColorVariables(palettes) {
@@ -532,30 +636,6 @@ function createThemeInArboard(artboard, theme) {
 // ******************************************************************* //
 // General Styles management functions                                 //
 // ******************************************************************* //
-function getLayerStyleNameFromID(id) {
-    let styleName = "";
-    for (let i = 0; i < arrayLayerStyleNames.length; i++) {
-        if (arrayLayerStyleIDs[i] === id) {
-            styleName = arrayLayerStyleNames[i];
-        }
-    }
-    return styleName;
-}
-
-function getTextStyleNameFromID(id) {
-    try {
-        let textStyle = "";
-        for (let i = 0; i < arrayTextStyleStyles.length; i++) {
-            if (arrayTextStyleIDs[i] === id) {
-                textStyle = arrayTextStyleStyles[i];
-            }
-        }
-        return textStyle;
-    } catch (getTextStylesStyleFromIDErr) {
-        console.log(getTextStylesStyleFromIDErr);
-    }
-}
-
 function getLayerStyleIDFromName(name) {
     let styleID = "";
     for (let i = 0; i < arrayLayerStyleIDs.length; i++) {
@@ -900,62 +980,6 @@ function findAndRemovePage(document, name, remove = false) {
     }
 }
 
-/* Manage the text */
-function createTextWithStyleID(parentLayer, padding, styleID) {
-    let textX = padding;
-    let textY = 10;
-    let textParent = parentLayer;
-    let textStyleID = styleID;
-    let textValue = buttonTextName;
-    let textName = buttonTextName;
-
-    let index = arrayTextStyleIDs.indexOf(textStyleID);
-
-    let newText = new Text({
-        parent: textParent,
-        text: textValue,
-    });
-
-    newText.frame.x = textX;
-    newText.frame.y = textY;
-    newText.sharedStyleId = textStyleID;
-    newText.style = textStyles[index].style;
-    newText.name = textName;
-
-    return newText;
-}
-
-function createTextWithStyleName(
-    parentLayer,
-    posX,
-    posY,
-    styleName,
-    textValue = "",
-    textName = ""
-) {
-    let textX = posX;
-    let textY = posY;
-
-    let textStyleID = getTextStyleIDFromName(styleName);
-    // console.log("Text");
-    // console.log(styleName);
-    // console.log(textStyleID);
-    let index = arrayTextStyleIDs.indexOf(textStyleID);
-
-    let newText = new Text({
-        parent: parentLayer,
-        text: textValue,
-        sharedStyleId: textStyleID,
-        style: textStyles[index].style,
-        name: textName,
-    });
-
-    newText.frame.x = posX;
-    newText.frame.y = posY;
-
-    return newText;
-}
-
 // ******************************************************************* //
 // Handle function to manage Sketch items                              //
 // ******************************************************************* //
@@ -1064,22 +1088,37 @@ function createShapePathWithStyleName(
     return newShape;
 }
 
-function createGroup(parentLayer, children, name) {
-    try {
-        let Group = sketch.Group;
-        let newGroup = new Group({
-            parent: parentLayer,
-            layers: children,
-            name: name,
-        });
+function createTextWithStyleName(
+    parentLayer,
+    posX,
+    posY,
+    styleName,
+    textValue = "",
+    textName = ""
+) {
+    let textX = posX;
+    let textY = posY;
 
-        return newGroup;
-    } catch (errGroup) {
-        console.log(errGroup);
-    }
+    let textStyleID = getTextStyleIDFromName(styleName);
+    // console.log("Text");
+    // console.log(styleName);
+    // console.log(textStyleID);
+    let index = arrayTextStyleIDs.indexOf(textStyleID);
+
+    let newText = new Text({
+        parent: parentLayer,
+        text: textValue,
+        sharedStyleId: textStyleID,
+        style: textStyles[index].style,
+        name: textName,
+    });
+
+    newText.frame.x = posX;
+    newText.frame.y = posY;
+
+    return newText;
 }
 
-//
 function matchingSwatchForName(name = "") {
     const swatches = sketch.getSelectedDocument().swatches;
     const matchingSwatches = swatches.filter((swatch) => swatch.name === name);
@@ -1091,15 +1130,17 @@ function matchingSwatchForName(name = "") {
     }
 }
 
-function matchingSwatchForColor(color = "") {
-    const swatches = sketch.getSelectedDocument().swatches;
-    const matchingSwatches = swatches.filter(
-        (swatch) => swatch.color === color
-    );
-    if (matchingSwatches.length == 0) {
-        return null;
+// ******************************************************************* //
+// When the plugin is shutdown by Sketch (for example when the user    //
+// disable the plugin) we need to close the webview if it's open       //
+// ******************************************************************* //
+export function onShutdown() {
+    const existingWebview = getWebview(webviewIdentifier);
+    if (existingWebview) {
+        existingWebview.close();
     }
-    if (matchingSwatches.length == 1) {
-        return matchingSwatches[0];
-    }
+}
+
+function openUrl(url) {
+    NSWorkspace.sharedWorkspace().openURL(NSURL.URLWithString(url));
 }

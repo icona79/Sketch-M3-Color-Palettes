@@ -3,9 +3,9 @@
     "bundleVersion": 1,
     "commands": [
         {
-            "name": "🎨 Theme from custom color",
-            "identifier": "palette-custom",
-            "script": "./script.js",
+            "name": "🪄 Import theme",
+            "identifier": "palette-import",
+            "script": "./import-tokens.js",
             "handlers": {
                 "run": "onRun",
                 "actions": {
@@ -14,8 +14,19 @@
             }
         },
         {
-            "name": "🤖 Import theme from MD3 Web tool design tokens",
-            "identifier": "palette-import",
+            "name": "👀 Plugin Guide",
+            "identifier": "tour",
+            "script": "./import-tokens.js",
+            "handlers": {
+                "run": "onRun",
+                "actions": {
+                    "Shutdown": "onShutdown"
+                }
+            }
+        },
+        {
+            "name": "🔗 Load Material Design webtool",
+            "identifier": "webtool",
             "script": "./import-tokens.js",
             "handlers": {
                 "run": "onRun",
@@ -26,9 +37,9 @@
         }
     ],
     "menu": {
-        "title": "🤖 Import theme from MD3 Web tool design tokens",
-        "items": ["palette-import"],
-        "isRoot": true
+        "title": "🤖 Material Design 3 themes importer",
+        "items": ["palette-import", "tour", "webtool"],
+        "isRoot": false
     },
     "icon": "icon.png"
 }

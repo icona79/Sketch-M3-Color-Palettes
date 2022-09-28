@@ -939,6 +939,288 @@ module.exports.NOT_IMPLEMENTED = function NOT_IMPLEMENTED(name) {
 
 /***/ }),
 
+/***/ "./node_modules/@skpm/promise/index.js":
+/*!*********************************************!*\
+  !*** ./node_modules/@skpm/promise/index.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* from https://github.com/taylorhakes/promise-polyfill */
+
+function promiseFinally(callback) {
+  var constructor = this.constructor;
+  return this.then(
+    function(value) {
+      return constructor.resolve(callback()).then(function() {
+        return value;
+      });
+    },
+    function(reason) {
+      return constructor.resolve(callback()).then(function() {
+        return constructor.reject(reason);
+      });
+    }
+  );
+}
+
+function noop() {}
+
+/**
+ * @constructor
+ * @param {Function} fn
+ */
+function Promise(fn) {
+  if (!(this instanceof Promise))
+    throw new TypeError("Promises must be constructed via new");
+  if (typeof fn !== "function") throw new TypeError("not a function");
+  /** @type {!number} */
+  this._state = 0;
+  /** @type {!boolean} */
+  this._handled = false;
+  /** @type {Promise|undefined} */
+  this._value = undefined;
+  /** @type {!Array<!Function>} */
+  this._deferreds = [];
+
+  doResolve(fn, this);
+}
+
+function handle(self, deferred) {
+  while (self._state === 3) {
+    self = self._value;
+  }
+  if (self._state === 0) {
+    self._deferreds.push(deferred);
+    return;
+  }
+  self._handled = true;
+  Promise._immediateFn(function() {
+    var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected;
+    if (cb === null) {
+      (self._state === 1 ? resolve : reject)(deferred.promise, self._value);
+      return;
+    }
+    var ret;
+    try {
+      ret = cb(self._value);
+    } catch (e) {
+      reject(deferred.promise, e);
+      return;
+    }
+    resolve(deferred.promise, ret);
+  });
+}
+
+function resolve(self, newValue) {
+  try {
+    // Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
+    if (newValue === self)
+      throw new TypeError("A promise cannot be resolved with itself.");
+    if (
+      newValue &&
+      (typeof newValue === "object" || typeof newValue === "function")
+    ) {
+      var then = newValue.then;
+      if (newValue instanceof Promise) {
+        self._state = 3;
+        self._value = newValue;
+        finale(self);
+        return;
+      } else if (typeof then === "function") {
+        doResolve(then.bind(newValue), self);
+        return;
+      }
+    }
+    self._state = 1;
+    self._value = newValue;
+    finale(self);
+  } catch (e) {
+    reject(self, e);
+  }
+}
+
+function reject(self, newValue) {
+  self._state = 2;
+  self._value = newValue;
+  finale(self);
+}
+
+function finale(self) {
+  if (self._state === 2 && self._deferreds.length === 0) {
+    Promise._immediateFn(function() {
+      if (!self._handled) {
+        Promise._unhandledRejectionFn(self._value, self);
+      }
+    });
+  }
+
+  for (var i = 0, len = self._deferreds.length; i < len; i++) {
+    handle(self, self._deferreds[i]);
+  }
+  self._deferreds = null;
+}
+
+/**
+ * @constructor
+ */
+function Handler(onFulfilled, onRejected, promise) {
+  this.onFulfilled = typeof onFulfilled === "function" ? onFulfilled : null;
+  this.onRejected = typeof onRejected === "function" ? onRejected : null;
+  this.promise = promise;
+}
+
+/**
+ * Take a potentially misbehaving resolver function and make sure
+ * onFulfilled and onRejected are only called once.
+ *
+ * Makes no guarantees about asynchrony.
+ */
+function doResolve(fn, self) {
+  var done = false;
+  try {
+    fn(
+      function(value) {
+        if (done) {
+          Promise._multipleResolvesFn("resolve", self, value);
+          return;
+        }
+        done = true;
+        resolve(self, value);
+      },
+      function(reason) {
+        if (done) {
+          Promise._multipleResolvesFn("reject", self, reason);
+          return;
+        }
+        done = true;
+        reject(self, reason);
+      }
+    );
+  } catch (ex) {
+    if (done) {
+      Promise._multipleResolvesFn("reject", self, ex);
+      return;
+    }
+    done = true;
+    reject(self, ex);
+  }
+}
+
+Promise.prototype["catch"] = function(onRejected) {
+  return this.then(null, onRejected);
+};
+
+Promise.prototype.then = function(onFulfilled, onRejected) {
+  // @ts-ignore
+  var prom = new this.constructor(noop);
+
+  handle(this, new Handler(onFulfilled, onRejected, prom));
+  return prom;
+};
+
+Promise.prototype["finally"] = promiseFinally;
+
+Promise.all = function(arr) {
+  return new Promise(function(resolve, reject) {
+    if (!Array.isArray(arr)) {
+      return reject(new TypeError("Promise.all accepts an array"));
+    }
+
+    var args = Array.prototype.slice.call(arr);
+    if (args.length === 0) return resolve([]);
+    var remaining = args.length;
+
+    function res(i, val) {
+      try {
+        if (val && (typeof val === "object" || typeof val === "function")) {
+          var then = val.then;
+          if (typeof then === "function") {
+            then.call(
+              val,
+              function(val) {
+                res(i, val);
+              },
+              reject
+            );
+            return;
+          }
+        }
+        args[i] = val;
+        if (--remaining === 0) {
+          resolve(args);
+        }
+      } catch (ex) {
+        reject(ex);
+      }
+    }
+
+    for (var i = 0; i < args.length; i++) {
+      res(i, args[i]);
+    }
+  });
+};
+
+Promise.resolve = function(value) {
+  if (value && typeof value === "object" && value.constructor === Promise) {
+    return value;
+  }
+
+  return new Promise(function(resolve) {
+    resolve(value);
+  });
+};
+
+Promise.reject = function(value) {
+  return new Promise(function(resolve, reject) {
+    reject(value);
+  });
+};
+
+Promise.race = function(arr) {
+  return new Promise(function(resolve, reject) {
+    if (!Array.isArray(arr)) {
+      return reject(new TypeError("Promise.race accepts an array"));
+    }
+
+    for (var i = 0, len = arr.length; i < len; i++) {
+      Promise.resolve(arr[i]).then(resolve, reject);
+    }
+  });
+};
+
+// Use polyfill for setImmediate for performance gains
+Promise._immediateFn = setImmediate;
+
+Promise._unhandledRejectionFn = function _unhandledRejectionFn(err, promise) {
+  if (
+    typeof process !== "undefined" &&
+    process.listenerCount &&
+    (process.listenerCount("unhandledRejection") ||
+      process.listenerCount("uncaughtException"))
+  ) {
+    process.emit("unhandledRejection", err, promise);
+    process.emit("uncaughtException", err, "unhandledRejection");
+  } else if (typeof console !== "undefined" && console) {
+    console.warn("Possible Unhandled Promise Rejection:", err);
+  }
+};
+
+Promise._multipleResolvesFn = function _multipleResolvesFn(
+  type,
+  promise,
+  value
+) {
+  if (typeof process !== "undefined" && process.emit) {
+    process.emit("multipleResolves", type, promise, value);
+  }
+};
+
+module.exports = Promise;
+
+
+/***/ }),
+
 /***/ "./node_modules/array-sort/index.js":
 /*!******************************************!*\
   !*** ./node_modules/array-sort/index.js ***!
@@ -1210,1463 +1492,6 @@ function isBuffer(val) {
     && typeof val.constructor.isBuffer === 'function'
     && val.constructor.isBuffer(val);
 }
-
-
-/***/ }),
-
-/***/ "./node_modules/color-difference/lib/compare.js":
-/*!******************************************************!*\
-  !*** ./node_modules/color-difference/lib/compare.js ***!
-  \******************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return compare; })();
-
-var HexRgb   = __webpack_require__(/*! color-model */ "./node_modules/color-model/index.js").HexRgb,
-    methods = {
-        'EuclideanDistance' : __webpack_require__(/*! ./method/euclidean-distance */ "./node_modules/color-difference/lib/method/euclidean-distance.js")
-      , 'CIE76Difference'   : __webpack_require__(/*! ./method/cie-76-difference */ "./node_modules/color-difference/lib/method/cie-76-difference.js")
-    };
-
-/**
- * Compares two colors and returns difference from 1 to 100
- *
- * @param {String} color1
- * @param {String} color2
- * @param {String} method Default method is best from currently implemented
- * @return {Number} difference
- */
-function compare(color1, color2, method) {
-  var methodName = method || 'CIE76Difference';
-
-  if (undefined === methods[methodName]) {
-    throw new Error('Method "' + methodName + '" is unknown. See implemented methods in ./lib/method directory.');
-  }
-
-  /** @type Abstract */
-  var methodObj = new methods[methodName];
-
-  return methodObj.compare(new HexRgb(color1), new HexRgb(color2));
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-difference/lib/index.js":
-/*!****************************************************!*\
-  !*** ./node_modules/color-difference/lib/index.js ***!
-  \****************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports  = {
-  compare       : __webpack_require__(/*! ./compare */ "./node_modules/color-difference/lib/compare.js")
-  , method      : {
-      'EuclideanDistance' : __webpack_require__(/*! ./method/euclidean-distance */ "./node_modules/color-difference/lib/method/euclidean-distance.js")
-    , 'CIE76Difference'   : __webpack_require__(/*! ./method/cie-76-difference */ "./node_modules/color-difference/lib/method/cie-76-difference.js")
-  }
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-difference/lib/method/abstract.js":
-/*!**************************************************************!*\
-  !*** ./node_modules/color-difference/lib/method/abstract.js ***!
-  \**************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = (function() { return Abstract; })();
-
-function Abstract() {
-};
-
-/**
- * Compares two colors and returns difference from 1 to 100
- *
- * @param {Rgb} color1
- * @param {Rgb} color2
- * @return {Number} difference
- */
-Abstract.prototype.compare = function(color1, color2) {
-  throw new Error('Compare method unimplemented!');
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-difference/lib/method/cie-76-difference.js":
-/*!***********************************************************************!*\
-  !*** ./node_modules/color-difference/lib/method/cie-76-difference.js ***!
-  \***********************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return CIE76Difference; })();
-
-/**
- * @extends Abstract
- */
-function CIE76Difference() {
-};
-
-__webpack_require__(/*! util */ "util").inherits(CIE76Difference, __webpack_require__(/*! ./abstract */ "./node_modules/color-difference/lib/method/abstract.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {Rgb} color1
- * @param {Rgb} color2
- */
-CIE76Difference.prototype.compare = function(color1, color2) {
-  if (color1.equals(color2)) {
-    return 0;
-  }
-
-  function squaredDelta(v1, v2) {
-    return Math.pow(v1 - v2, 2);
-  }
-
-  var lab1 = color1.toLab(),
-      lab2 = color2.toLab(),
-      sum  = 0;
-
-  sum += squaredDelta(lab1.lightness(), lab2.lightness());
-  sum += squaredDelta(lab1.a(), lab2.a());
-  sum += squaredDelta(lab1.b(), lab2.b());
-
-  return Math.max(Math.min(Math.sqrt(sum), 100), 0)
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-difference/lib/method/euclidean-distance.js":
-/*!************************************************************************!*\
-  !*** ./node_modules/color-difference/lib/method/euclidean-distance.js ***!
-  \************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return EuclideanDistance; })();
-
-/**
- * @extends Abstract
- */
-function EuclideanDistance() {
-};
-
-__webpack_require__(/*! util */ "util").inherits(EuclideanDistance, __webpack_require__(/*! ./abstract */ "./node_modules/color-difference/lib/method/abstract.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {Rgb} color1
- * @param {Rgb} color2
- */
-EuclideanDistance.prototype.compare = function(color1, color2) {
-  if (color1.equals(color2)) {
-    return 0;
-  }
-
-  function squaredDelta(v1, v2) {
-    return Math.pow(v1 - v2, 2);
-  }
-
-  var sum = 0;
-  sum += squaredDelta(color1.red(),   color2.red());
-  sum += squaredDelta(color1.green(), color2.green());
-  sum += squaredDelta(color1.blue(),  color2.blue());
-
-  var conversionIndex = 19.5075;
-
-  return Math.sqrt(sum / conversionIndex);
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/index.js":
-/*!*******************************************!*\
-  !*** ./node_modules/color-model/index.js ***!
-  \*******************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-if (process.env.COLOR_MODEL_COVERAGE) {
-  eval('module.exports = require("./.coverage/lib");');
-} else {
-  module.exports = __webpack_require__(/*! ./lib */ "./node_modules/color-model/lib/index.js");
-}
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/abstract-model.js":
-/*!********************************************************!*\
-  !*** ./node_modules/color-model/lib/abstract-model.js ***!
-  \********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return AbstractModel; })();
-
-var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
-
-/**
- * Abstract color model
- */
-function AbstractModel() {
-  this._name       = null;
-  this._components = [];
-};
-
-/**
- * @returns {String}
- */
-AbstractModel.prototype.toString = function () {
-  var v = [];
-  for (var i = 0, iMax = this._components.length; i < iMax; i++) {
-    v.push(this['_' + this._components[i]].get());
-  }
-  return this._name + '(' + v.join(', ') + ')';
-};
-
-/**
- * @param {AbstractModel} that
- * @returns {Boolean}
- */
-AbstractModel.prototype.equals = function (that) {
-  if (!(that instanceof AbstractModel) || this._name !== that._name) {
-    return false;
-  }
-  for (var i = 0, cs = this._components, iMax = cs.length; i < iMax; i++) {
-    var key = '_' + cs[i];
-    if (!this[key].equals(that[key])) {
-      return false;
-    }
-  }
-  return true;
-};
-
-/**
- * @abstract
- * @returns {Xyz}
- */
-AbstractModel.prototype.toXyz = function () {
-  throw new Error('Model ' + this._name + ' has not implemented Xyz conversion!');
-};
-
-/**
- * @returns {Lab}
- */
-AbstractModel.prototype.toLab = function () {
-  return this.toXyz().toLab();
-};
-
-/**
- * Getter/chainable setter in one place
- *
- * @param {String} name
- * @param {Number} value
- * @returns {AbstractModel}
- */
-AbstractModel.prototype.component = function (name, value) {
-  var component = this['_' + name];
-  if (undefined === component || !(component instanceof Component)) {
-    throw new Error('Component "' + name + '" is not exists');
-  }
-
-  if (1 == arguments.length) {
-    return component.get();
-  }
-
-  component.set(value);
-  return this;
-};
-
-/**
- * @param {String} name
- * @param {Array} args
- * @returns {AbstractModel}
- */
-AbstractModel.prototype._component = function (name, args) {
-  /** @type Component */
-  var component = this['_' + name];
-
-  if (0 == args.length) {
-    return component.get();
-  }
-
-  component.set(args[0]);
-  return this;
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/component.js":
-/*!***************************************************!*\
-  !*** ./node_modules/color-model/lib/component.js ***!
-  \***************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = (function() { return Component; })();
-
-/**
- * Color model Component
- * @param {String} name
- * @param {Number} from
- * @param {Number} to
- */
-function Component(name, from, to) {
-  if (!name) {
-    throw new Error('Name not set');
-  }
-  this._name = name;
-
-  from = parseFloat(from);
-  to   = parseFloat(to);
-  if (!(from < to)) {
-    throw new Error('From must be less than to');
-  }
-  this._from = from;
-  this._to   = to;
-
-  this._value = null;
-};
-
-/**
- * @param {Number} value
- * @returns {Component}
- */
-Component.prototype.set = function (value) {
-  value = value ? parseFloat(value) : 0;
-  if (isNaN(value)) {
-    throw new Error('Value for ' + this._name + ' must be numeric');
-  }
-
-  if (value < this._from || value > this._to) {
-    throw new Error('Value for ' + this._name + ' (' + value + ') must be between ' + this._from + ' and ' + this._to);
-  }
-
-  this._value = value;
-  return this;
-};
-
-/**
- * @returns {Number}
- */
-Component.prototype.get = function () {
-  return this._value;
-};
-
-/**
- * @param {Component} that
- * @returns {Boolean}
- */
-Component.prototype.equals = function (that) {
-  return (that instanceof Component)
-    && this._name  === that._name
-    && this._value === that._value;
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/hex-rgb.js":
-/*!*************************************************!*\
-  !*** ./node_modules/color-model/lib/hex-rgb.js ***!
-  \*************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return HexRgb; })();
-
-var _r = __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js"); eval('var Rgb = _r');
-
-/**
- * Rgb color model, that created from HEX string and formatted as HEX
- * @extends Rgb
- * @param {String} hex
- */
-function HexRgb(hex) {
-  if (undefined === hex) {
-    return HexRgb.super_.apply(this, args);
-  }
-
-  var c  = '([a-f0-9]{1,2})',
-      re = new RegExp('^#?' + c + c + c + '$', 'i'),
-      m  = hex.match(re);
-
-  if (null === m) {
-    throw new Error('Value "' + hex + '" is unknown hex color');
-  }
-
-  var args = [
-    this._parseIntFromHex(m[1]),
-    this._parseIntFromHex(m[2]),
-    this._parseIntFromHex(m[3])
-  ];
-  HexRgb.super_.apply(this, args);
-};
-
-__webpack_require__(/*! util */ "util").inherits(HexRgb, __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {String} hex
- * @returns {Number}
- */
-HexRgb.prototype._parseIntFromHex = function(hex) {
-  if (1 == hex.length) {
-    hex = hex + hex;
-  }
-  return parseInt(hex, 16);
-};
-
-/**
- * @returns {String}
- */
-HexRgb.prototype.toString = function() {
-  return '#' + this._formatIntAsHex(this.red()) + this._formatIntAsHex(this.green()) + this._formatIntAsHex(this.blue());
-};
-
-/**
- * @param {Number} intValue
- * @returns {String}
- */
-HexRgb.prototype._formatIntAsHex = function(intValue) {
-  intValue = Math.round(intValue);
-  strValue = '' + intValue;
-  if (1 == strValue.length) {
-    strValue = strValue + strValue;
-  }
-  return (intValue < 16 ? '0' : '') + intValue.toString(16);
-};
-
-/**
- * @returns {Rgb}
- */
-HexRgb.prototype.toRgb = function () {
-  return new Rgb(this._red.get(), this._green.get(), this._blue.get());
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/hsl.js":
-/*!*********************************************!*\
-  !*** ./node_modules/color-model/lib/hsl.js ***!
-  \*********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return Hsl; })();
-
-var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
-var _r = __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js");       eval('var Rgb       = _r');
-
-/**
- * Hue, saturation, lightness color space
- * @extends AbstractModel
- * @param {Number} h
- * @param {Number} s
- * @param {Number} l
- */
-function Hsl(h, s, l) {
-  this._name       = 'hsl';
-  this._components = ['hue', 'saturation', 'lightness'];
-  this._hue        = new Component('hue',        0, 360); this._hue.set(h);
-  this._saturation = new Component('saturation', 0, 1  ); this._saturation.set(s);
-  this._lightness  = new Component('lightness',  0, 1  ); this._lightness.set(l);
-};
-
-__webpack_require__(/*! util */ "util").inherits(Hsl, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {Number} value from 0 to 360
- * @returns {Hsl}
- */
-Hsl.prototype.hue = function (value) {
-  return this._component('hue', arguments);
-};
-
-/**
- * @param {Number} value from 0 to 1
- * @returns {Hsl}
- */
-Hsl.prototype.saturation = function (value) {
-  return this._component('saturation', arguments);
-};
-
-/**
- * @param {Number} value from 0 to 1
- * @returns {Hsl}
- */
-Hsl.prototype.lightness = function (value) {
-  return this._component('lightness', arguments);
-};
-
-/**
- * @returns {Xyz}
- */
-Hsl.prototype.toXyz = function () {
-  return this.toRgb().toXyz();
-};
-
-/**
- * @returns {Rgb}
- */
-Hsl.prototype.toRgb = function () {
-  var lightness  = this._lightness.get(),
-      saturation = this._saturation.get();
-  if (saturation == 0) {
-    var light = 0;
-    if (lightness < 0) {
-      light = 0;
-    } else if (lightness >= 1) {
-      light = 255;
-    } else {
-      light = (lightness * (1 << 16)) >> 8;
-    }
-    return new Rgb(light, light, light);
-  }
-
-  var hue   = this._hue.get() / this._hue._to,
-      temp2 = (lightness < 0.5) ?
-                (lightness * (saturation + 1)) :
-                (lightness + saturation) - (lightness * saturation),
-      temp1 = 2 * lightness - temp2;
-
-  return new Rgb(
-    this._calcHue(temp1, temp2, hue + 1 / 3),
-    this._calcHue(temp1, temp2, hue),
-    this._calcHue(temp1, temp2, hue - 1 / 3)
-  );
-};
-
-/**
- * @param {Number} temp1
- * @param {Number} temp2
- * @param {Number} hue
- * @returns {Number}
- */
-Hsl.prototype._calcHue = function (temp1, temp2, hue) {
-  if (hue < 0) {
-    ++hue;
-  } else if (hue > 1) {
-    --hue;
-  }
-
-  result = temp1;
-  if (hue * 6 < 1) {
-    result = temp1 + (temp2 - temp1) * hue * 6;
-  } else if (hue * 2 < 1) {
-    result = temp2;
-  } else if (hue * 3 < 2) {
-    result = temp1 + (temp2 - temp1) * (2/3 - hue) * 6;
-  }
-
-  return (result * 255.99999999999997) >> 0;
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/index.js":
-/*!***********************************************!*\
-  !*** ./node_modules/color-model/lib/index.js ***!
-  \***********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = {
-    Component     : __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js")
-  , AbstractModel : __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")
-  , Xyz           : __webpack_require__(/*! ./xyz */ "./node_modules/color-model/lib/xyz.js")
-  , Rgb           : __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js")
-  , HexRgb        : __webpack_require__(/*! ./hex-rgb */ "./node_modules/color-model/lib/hex-rgb.js")
-  , Lab           : __webpack_require__(/*! ./lab */ "./node_modules/color-model/lib/lab.js")
-  , Hsl           : __webpack_require__(/*! ./hsl */ "./node_modules/color-model/lib/hsl.js")
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/lab.js":
-/*!*********************************************!*\
-  !*** ./node_modules/color-model/lib/lab.js ***!
-  \*********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return Lab; })();
-
-var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
-
-/**
- * Lab color space
- *
- * CIE 1976 (L*, a*, b*) color space
- * @extends AbstractModel
- * @param {Number} l
- * @param {Number} a
- * @param {Number} b
- */
-function Lab(l, a, b) {
-  this._name       = 'lab';
-  this._components = ['lightness', 'a', 'b'];
-  this._lightness  = new Component('lightness',    0, 100); this._lightness.set(l);
-  this._a          = new Component('a',          -87, 100); this._a.set(a);
-  this._b          = new Component('b',         -108, 100); this._b.set(b);
-};
-
-__webpack_require__(/*! util */ "util").inherits(Lab, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {Number} value
- * @returns {Lab}
- */
-Lab.prototype.lightness = function (value) {
-  return this._component('lightness', arguments);
-};
-
-/**
- * @param {Number} value
- * @returns {Lab}
- */
-Lab.prototype.a = function (value) {
-  return this._component('a', arguments);
-};
-
-/**
- * @param {Number} value
- * @returns {Lab}
- */
-Lab.prototype.b = function (value) {
-  return this._component('b', arguments);
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/rgb.js":
-/*!*********************************************!*\
-  !*** ./node_modules/color-model/lib/rgb.js ***!
-  \*********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return Rgb; })();
-
-var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
-var _r = __webpack_require__(/*! ./xyz */ "./node_modules/color-model/lib/xyz.js");       eval('var Xyz       = _r');
-var _r = __webpack_require__(/*! ./hsl */ "./node_modules/color-model/lib/hsl.js");       eval('var Hsl       = _r');
-
-/**
- * Rgb color model
- * @extends AbstractModel
- * @param {Number} r
- * @param {Number} g
- * @param {Number} b
- */
-function Rgb(r, g, b) {
-  this._name       = 'rgb';
-  this._components = ['red', 'green', 'blue'];
-  this._red        = new Component('red',   0, 255); this._red.set(r);
-  this._green      = new Component('green', 0, 255); this._green.set(g);
-  this._blue       = new Component('blue',  0, 255); this._blue.set(b);
-};
-
-__webpack_require__(/*! util */ "util").inherits(Rgb, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {Number} value
- * @returns {Rgb}
- */
-Rgb.prototype.red = function (value) {
-  return this._component('red', arguments);
-};
-
-/**
- * @param {Number} value
- * @returns {Rgb}
- */
-Rgb.prototype.green = function (value) {
-  return this._component('green', arguments);
-};
-
-/**
- * @param {Number} value
- * @returns {Rgb}
- */
-Rgb.prototype.blue = function (value) {
-  return this._component('blue', arguments);
-};
-
-/**
- * @returns {HexRgb}
- */
-Rgb.prototype.toHex = function () {
-  var HexRgb = __webpack_require__(/*! ./hex-rgb */ "./node_modules/color-model/lib/hex-rgb.js");
-  return new HexRgb()
-    .red  (this._red  .get())
-    .green(this._green.get())
-    .blue (this._blue .get());
-};
-
-/**
- * @returns {String}
- */
-Rgb.prototype.toHexString = function () {
-  return this.toHex().toString();
-};
-
-/**
- * @param {Number} value
- * @returns {Number}
- */
-Rgb.prototype._preparePreXyzValue = function(value) {
-  value = value / 255;
-  if (value > 0.04045) {
-    value = (value + 0.055) / 1.055;
-    value = Math.pow(value, 2.4);
-  } else {
-    value = value / 12.92;
-  }
-  return value * 100;
-};
-
-/**
- * @returns {Xyz}
- */
-Rgb.prototype.toXyz = function () {
-  var r = this._preparePreXyzValue(this._red  .get()),
-      g = this._preparePreXyzValue(this._green.get()),
-      b = this._preparePreXyzValue(this._blue .get());
-
-  return new Xyz(
-    this._finalizeXyzValue(r * 0.4124 + g * 0.3576 + b * 0.1805),
-    this._finalizeXyzValue(r * 0.2126 + g * 0.7152 + b * 0.0722),
-    this._finalizeXyzValue(r * 0.0193 + g * 0.1192 + b * 0.9505)
-  );
-};
-
-/**
- * @param {Number} preXyzValue
- * @returns {Number}
- */
-Rgb.prototype._finalizeXyzValue = function (preXyzValue) {
-  return Math.round(preXyzValue * 10000) / 10000;
-};
-
-/**
- * @returns {Hsl}
- */
-Rgb.prototype.toHsl = function () {
-  var r = this._red  .get() / 255,
-      g = this._green.get() / 255,
-      b = this._blue .get() / 255,
-      min   = Math.min(r, g, b),
-      max   = Math.max(r, g, b),
-      delta = max - min,
-      lightness = (min + max) / 2;
-
-  lightness = Math.round(lightness * 100) / 100;
-
-  if (delta == 0) {
-    return new Hsl(0, 0, lightness);
-  }
-
-  var saturation = 0;
-  if (lightness < 0.5) {
-    saturation = delta / (max + min);
-  } else {
-    saturation = delta / (2 - max - min);
-  }
-  saturation = Math.round(saturation * 100) / 100;
-
-  var hue  = 0,
-    deltaR = (((max - r) / 6 ) + (delta / 2)) / delta,
-    deltaG = (((max - g) / 6 ) + (delta / 2)) / delta,
-    deltaB = (((max - b) / 6 ) + (delta / 2)) / delta;
-
-  if (r == max) {
-    hue = deltaB - deltaG;
-  } else if (g == max) {
-    hue = ( 1 / 3 ) + deltaR - deltaB;
-  } else {
-    hue = ( 2 / 3 ) + deltaG - deltaR;
-  }
-
-  if (hue < 0) {
-    ++hue;
-  } else if (hue > 1) {
-    --hue;
-  }
-  hue = (hue * 360.99999999999997) >> 0;
-  if (360 == hue) {
-    hue = 0;
-  }
-
-  return new Hsl(hue, saturation, lightness);
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-model/lib/xyz.js":
-/*!*********************************************!*\
-  !*** ./node_modules/color-model/lib/xyz.js ***!
-  \*********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = (function() { return Xyz; })();
-
-var _r = __webpack_require__(/*! ./component */ "./node_modules/color-model/lib/component.js"); eval('var Component = _r');
-var _r = __webpack_require__(/*! ./rgb */ "./node_modules/color-model/lib/rgb.js");       eval('var Rgb       = _r');
-var _r = __webpack_require__(/*! ./lab */ "./node_modules/color-model/lib/lab.js");       eval('var Lab       = _r');
-
-/**
- * XYZ color model - base color model for others
- *
- * CIE 1931 color space
- * @extends AbstractModel
- * @param {Number} x
- * @param {Number} y
- * @param {Number} z
- */
-function Xyz(x, y, z) {
-  this._name       = 'xyz';
-  this._components = ['x', 'y', 'z'];
-  this._x          = new Component('x', 0, 95.05); this._x.set(x);
-  this._y          = new Component('y', 0, 100  ); this._y.set(y);
-  this._z          = new Component('z', 0, 108.9); this._z.set(z);
-};
-
-__webpack_require__(/*! util */ "util").inherits(Xyz, __webpack_require__(/*! ./abstract-model */ "./node_modules/color-model/lib/abstract-model.js")); 'code' ? 'completion' : undefined;
-
-/**
- * @param {Number} value
- * @returns {Xyz}
- */
-Xyz.prototype.x = function (value) {
-  return this._component('x', arguments);
-};
-
-/**
- * @param {Number} value
- * @returns {Xyz}
- */
-Xyz.prototype.y = function (value) {
-  return this._component('y', arguments);
-};
-
-/**
- * @param {Number} value
- * @returns {Xyz}
- */
-Xyz.prototype.z = function (value) {
-  return this._component('z', arguments);
-};
-
-/**
- * @returns {Xyz}
- */
-Xyz.prototype.toXyz = function () {
-  return new Xyz(this._x.get(), this._y.get(), this._z.get());
-};
-
-/**
- * @returns {Lab}
- */
-Xyz.prototype.toLab = function () {
-  var x = this._preparePreLabValue(this._x.get() /  95.047),
-      y = this._preparePreLabValue(this._y.get() / 100.000),
-      z = this._preparePreLabValue(this._z.get() / 108.883);
-
-  return new Lab(
-    this._finalizeLabValue((116 * y) - 16),
-    this._finalizeLabValue(500 * (x - y)),
-    this._finalizeLabValue(200 * (y - z))
-  );
-};
-
-/**
- * @param {Number} preLabValue
- * @returns {Number}
- */
-Xyz.prototype._preparePreLabValue = function (preLabValue) {
-  if (preLabValue > 0.008856) {
-    return Math.pow(preLabValue, 1/3);
-  }
-  return (7.787 * preLabValue) + (16 / 116);
-};
-
-/**
- * @param {Number} preLabValue
- * @returns {Number}
- */
-Xyz.prototype._finalizeLabValue = function (preLabValue) {
-  return Math.round(preLabValue * 10000) / 10000;
-};
-
-/**
- * @returns {Rgb}
- */
-Xyz.prototype.toRgb = function () {
-  var x = this._x.get() / 100,
-      y = this._y.get() / 100,
-      z = this._z.get() / 100,
-      r = x *  3.2406 + y * -1.5372 + z * -0.4986,
-      g = x * -0.9689 + y *  1.8758 + z *  0.0415,
-      b = x *  0.0557 + y * -0.2040 + z *  1.0570;
-
-  return new Rgb(this._finalizeRgbValue(r), this._finalizeRgbValue(g), this._finalizeRgbValue(b));
-};
-
-/**
- * @param {Number} preRgbValue
- * @returns {Number}
- */
-Xyz.prototype._finalizeRgbValue = function (preRgbValue) {
-  if (preRgbValue > 0.0031308 ) {
-    preRgbValue = 1.055 * Math.pow(preRgbValue,  1/2.4) - 0.055;
-  } else {
-    preRgbValue = 12.92 * preRgbValue;
-  }
-
-  return Math.round(255 * preRgbValue);
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/color-name/index.js":
-/*!******************************************!*\
-  !*** ./node_modules/color-name/index.js ***!
-  \******************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-module.exports = {
-	"aliceblue": [240, 248, 255],
-	"antiquewhite": [250, 235, 215],
-	"aqua": [0, 255, 255],
-	"aquamarine": [127, 255, 212],
-	"azure": [240, 255, 255],
-	"beige": [245, 245, 220],
-	"bisque": [255, 228, 196],
-	"black": [0, 0, 0],
-	"blanchedalmond": [255, 235, 205],
-	"blue": [0, 0, 255],
-	"blueviolet": [138, 43, 226],
-	"brown": [165, 42, 42],
-	"burlywood": [222, 184, 135],
-	"cadetblue": [95, 158, 160],
-	"chartreuse": [127, 255, 0],
-	"chocolate": [210, 105, 30],
-	"coral": [255, 127, 80],
-	"cornflowerblue": [100, 149, 237],
-	"cornsilk": [255, 248, 220],
-	"crimson": [220, 20, 60],
-	"cyan": [0, 255, 255],
-	"darkblue": [0, 0, 139],
-	"darkcyan": [0, 139, 139],
-	"darkgoldenrod": [184, 134, 11],
-	"darkgray": [169, 169, 169],
-	"darkgreen": [0, 100, 0],
-	"darkgrey": [169, 169, 169],
-	"darkkhaki": [189, 183, 107],
-	"darkmagenta": [139, 0, 139],
-	"darkolivegreen": [85, 107, 47],
-	"darkorange": [255, 140, 0],
-	"darkorchid": [153, 50, 204],
-	"darkred": [139, 0, 0],
-	"darksalmon": [233, 150, 122],
-	"darkseagreen": [143, 188, 143],
-	"darkslateblue": [72, 61, 139],
-	"darkslategray": [47, 79, 79],
-	"darkslategrey": [47, 79, 79],
-	"darkturquoise": [0, 206, 209],
-	"darkviolet": [148, 0, 211],
-	"deeppink": [255, 20, 147],
-	"deepskyblue": [0, 191, 255],
-	"dimgray": [105, 105, 105],
-	"dimgrey": [105, 105, 105],
-	"dodgerblue": [30, 144, 255],
-	"firebrick": [178, 34, 34],
-	"floralwhite": [255, 250, 240],
-	"forestgreen": [34, 139, 34],
-	"fuchsia": [255, 0, 255],
-	"gainsboro": [220, 220, 220],
-	"ghostwhite": [248, 248, 255],
-	"gold": [255, 215, 0],
-	"goldenrod": [218, 165, 32],
-	"gray": [128, 128, 128],
-	"green": [0, 128, 0],
-	"greenyellow": [173, 255, 47],
-	"grey": [128, 128, 128],
-	"honeydew": [240, 255, 240],
-	"hotpink": [255, 105, 180],
-	"indianred": [205, 92, 92],
-	"indigo": [75, 0, 130],
-	"ivory": [255, 255, 240],
-	"khaki": [240, 230, 140],
-	"lavender": [230, 230, 250],
-	"lavenderblush": [255, 240, 245],
-	"lawngreen": [124, 252, 0],
-	"lemonchiffon": [255, 250, 205],
-	"lightblue": [173, 216, 230],
-	"lightcoral": [240, 128, 128],
-	"lightcyan": [224, 255, 255],
-	"lightgoldenrodyellow": [250, 250, 210],
-	"lightgray": [211, 211, 211],
-	"lightgreen": [144, 238, 144],
-	"lightgrey": [211, 211, 211],
-	"lightpink": [255, 182, 193],
-	"lightsalmon": [255, 160, 122],
-	"lightseagreen": [32, 178, 170],
-	"lightskyblue": [135, 206, 250],
-	"lightslategray": [119, 136, 153],
-	"lightslategrey": [119, 136, 153],
-	"lightsteelblue": [176, 196, 222],
-	"lightyellow": [255, 255, 224],
-	"lime": [0, 255, 0],
-	"limegreen": [50, 205, 50],
-	"linen": [250, 240, 230],
-	"magenta": [255, 0, 255],
-	"maroon": [128, 0, 0],
-	"mediumaquamarine": [102, 205, 170],
-	"mediumblue": [0, 0, 205],
-	"mediumorchid": [186, 85, 211],
-	"mediumpurple": [147, 112, 219],
-	"mediumseagreen": [60, 179, 113],
-	"mediumslateblue": [123, 104, 238],
-	"mediumspringgreen": [0, 250, 154],
-	"mediumturquoise": [72, 209, 204],
-	"mediumvioletred": [199, 21, 133],
-	"midnightblue": [25, 25, 112],
-	"mintcream": [245, 255, 250],
-	"mistyrose": [255, 228, 225],
-	"moccasin": [255, 228, 181],
-	"navajowhite": [255, 222, 173],
-	"navy": [0, 0, 128],
-	"oldlace": [253, 245, 230],
-	"olive": [128, 128, 0],
-	"olivedrab": [107, 142, 35],
-	"orange": [255, 165, 0],
-	"orangered": [255, 69, 0],
-	"orchid": [218, 112, 214],
-	"palegoldenrod": [238, 232, 170],
-	"palegreen": [152, 251, 152],
-	"paleturquoise": [175, 238, 238],
-	"palevioletred": [219, 112, 147],
-	"papayawhip": [255, 239, 213],
-	"peachpuff": [255, 218, 185],
-	"peru": [205, 133, 63],
-	"pink": [255, 192, 203],
-	"plum": [221, 160, 221],
-	"powderblue": [176, 224, 230],
-	"purple": [128, 0, 128],
-	"rebeccapurple": [102, 51, 153],
-	"red": [255, 0, 0],
-	"rosybrown": [188, 143, 143],
-	"royalblue": [65, 105, 225],
-	"saddlebrown": [139, 69, 19],
-	"salmon": [250, 128, 114],
-	"sandybrown": [244, 164, 96],
-	"seagreen": [46, 139, 87],
-	"seashell": [255, 245, 238],
-	"sienna": [160, 82, 45],
-	"silver": [192, 192, 192],
-	"skyblue": [135, 206, 235],
-	"slateblue": [106, 90, 205],
-	"slategray": [112, 128, 144],
-	"slategrey": [112, 128, 144],
-	"snow": [255, 250, 250],
-	"springgreen": [0, 255, 127],
-	"steelblue": [70, 130, 180],
-	"tan": [210, 180, 140],
-	"teal": [0, 128, 128],
-	"thistle": [216, 191, 216],
-	"tomato": [255, 99, 71],
-	"turquoise": [64, 224, 208],
-	"violet": [238, 130, 238],
-	"wheat": [245, 222, 179],
-	"white": [255, 255, 255],
-	"whitesmoke": [245, 245, 245],
-	"yellow": [255, 255, 0],
-	"yellowgreen": [154, 205, 50]
-};
-
-
-/***/ }),
-
-/***/ "./node_modules/colorcolor/src/colorcolor.js":
-/*!***************************************************!*\
-  !*** ./node_modules/colorcolor/src/colorcolor.js ***!
-  \***************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*jshint esversion: 6 */
-
-function colorcolor(color, newColor = "rgba", calculateOpacity = false) {
-	color = color.toLowerCase();
-	newColor = newColor.toLowerCase();
-	var returnedColor = color;
-	var namedColor = __webpack_require__(/*! color-name */ "./node_modules/color-name/index.js");
-	var r,g,b,a;
-	var roundTo = 4;
-	var colorDefinitions = {
-		rgb: {
-			re: /^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/,
-			example: [ "rgb(123, 234, 45)", "rgb(255,234,245)" ],
-			toRGBA: function (bits) {
-				return [
-					parseInt(bits[ 1 ], 10), parseInt(bits[ 2 ], 10), parseInt(bits[ 3 ], 10), 1
-				];
-			}
-		},
-		rgba: {
-			re: /^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d+(?:\.\d+)?|\.\d+)\s*\)/,
-			example: [ "rgba(123, 234, 45, 1)", "rgba(255,234,245, 0.5)" ],
-			toRGBA: function (bits) {
-				return [
-					parseInt(bits[ 1 ], 10), parseInt(bits[ 2 ], 10), parseInt(bits[ 3 ], 10), parseFloat(bits[ 4 ])
-				];
-			}
-		},
-		hex: {
-			re: /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/,
-			example: [ "00ff00", "336699" ],
-			toRGBA: function (bits) {
-				return [
-					parseInt(bits[ 1 ], 16), parseInt(bits[ 2 ], 16), parseInt(bits[ 3 ], 16), 1
-				];
-			}
-		},
-		hex3: {
-			re: /^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
-			example: [ "fb0", "f0f" ],
-			toRGBA: function (bits) {
-				return [
-					parseInt(bits[ 1 ] + bits[ 1 ], 16), parseInt(bits[ 2 ] + bits[ 2 ], 16), parseInt(bits[ 3 ] + bits[ 3 ], 16), 1
-				];
-			}
-		},
-		hexa: {
-			re: /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/,
-			example: [ "00ff00ff", "336699a0" ],
-			toRGBA: function (bits) {
-				return [
-					parseInt(bits[ 1 ], 16), parseInt(bits[ 2 ], 16), parseInt(bits[ 3 ], 16), (parseInt(bits[ 4 ], 16) / 255)
-				];
-			}
-		},
-		hex4a: {
-			re: /^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
-			example: [ "fb0f", "f0f8" ],
-			toRGBA: function (bits) {
-				return [
-					parseInt(bits[ 1 ] + bits[ 1 ], 16), parseInt(bits[ 2 ] + bits[ 2 ], 16), parseInt(bits[ 3 ] + bits[ 3 ], 16), (parseInt(bits[ 4 ] + bits[ 4 ], 16) / 255)
-				];
-			}
-		},
-		hsl: {
-			re: /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/,
-			example: [ "hsl(120, 100%, 25%)", "hsl(0, 100%, 50%)" ],
-			toRGBA: function (bits) {
-				bits[ 4 ] = 1;
-				var rgba = hslToRgb(bits);
-				return [
-					rgba.r, rgba.g, rgba.b, rgba.a
-				];
-			}
-		},
-		hsla: {
-			re: /^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*(\d+(?:\.\d+)?|\.\d+)\s*\)/,
-			example: [ "hsla(120, 100%, 25%, 1)", "hsla(0, 100%, 50%, 0.5)" ],
-			toRGBA: function (bits) {
-				var rgba = hslToRgb(bits);
-				return [
-					rgba.r, rgba.g, rgba.b, rgba.a
-				];
-			}
-		},
-		hsv: {
-			re: /^hsv\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/,
-			example: [ "hsv(120, 100%, 25%)", "hsv(0, 100%, 50%)" ],
-			toRGBA: function (bits) {
-				var rgb = hsvToRgb(bits);
-				return [
-					rgb.r, rgb.g, rgb.b, 1
-				];
-			}
-		},
-		hsb: {
-			re: /^hsb\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/,
-			example: [ "hsb(120, 100%, 25%)", "hsb(0, 100%, 50%)" ],
-			toRGBA: function (bits) {
-				var rgb = hsvToRgb(bits);
-				return [
-					rgb.r, rgb.g, rgb.b, 1
-				];
-			}
-		}
-	};
-
-	// If this is a named color, convert it to hex
-	if (namedColor.hasOwnProperty(color)) {
-		color = namedColor[color];
-		color.forEach(function(piece, index) {
-			"use strict";
-			color[index] = ("0" + piece.toString(16)).slice(-2);
-		});
-		color = "#" + color.join('');
-	}
-
-	// Search the color definitions for a match
-	for (let colorDefinition in colorDefinitions) {
-		let re = colorDefinitions[colorDefinition].re;
-		let processor = colorDefinitions[colorDefinition].toRGBA;
-		let bits = re.exec(color);
-		if (bits) {
-			let channels = processor(bits);
-			r = channels[0];
-			g = channels[1];
-			b = channels[2];
-			a = +(Math.round(channels[3] + ("e+" + roundTo)) + ("e-" + roundTo));
-		}
-	}
-	r = Math.round( ( r < 0 || isNaN(r) ) ? 0 : ( ( r > 255 ) ? 255 : r ) );
-	g = Math.round( ( g < 0 || isNaN(g) ) ? 0 : ( ( g > 255 ) ? 255 : g ) );
-	b = Math.round( ( b < 0 || isNaN(b) ) ? 0 : ( ( b > 255 ) ? 255 : b ) );
-	a = ( a < 0 || isNaN(a) ) ? 0 : ( ( a > 1 ) ? 1 : a );
-
-	switch (newColor) {
-		case "hex":
-			returnedColor = "#" + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2);
-			break;
-		case "hexa":
-			if (calculateOpacity) {
-				[r, g, b, a] = calculateOpacityFromWhite(r, g, b, a);
-			}
-			returnedColor = "#" + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2) + ("0" + (Math.round(255 * a)).toString(16)).slice(-2);
-			break;
-		case "hsl":
-			let hsl = rgbToHsl({ "r": r, "g": g, "b": b });
-			returnedColor = `hsl(${hsl.h},${hsl.s}%,${hsl.l}%)`;
-			break;
-		case "hsla":
-			if (calculateOpacity) {
-				[r, g, b, a] = calculateOpacityFromWhite(r, g, b, a);
-			}
-			let hsla = rgbToHsl({ "r": r, "g": g, "b": b, "a": a });
-			returnedColor = `hsla(${hsla.h},${hsla.s}%,${hsla.l}%,${hsla.a})`;
-			break;
-		case "hsb":
-			/* Same as `hsv` */
-			let hsb = rgbToHsv({ "r": r, "g": g, "b": b });
-			returnedColor = `hsb(${hsb.h},${hsb.s}%,${hsb.v}%)`;
-			break;
-		case "hsv":
-			let hsv = rgbToHsv({ "r": r, "g": g, "b": b });
-			returnedColor = `hsv(${hsv.h},${hsv.s}%,${hsv.v}%)`;
-			break;
-		case "rgb":
-			returnedColor = `rgb(${r},${g},${b})`;
-			break;
-		case "rgba":
-		/* falls through */
-		default:
-			if (calculateOpacity) {
-				[r, g, b, a] = calculateOpacityFromWhite(r, g, b, a);
-			}
-			returnedColor = `rgba(${r},${g},${b},${a})`;
-			break;
-	}
-
-	return returnedColor;
-}
-
-function calculateOpacityFromWhite(r, g, b, a) {
-	"use strict";
-	var min = 0;
-	a = ( 255 - ( min = Math.min(r, g, b) ) ) / 255;
-	r = (  false || ( r - min ) / a ).toFixed(0);
-	g = (  false || ( g - min ) / a ).toFixed(0);
-	b = (  false || ( b - min ) / a ).toFixed(0);
-	a = parseFloat(a.toFixed(4));
-
-	return [r, g, b, a];
-}
-
-function hslToRgb(bits) {
-	var rgba = {}, hsl = {
-		h: bits[1] / 360,
-		s: bits[2] / 100,
-		l: bits[3] / 100,
-		a: parseFloat(bits[ 4 ])
-	};
-	if (hsl.s === 0) {
-		let v = 255 * hsl.l;
-		rgba = {
-			r: v,
-			g: v,
-			b: v,
-			a: hsl.a
-		};
-	} else {
-		let q = hsl.l < 0.5 ? hsl.l * ( 1 + hsl.s ) : ( hsl.l + hsl.s ) - ( hsl.l * hsl.s );
-		let p = 2 * hsl.l - q;
-		rgba.r = hueToRgb(p, q, hsl.h + ( 1 / 3 ) ) * 255;
-		rgba.g = hueToRgb(p, q, hsl.h) * 255;
-		rgba.b = hueToRgb(p, q, hsl.h - ( 1 / 3 ) ) * 255;
-		rgba.a = hsl.a;
-	}
-
-	return rgba;
-}
-
-function rgbToHsl(rgba) {
-	rgba.r = rgba.r / 255;
-	rgba.g = rgba.g / 255;
-	rgba.b = rgba.b / 255;
-	var max = Math.max(rgba.r, rgba.g, rgba.b), min = Math.min(rgba.r, rgba.g, rgba.b), hsl = [], d;
-	hsl.a = rgba.a;
-	hsl.l = ( max + min ) / 2;
-	if (max === min) {
-		hsl.h = 0;
-		hsl.s = 0;
-	} else {
-		d = max - min;
-		hsl.s = hsl.l >= 0.5 ? d / ( 2 - max - min ) : d / ( max + min );
-		switch (max) {
-			case rgba.r:
-				hsl.h = ( rgba.g - rgba.b ) / d + ( rgba.g < rgba.b ? 6 : 0 );
-				break;
-			case rgba.g:
-				hsl.h = ( rgba.b - rgba.r ) / d + 2;
-				break;
-			case rgba.b:
-				hsl.h = ( rgba.r - rgba.g ) / d + 4;
-				break;
-		}
-		hsl.h /= 6;
-	}
-	hsl.h = parseInt(( hsl.h * 360 ).toFixed(0), 10);
-	hsl.s = parseInt(( hsl.s * 100 ).toFixed(0), 10);
-	hsl.l = parseInt(( hsl.l * 100 ).toFixed(0), 10);
-
-	return hsl;
-}
-
-function hsvToRgb(bits) {
-	var rgb = {}, hsv = {
-		h: bits[1] / 360,
-		s: bits[2] / 100,
-		v: bits[3] / 100
-	}, i = Math.floor(hsv.h * 6), f = hsv.h * 6 - i, p = hsv.v * ( 1 - hsv.s ), q = hsv.v * ( 1 - f * hsv.s ), t = hsv.v * ( 1 - ( 1 - f ) * hsv.s );
-	switch (i % 6) {
-		case 0:
-			rgb.r = hsv.v;
-			rgb.g = t;
-			rgb.b = p;
-			break;
-		case 1:
-			rgb.r = q;
-			rgb.g = hsv.v;
-			rgb.b = p;
-			break;
-		case 2:
-			rgb.r = p;
-			rgb.g = hsv.v;
-			rgb.b = t;
-			break;
-		case 3:
-			rgb.r = p;
-			rgb.g = q;
-			rgb.b = hsv.v;
-			break;
-		case 4:
-			rgb.r = t;
-			rgb.g = p;
-			rgb.b = hsv.v;
-			break;
-		case 5:
-			rgb.r = hsv.v;
-			rgb.g = p;
-			rgb.b = q;
-			break;
-	}
-	rgb.r = rgb.r * 255;
-	rgb.g = rgb.g * 255;
-	rgb.b = rgb.b * 255;
-
-	return rgb;
-}
-
-function rgbToHsv(rgba) {
-	rgba.r = toPercent(parseInt(rgba.r, 10) % 256, 256);
-	rgba.g = toPercent(parseInt(rgba.g, 10) % 256, 256);
-	rgba.b = toPercent(parseInt(rgba.b, 10) % 256, 256);
-	var max = Math.max(rgba.r, rgba.g, rgba.b), min = Math.min(rgba.r, rgba.g, rgba.b), d = max - min, hsv = {
-		"h": 0,
-		"s": max === 0 ? 0 : d / max,
-		"v": max
-	};
-	if (max !== min) {
-		switch (max) {
-			case rgba.r:
-				hsv.h = ( rgba.g - rgba.b ) / d + ( rgba.g < rgba.b ? 6 : 0 );
-				break;
-			case rgba.g:
-				hsv.h = ( rgba.b - rgba.r ) / d + 2;
-				break;
-			case rgba.b:
-				hsv.h = ( rgba.r - rgba.g ) / d + 4;
-				break;
-		}
-		hsv.h /= 6;
-	}
-	hsv.h = parseInt(( hsv.h * 360 ).toFixed(0), 10);
-	hsv.s = parseInt(( hsv.s * 100 ).toFixed(0), 10);
-	hsv.v = parseInt(( hsv.v * 100 ).toFixed(0), 10);
-
-	return hsv;
-}
-
-function hueToRgb(p, q, t) {
-	if (t < 0) {
-		t += 1;
-	}
-	if (t > 1) {
-		t -= 1;
-	}
-	if (t < 1 / 6) {
-		return p + ( q - p ) * 6 * t;
-	}
-	if (t < 1 / 2) {
-		return q;
-	}
-	if (t < 2 / 3) {
-		return p + ( q - p ) * ( ( 2 / 3 - t ) * 6 );
-	}
-
-	return p;
-}
-
-function toPercent(amount, limit) {
-	return amount / limit;
-}
-
-module.exports = colorcolor;
-global.colorcolor = module.exports; /* ew */
 
 
 /***/ }),
@@ -3058,6 +1883,2165 @@ module.exports = function isPlainObject(o) {
 module.exports = function isObject(val) {
   return val != null && typeof val === 'object' && Array.isArray(val) === false;
 };
+
+
+/***/ }),
+
+/***/ "./node_modules/mocha-js-delegate/index.js":
+/*!*************************************************!*\
+  !*** ./node_modules/mocha-js-delegate/index.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* globals MOClassDescription, NSObject, NSSelectorFromString, NSClassFromString, MOPropertyDescription */
+
+module.exports = function MochaDelegate(definition, superclass) {
+  var uniqueClassName =
+    'MochaJSDelegate_DynamicClass_' + NSUUID.UUID().UUIDString()
+
+  var delegateClassDesc = MOClassDescription.allocateDescriptionForClassWithName_superclass_(
+    uniqueClassName,
+    superclass || NSObject
+  )
+
+  // Storage
+  var handlers = {}
+  var ivars = {}
+
+  // Define an instance method
+  function setHandlerForSelector(selectorString, func) {
+    var handlerHasBeenSet = selectorString in handlers
+    var selector = NSSelectorFromString(selectorString)
+
+    handlers[selectorString] = func
+
+    /*
+      For some reason, Mocha acts weird about arguments: https://github.com/logancollins/Mocha/issues/28
+      We have to basically create a dynamic handler with a likewise dynamic number of predefined arguments.
+    */
+    if (!handlerHasBeenSet) {
+      var args = []
+      var regex = /:/g
+      while (regex.exec(selectorString)) {
+        args.push('arg' + args.length)
+      }
+
+      // eslint-disable-next-line no-eval
+      var dynamicFunction = eval(
+        '(function (' +
+          args.join(', ') +
+          ') { return handlers[selectorString].apply(this, arguments); })'
+      )
+
+      delegateClassDesc.addInstanceMethodWithSelector_function(
+        selector,
+        dynamicFunction
+      )
+    }
+  }
+
+  // define a property
+  function setIvar(key, value) {
+    var ivarHasBeenSet = key in handlers
+
+    ivars[key] = value
+
+    if (!ivarHasBeenSet) {
+      delegateClassDesc.addInstanceVariableWithName_typeEncoding(key, '@')
+      var description = MOPropertyDescription.new()
+      description.name = key
+      description.typeEncoding = '@'
+      description.weak = true
+      description.ivarName = key
+      delegateClassDesc.addProperty(description)
+    }
+  }
+
+  this.getClass = function() {
+    return NSClassFromString(uniqueClassName)
+  }
+
+  this.getClassInstance = function(instanceVariables) {
+    var instance = NSClassFromString(uniqueClassName).new()
+    Object.keys(ivars).forEach(function(key) {
+      instance[key] = ivars[key]
+    })
+    Object.keys(instanceVariables || {}).forEach(function(key) {
+      instance[key] = instanceVariables[key]
+    })
+    return instance
+  }
+  // alias
+  this.new = this.getClassInstance
+
+  // Convenience
+  if (typeof definition === 'object') {
+    Object.keys(definition).forEach(
+      function(key) {
+        if (typeof definition[key] === 'function') {
+          setHandlerForSelector(key, definition[key])
+        } else {
+          setIvar(key, definition[key])
+        }
+      }
+    )
+  }
+
+  delegateClassDesc.registerClass()
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/browser-api.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/browser-api.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function parseHexColor(color) {
+  // Check the string for incorrect formatting.
+  if (!color || color[0] !== '#') {
+    if (
+      color &&
+      typeof color.isKindOfClass === 'function' &&
+      color.isKindOfClass(NSColor)
+    ) {
+      return color
+    }
+    throw new Error(
+      'Incorrect color formating. It should be an hex color: #RRGGBBAA'
+    )
+  }
+
+  // append FF if alpha channel is not specified.
+  var source = color.substr(1)
+  if (source.length === 3) {
+    source += 'F'
+  } else if (source.length === 6) {
+    source += 'FF'
+  }
+  // Convert the string from #FFF format to #FFFFFF format.
+  var hex
+  if (source.length === 4) {
+    for (var i = 0; i < 4; i += 1) {
+      hex += source[i]
+      hex += source[i]
+    }
+  } else if (source.length === 8) {
+    hex = source
+  } else {
+    return NSColor.whiteColor()
+  }
+
+  var r = parseInt(hex.slice(0, 2), 16) / 255
+  var g = parseInt(hex.slice(2, 4), 16) / 255
+  var b = parseInt(hex.slice(4, 6), 16) / 255
+  var a = parseInt(hex.slice(6, 8), 16) / 255
+
+  return NSColor.colorWithSRGBRed_green_blue_alpha(r, g, b, a)
+}
+
+module.exports = function (browserWindow, panel, webview) {
+  // keep reference to the subviews
+  browserWindow._panel = panel
+  browserWindow._webview = webview
+  browserWindow._destroyed = false
+
+  browserWindow.destroy = function () {
+    return panel.close()
+  }
+
+  browserWindow.close = function () {
+    if (panel.delegate().utils && panel.delegate().utils.parentWindow) {
+      var shouldClose = true
+      browserWindow.emit('close', {
+        get defaultPrevented() {
+          return !shouldClose
+        },
+        preventDefault: function () {
+          shouldClose = false
+        },
+      })
+      if (shouldClose) {
+        panel.delegate().utils.parentWindow.endSheet(panel)
+      }
+      return
+    }
+
+    if (!browserWindow.isClosable()) {
+      return
+    }
+
+    panel.performClose(null)
+  }
+
+  function focus(focused) {
+    if (!browserWindow.isVisible()) {
+      return
+    }
+    if (focused) {
+      NSApplication.sharedApplication().activateIgnoringOtherApps(true)
+      panel.makeKeyAndOrderFront(null)
+    } else {
+      panel.orderBack(null)
+      NSApp.mainWindow().makeKeyAndOrderFront(null)
+    }
+  }
+
+  browserWindow.focus = focus.bind(this, true)
+  browserWindow.blur = focus.bind(this, false)
+
+  browserWindow.isFocused = function () {
+    return panel.isKeyWindow()
+  }
+
+  browserWindow.isDestroyed = function () {
+    return browserWindow._destroyed
+  }
+
+  browserWindow.show = function () {
+    // This method is supposed to put focus on window, however if the app does not
+    // have focus then "makeKeyAndOrderFront" will only show the window.
+    NSApp.activateIgnoringOtherApps(true)
+
+    if (panel.delegate().utils && panel.delegate().utils.parentWindow) {
+      return panel.delegate().utils.parentWindow.beginSheet_completionHandler(
+        panel,
+        __mocha__.createBlock_function('v16@?0q8', function () {
+          browserWindow.emit('closed')
+        })
+      )
+    }
+
+    return panel.makeKeyAndOrderFront(null)
+  }
+
+  browserWindow.showInactive = function () {
+    return panel.orderFrontRegardless()
+  }
+
+  browserWindow.hide = function () {
+    return panel.orderOut(null)
+  }
+
+  browserWindow.isVisible = function () {
+    return panel.isVisible()
+  }
+
+  browserWindow.isModal = function () {
+    return false
+  }
+
+  browserWindow.maximize = function () {
+    if (!browserWindow.isMaximized()) {
+      panel.zoom(null)
+    }
+  }
+  browserWindow.unmaximize = function () {
+    if (browserWindow.isMaximized()) {
+      panel.zoom(null)
+    }
+  }
+
+  browserWindow.isMaximized = function () {
+    if ((panel.styleMask() & NSResizableWindowMask) !== 0) {
+      return panel.isZoomed()
+    }
+    var rectScreen = NSScreen.mainScreen().visibleFrame()
+    var rectWindow = panel.frame()
+    return (
+      rectScreen.origin.x == rectWindow.origin.x &&
+      rectScreen.origin.y == rectWindow.origin.y &&
+      rectScreen.size.width == rectWindow.size.width &&
+      rectScreen.size.height == rectWindow.size.height
+    )
+  }
+
+  browserWindow.minimize = function () {
+    return panel.miniaturize(null)
+  }
+
+  browserWindow.restore = function () {
+    return panel.deminiaturize(null)
+  }
+
+  browserWindow.isMinimized = function () {
+    return panel.isMiniaturized()
+  }
+
+  browserWindow.setFullScreen = function (fullscreen) {
+    if (fullscreen !== browserWindow.isFullscreen()) {
+      panel.toggleFullScreen(null)
+    }
+  }
+
+  browserWindow.isFullscreen = function () {
+    return panel.styleMask() & NSFullScreenWindowMask
+  }
+
+  browserWindow.setAspectRatio = function (aspectRatio /* , extraSize */) {
+    // Reset the behaviour to default if aspect_ratio is set to 0 or less.
+    if (aspectRatio > 0.0) {
+      panel.setAspectRatio(NSMakeSize(aspectRatio, 1.0))
+    } else {
+      panel.setResizeIncrements(NSMakeSize(1.0, 1.0))
+    }
+  }
+
+  browserWindow.setBounds = function (bounds, animate) {
+    if (!bounds) {
+      return
+    }
+
+    // Do nothing if in fullscreen mode.
+    if (browserWindow.isFullscreen()) {
+      return
+    }
+
+    const newBounds = Object.assign(browserWindow.getBounds(), bounds)
+
+    // TODO: Check size constraints since setFrame does not check it.
+    // var size = bounds.size
+    // size.SetToMax(GetMinimumSize());
+    // gfx::Size max_size = GetMaximumSize();
+    // if (!max_size.IsEmpty())
+    //   size.SetToMin(max_size);
+
+    var cocoaBounds = NSMakeRect(
+      newBounds.x,
+      0,
+      newBounds.width,
+      newBounds.height
+    )
+    // Flip Y coordinates based on the primary screen
+    var screen = NSScreen.screens().firstObject()
+    cocoaBounds.origin.y = NSHeight(screen.frame()) - newBounds.y
+
+    panel.setFrame_display_animate(cocoaBounds, true, animate)
+  }
+
+  browserWindow.getBounds = function () {
+    const cocoaBounds = panel.frame()
+    var mainScreenRect = NSScreen.screens().firstObject().frame()
+    return {
+      x: cocoaBounds.origin.x,
+      y: Math.round(NSHeight(mainScreenRect) - cocoaBounds.origin.y),
+      width: cocoaBounds.size.width,
+      height: cocoaBounds.size.height,
+    }
+  }
+
+  browserWindow.setContentBounds = function (bounds, animate) {
+    // TODO:
+    browserWindow.setBounds(bounds, animate)
+  }
+
+  browserWindow.getContentBounds = function () {
+    // TODO:
+    return browserWindow.getBounds()
+  }
+
+  browserWindow.setSize = function (width, height, animate) {
+    // TODO: handle resizing around center
+    return browserWindow.setBounds({ width: width, height: height }, animate)
+  }
+
+  browserWindow.getSize = function () {
+    var bounds = browserWindow.getBounds()
+    return [bounds.width, bounds.height]
+  }
+
+  browserWindow.setContentSize = function (width, height, animate) {
+    // TODO: handle resizing around center
+    return browserWindow.setContentBounds(
+      { width: width, height: height },
+      animate
+    )
+  }
+
+  browserWindow.getContentSize = function () {
+    var bounds = browserWindow.getContentBounds()
+    return [bounds.width, bounds.height]
+  }
+
+  browserWindow.setMinimumSize = function (width, height) {
+    const minSize = CGSizeMake(width, height)
+    panel.setContentMinSize(minSize)
+  }
+
+  browserWindow.getMinimumSize = function () {
+    const size = panel.contentMinSize()
+    return [size.width, size.height]
+  }
+
+  browserWindow.setMaximumSize = function (width, height) {
+    const maxSize = CGSizeMake(width, height)
+    panel.setContentMaxSize(maxSize)
+  }
+
+  browserWindow.getMaximumSize = function () {
+    const size = panel.contentMaxSize()
+    return [size.width, size.height]
+  }
+
+  browserWindow.setResizable = function (resizable) {
+    return browserWindow._setStyleMask(resizable, NSResizableWindowMask)
+  }
+
+  browserWindow.isResizable = function () {
+    return panel.styleMask() & NSResizableWindowMask
+  }
+
+  browserWindow.setMovable = function (movable) {
+    return panel.setMovable(movable)
+  }
+  browserWindow.isMovable = function () {
+    return panel.isMovable()
+  }
+
+  browserWindow.setMinimizable = function (minimizable) {
+    return browserWindow._setStyleMask(minimizable, NSMiniaturizableWindowMask)
+  }
+
+  browserWindow.isMinimizable = function () {
+    return panel.styleMask() & NSMiniaturizableWindowMask
+  }
+
+  browserWindow.setMaximizable = function (maximizable) {
+    if (panel.standardWindowButton(NSWindowZoomButton)) {
+      panel.standardWindowButton(NSWindowZoomButton).setEnabled(maximizable)
+    }
+  }
+
+  browserWindow.isMaximizable = function () {
+    return (
+      panel.standardWindowButton(NSWindowZoomButton) &&
+      panel.standardWindowButton(NSWindowZoomButton).isEnabled()
+    )
+  }
+
+  browserWindow.setFullScreenable = function (fullscreenable) {
+    browserWindow._setCollectionBehavior(
+      fullscreenable,
+      NSWindowCollectionBehaviorFullScreenPrimary
+    )
+    // On EL Capitan this flag is required to hide fullscreen button.
+    browserWindow._setCollectionBehavior(
+      !fullscreenable,
+      NSWindowCollectionBehaviorFullScreenAuxiliary
+    )
+  }
+
+  browserWindow.isFullScreenable = function () {
+    var collectionBehavior = panel.collectionBehavior()
+    return collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary
+  }
+
+  browserWindow.setClosable = function (closable) {
+    browserWindow._setStyleMask(closable, NSClosableWindowMask)
+  }
+
+  browserWindow.isClosable = function () {
+    return panel.styleMask() & NSClosableWindowMask
+  }
+
+  browserWindow.setAlwaysOnTop = function (top, level, relativeLevel) {
+    var windowLevel = NSNormalWindowLevel
+    var maxWindowLevel = CGWindowLevelForKey(kCGMaximumWindowLevelKey)
+    var minWindowLevel = CGWindowLevelForKey(kCGMinimumWindowLevelKey)
+
+    if (top) {
+      if (level === 'normal') {
+        windowLevel = NSNormalWindowLevel
+      } else if (level === 'torn-off-menu') {
+        windowLevel = NSTornOffMenuWindowLevel
+      } else if (level === 'modal-panel') {
+        windowLevel = NSModalPanelWindowLevel
+      } else if (level === 'main-menu') {
+        windowLevel = NSMainMenuWindowLevel
+      } else if (level === 'status') {
+        windowLevel = NSStatusWindowLevel
+      } else if (level === 'pop-up-menu') {
+        windowLevel = NSPopUpMenuWindowLevel
+      } else if (level === 'screen-saver') {
+        windowLevel = NSScreenSaverWindowLevel
+      } else if (level === 'dock') {
+        // Deprecated by macOS, but kept for backwards compatibility
+        windowLevel = NSDockWindowLevel
+      } else {
+        windowLevel = NSFloatingWindowLevel
+      }
+    }
+
+    var newLevel = windowLevel + (relativeLevel || 0)
+    if (newLevel >= minWindowLevel && newLevel <= maxWindowLevel) {
+      panel.setLevel(newLevel)
+    } else {
+      throw new Error(
+        'relativeLevel must be between ' +
+          minWindowLevel +
+          ' and ' +
+          maxWindowLevel
+      )
+    }
+  }
+
+  browserWindow.isAlwaysOnTop = function () {
+    return panel.level() !== NSNormalWindowLevel
+  }
+
+  browserWindow.moveTop = function () {
+    return panel.orderFrontRegardless()
+  }
+
+  browserWindow.center = function () {
+    panel.center()
+  }
+
+  browserWindow.setPosition = function (x, y, animate) {
+    return browserWindow.setBounds({ x: x, y: y }, animate)
+  }
+
+  browserWindow.getPosition = function () {
+    var bounds = browserWindow.getBounds()
+    return [bounds.x, bounds.y]
+  }
+
+  browserWindow.setTitle = function (title) {
+    panel.setTitle(title)
+  }
+
+  browserWindow.getTitle = function () {
+    return String(panel.title())
+  }
+
+  var attentionRequestId = 0
+  browserWindow.flashFrame = function (flash) {
+    if (flash) {
+      attentionRequestId = NSApp.requestUserAttention(NSInformationalRequest)
+    } else {
+      NSApp.cancelUserAttentionRequest(attentionRequestId)
+      attentionRequestId = 0
+    }
+  }
+
+  browserWindow.getNativeWindowHandle = function () {
+    return panel
+  }
+
+  browserWindow.getNativeWebViewHandle = function () {
+    return webview
+  }
+
+  browserWindow.loadURL = function (url) {
+    // When frameLocation is a file, prefix it with the Sketch Resources path
+    if (/^(?!https?|file).*\.html?$/.test(url)) {
+      if (typeof __command !== 'undefined' && __command.pluginBundle()) {
+        url =
+          'file://' + __command.pluginBundle().urlForResourceNamed(url).path()
+      }
+    }
+
+    if (/^file:\/\/.*\.html?$/.test(url)) {
+      // ensure URLs containing spaces are properly handled
+      url = NSString.alloc().initWithString(url)
+      url = url.stringByAddingPercentEncodingWithAllowedCharacters(
+        NSCharacterSet.URLQueryAllowedCharacterSet()
+      )
+      webview.loadFileURL_allowingReadAccessToURL(
+        NSURL.URLWithString(url),
+        NSURL.URLWithString('file:///')
+      )
+      return
+    }
+
+    const properURL = NSURL.URLWithString(url)
+    const urlRequest = NSURLRequest.requestWithURL(properURL)
+
+    webview.loadRequest(urlRequest)
+  }
+
+  browserWindow.reload = function () {
+    webview.reload()
+  }
+
+  browserWindow.setHasShadow = function (hasShadow) {
+    return panel.setHasShadow(hasShadow)
+  }
+
+  browserWindow.hasShadow = function () {
+    return panel.hasShadow()
+  }
+
+  browserWindow.setOpacity = function (opacity) {
+    return panel.setAlphaValue(opacity)
+  }
+
+  browserWindow.getOpacity = function () {
+    return panel.alphaValue()
+  }
+
+  browserWindow.setVisibleOnAllWorkspaces = function (visible) {
+    return browserWindow._setCollectionBehavior(
+      visible,
+      NSWindowCollectionBehaviorCanJoinAllSpaces
+    )
+  }
+
+  browserWindow.isVisibleOnAllWorkspaces = function () {
+    var collectionBehavior = panel.collectionBehavior()
+    return collectionBehavior & NSWindowCollectionBehaviorCanJoinAllSpaces
+  }
+
+  browserWindow.setIgnoreMouseEvents = function (ignore) {
+    return panel.setIgnoresMouseEvents(ignore)
+  }
+
+  browserWindow.setContentProtection = function (enable) {
+    panel.setSharingType(enable ? NSWindowSharingNone : NSWindowSharingReadOnly)
+  }
+
+  browserWindow.setAutoHideCursor = function (autoHide) {
+    panel.setDisableAutoHideCursor(autoHide)
+  }
+
+  browserWindow.setVibrancy = function (type) {
+    var effectView = browserWindow._vibrantView
+
+    if (!type) {
+      if (effectView == null) {
+        return
+      }
+
+      effectView.removeFromSuperview()
+      panel.setVibrantView(null)
+      return
+    }
+
+    if (effectView == null) {
+      var contentView = panel.contentView()
+      effectView = NSVisualEffectView.alloc().initWithFrame(
+        contentView.bounds()
+      )
+      browserWindow._vibrantView = effectView
+
+      effectView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable)
+      effectView.setBlendingMode(NSVisualEffectBlendingModeBehindWindow)
+      effectView.setState(NSVisualEffectStateActive)
+      effectView.setFrame(contentView.bounds())
+      contentView.addSubview_positioned_relativeTo(
+        effectView,
+        NSWindowBelow,
+        null
+      )
+    }
+
+    var vibrancyType = NSVisualEffectMaterialLight
+
+    if (type === 'appearance-based') {
+      vibrancyType = NSVisualEffectMaterialAppearanceBased
+    } else if (type === 'light') {
+      vibrancyType = NSVisualEffectMaterialLight
+    } else if (type === 'dark') {
+      vibrancyType = NSVisualEffectMaterialDark
+    } else if (type === 'titlebar') {
+      vibrancyType = NSVisualEffectMaterialTitlebar
+    } else if (type === 'selection') {
+      vibrancyType = NSVisualEffectMaterialSelection
+    } else if (type === 'menu') {
+      vibrancyType = NSVisualEffectMaterialMenu
+    } else if (type === 'popover') {
+      vibrancyType = NSVisualEffectMaterialPopover
+    } else if (type === 'sidebar') {
+      vibrancyType = NSVisualEffectMaterialSidebar
+    } else if (type === 'medium-light') {
+      vibrancyType = NSVisualEffectMaterialMediumLight
+    } else if (type === 'ultra-dark') {
+      vibrancyType = NSVisualEffectMaterialUltraDark
+    }
+
+    effectView.setMaterial(vibrancyType)
+  }
+
+  browserWindow._setBackgroundColor = function (colorName) {
+    var color = parseHexColor(colorName)
+    webview.setValue_forKey(false, 'drawsBackground')
+    panel.backgroundColor = color
+  }
+
+  browserWindow._invalidate = function () {
+    panel.flushWindow()
+    panel.contentView().setNeedsDisplay(true)
+  }
+
+  browserWindow._setStyleMask = function (on, flag) {
+    var wasMaximizable = browserWindow.isMaximizable()
+    if (on) {
+      panel.setStyleMask(panel.styleMask() | flag)
+    } else {
+      panel.setStyleMask(panel.styleMask() & ~flag)
+    }
+    // Change style mask will make the zoom button revert to default, probably
+    // a bug of Cocoa or macOS.
+    browserWindow.setMaximizable(wasMaximizable)
+  }
+
+  browserWindow._setCollectionBehavior = function (on, flag) {
+    var wasMaximizable = browserWindow.isMaximizable()
+    if (on) {
+      panel.setCollectionBehavior(panel.collectionBehavior() | flag)
+    } else {
+      panel.setCollectionBehavior(panel.collectionBehavior() & ~flag)
+    }
+    // Change collectionBehavior will make the zoom button revert to default,
+    // probably a bug of Cocoa or macOS.
+    browserWindow.setMaximizable(wasMaximizable)
+  }
+
+  browserWindow._showWindowButton = function (button) {
+    var view = panel.standardWindowButton(button)
+    view.superview().addSubview_positioned_relative(view, NSWindowAbove, null)
+  }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/constants.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/constants.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = {
+  JS_BRIDGE: '__skpm_sketchBridge',
+  JS_BRIDGE_RESULT_SUCCESS: '__skpm_sketchBridge_success',
+  JS_BRIDGE_RESULT_ERROR: '__skpm_sketchBridge_error',
+  START_MOVING_WINDOW: '__skpm_startMovingWindow',
+  EXECUTE_JAVASCRIPT: '__skpm_executeJS',
+  EXECUTE_JAVASCRIPT_SUCCESS: '__skpm_executeJS_success_',
+  EXECUTE_JAVASCRIPT_ERROR: '__skpm_executeJS_error_',
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/dispatch-first-click.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/dispatch-first-click.js ***!
+  \*************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var tagsToFocus =
+  '["text", "textarea", "date", "datetime-local", "email", "number", "month", "password", "search", "tel", "time", "url", "week" ]'
+
+module.exports = function (webView, event) {
+  var point = webView.convertPoint_fromView(event.locationInWindow(), null)
+  return (
+    'var el = document.elementFromPoint(' + // get the DOM element that match the event
+    point.x +
+    ', ' +
+    point.y +
+    '); ' +
+    'if (el && el.tagName === "SELECT") {' + // select needs special handling
+    '  var event = document.createEvent("MouseEvents");' +
+    '  event.initMouseEvent("mousedown", true, true, window);' +
+    '  el.dispatchEvent(event);' +
+    '} else if (el && ' + // some tags need to be focused instead of clicked
+    tagsToFocus +
+    '.indexOf(el.type) >= 0 && ' +
+    'el.focus' +
+    ') {' +
+    'el.focus();' + // so focus them
+    '} else if (el) {' +
+    'el.dispatchEvent(new Event("click", {bubbles: true}))' + // click the others
+    '}'
+  )
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/execute-javascript.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/execute-javascript.js ***!
+  \***********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(Promise) {var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+module.exports = function (webview, browserWindow) {
+  function executeJavaScript(script, userGesture, callback) {
+    if (typeof userGesture === 'function') {
+      callback = userGesture
+      userGesture = false
+    }
+    var fiber = coscript.createFiber()
+
+    // if the webview is not ready yet, defer the execution until it is
+    if (
+      webview.navigationDelegate().state &&
+      webview.navigationDelegate().state.wasReady == 0
+    ) {
+      return new Promise(function (resolve, reject) {
+        browserWindow.once('ready-to-show', function () {
+          executeJavaScript(script, userGesture, callback)
+            .then(resolve)
+            .catch(reject)
+          fiber.cleanup()
+        })
+      })
+    }
+
+    return new Promise(function (resolve, reject) {
+      var requestId = Math.random()
+
+      browserWindow.webContents.on(
+        CONSTANTS.EXECUTE_JAVASCRIPT_SUCCESS + requestId,
+        function (res) {
+          try {
+            if (callback) {
+              callback(null, res)
+            }
+            resolve(res)
+          } catch (err) {
+            reject(err)
+          }
+          fiber.cleanup()
+        }
+      )
+      browserWindow.webContents.on(
+        CONSTANTS.EXECUTE_JAVASCRIPT_ERROR + requestId,
+        function (err) {
+          try {
+            if (callback) {
+              callback(err)
+              resolve()
+            } else {
+              reject(err)
+            }
+          } catch (err2) {
+            reject(err2)
+          }
+          fiber.cleanup()
+        }
+      )
+
+      webview.evaluateJavaScript_completionHandler(
+        module.exports.wrapScript(script, requestId),
+        null
+      )
+    })
+  }
+
+  return executeJavaScript
+}
+
+module.exports.wrapScript = function (script, requestId) {
+  return (
+    'window.' +
+    CONSTANTS.EXECUTE_JAVASCRIPT +
+    '(' +
+    requestId +
+    ', ' +
+    JSON.stringify(script) +
+    ')'
+  )
+}
+
+module.exports.injectScript = function (webView) {
+  var source =
+    'window.' +
+    CONSTANTS.EXECUTE_JAVASCRIPT +
+    ' = function(id, script) {' +
+    '  try {' +
+    '    var res = eval(script);' +
+    '    if (res && typeof res.then === "function" && typeof res.catch === "function") {' +
+    '      res.then(function (res2) {' +
+    '        window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_SUCCESS +
+    '" + id, res2);' +
+    '      })' +
+    '      .catch(function (err) {' +
+    '        window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_ERROR +
+    '" + id, err);' +
+    '      })' +
+    '    } else {' +
+    '      window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_SUCCESS +
+    '" + id, res);' +
+    '    }' +
+    '  } catch (err) {' +
+    '    window.postMessage("' +
+    CONSTANTS.EXECUTE_JAVASCRIPT_ERROR +
+    '" + id, err);' +
+    '  }' +
+    '}'
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    source,
+    0,
+    true
+  )
+  webView.configuration().userContentController().addUserScript(script)
+}
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@skpm/promise/index.js */ "./node_modules/@skpm/promise/index.js")))
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/fitSubview.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/fitSubview.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function addEdgeConstraint(edge, subview, view, constant) {
+  view.addConstraint(
+    NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant(
+      subview,
+      edge,
+      NSLayoutRelationEqual,
+      view,
+      edge,
+      1,
+      constant
+    )
+  )
+}
+module.exports = function fitSubviewToView(subview, view, constants) {
+  constants = constants || []
+  subview.setTranslatesAutoresizingMaskIntoConstraints(false)
+
+  addEdgeConstraint(NSLayoutAttributeLeft, subview, view, constants[0] || 0)
+  addEdgeConstraint(NSLayoutAttributeTop, subview, view, constants[1] || 0)
+  addEdgeConstraint(NSLayoutAttributeRight, subview, view, constants[2] || 0)
+  addEdgeConstraint(NSLayoutAttributeBottom, subview, view, constants[3] || 0)
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/index.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/index.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* let's try to match the API from Electron's Browser window
+(https://github.com/electron/electron/blob/master/docs/api/browser-window.md) */
+var EventEmitter = __webpack_require__(/*! events */ "events")
+var buildBrowserAPI = __webpack_require__(/*! ./browser-api */ "./node_modules/sketch-module-web-view/lib/browser-api.js")
+var buildWebAPI = __webpack_require__(/*! ./webview-api */ "./node_modules/sketch-module-web-view/lib/webview-api.js")
+var fitSubviewToView = __webpack_require__(/*! ./fitSubview */ "./node_modules/sketch-module-web-view/lib/fitSubview.js")
+var dispatchFirstClick = __webpack_require__(/*! ./dispatch-first-click */ "./node_modules/sketch-module-web-view/lib/dispatch-first-click.js")
+var injectClientMessaging = __webpack_require__(/*! ./inject-client-messaging */ "./node_modules/sketch-module-web-view/lib/inject-client-messaging.js")
+var movableArea = __webpack_require__(/*! ./movable-area */ "./node_modules/sketch-module-web-view/lib/movable-area.js")
+var executeJavaScript = __webpack_require__(/*! ./execute-javascript */ "./node_modules/sketch-module-web-view/lib/execute-javascript.js")
+var setDelegates = __webpack_require__(/*! ./set-delegates */ "./node_modules/sketch-module-web-view/lib/set-delegates.js")
+
+function BrowserWindow(options) {
+  options = options || {}
+
+  var identifier = options.identifier || String(NSUUID.UUID().UUIDString())
+  var threadDictionary = NSThread.mainThread().threadDictionary()
+
+  var existingBrowserWindow = BrowserWindow.fromId(identifier)
+
+  // if we already have a window opened, reuse it
+  if (existingBrowserWindow) {
+    return existingBrowserWindow
+  }
+
+  var browserWindow = new EventEmitter()
+  browserWindow.id = identifier
+
+  if (options.modal && !options.parent) {
+    throw new Error('A modal needs to have a parent.')
+  }
+
+  // Long-running script
+  var fiber = coscript.createFiber()
+
+  // Window size
+  var width = options.width || 800
+  var height = options.height || 600
+  var mainScreenRect = NSScreen.screens().firstObject().frame()
+  var cocoaBounds = NSMakeRect(
+    typeof options.x !== 'undefined'
+      ? options.x
+      : Math.round((NSWidth(mainScreenRect) - width) / 2),
+    typeof options.y !== 'undefined'
+      ? NSHeight(mainScreenRect) - options.y
+      : Math.round((NSHeight(mainScreenRect) - height) / 2),
+    width,
+    height
+  )
+
+  if (options.titleBarStyle && options.titleBarStyle !== 'default') {
+    options.frame = false
+  }
+
+  var useStandardWindow = options.windowType !== 'textured'
+  var styleMask = NSTitledWindowMask
+
+  // this is commented out because the toolbar doesn't appear otherwise :thinking-face:
+  // if (!useStandardWindow || options.frame === false) {
+  //   styleMask = NSFullSizeContentViewWindowMask
+  // }
+  if (options.minimizable !== false) {
+    styleMask |= NSMiniaturizableWindowMask
+  }
+  if (options.closable !== false) {
+    styleMask |= NSClosableWindowMask
+  }
+  if (options.resizable !== false) {
+    styleMask |= NSResizableWindowMask
+  }
+  if (!useStandardWindow || options.transparent || options.frame === false) {
+    styleMask |= NSTexturedBackgroundWindowMask
+  }
+
+  var panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer(
+    cocoaBounds,
+    styleMask,
+    NSBackingStoreBuffered,
+    true
+  )
+
+  // this would be nice but it's crashing on macOS 11.0
+  // panel.releasedWhenClosed = true
+
+  var wkwebviewConfig = WKWebViewConfiguration.alloc().init()
+  var webView = WKWebView.alloc().initWithFrame_configuration(
+    CGRectMake(0, 0, options.width || 800, options.height || 600),
+    wkwebviewConfig
+  )
+  injectClientMessaging(webView)
+  webView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable)
+
+  buildBrowserAPI(browserWindow, panel, webView)
+  buildWebAPI(browserWindow, panel, webView)
+  setDelegates(browserWindow, panel, webView, options)
+
+  if (options.windowType === 'desktop') {
+    panel.setLevel(kCGDesktopWindowLevel - 1)
+    // panel.setCanBecomeKeyWindow(false)
+    panel.setCollectionBehavior(
+      NSWindowCollectionBehaviorCanJoinAllSpaces |
+        NSWindowCollectionBehaviorStationary |
+        NSWindowCollectionBehaviorIgnoresCycle
+    )
+  }
+
+  if (
+    typeof options.minWidth !== 'undefined' ||
+    typeof options.minHeight !== 'undefined'
+  ) {
+    browserWindow.setMinimumSize(options.minWidth || 0, options.minHeight || 0)
+  }
+
+  if (
+    typeof options.maxWidth !== 'undefined' ||
+    typeof options.maxHeight !== 'undefined'
+  ) {
+    browserWindow.setMaximumSize(
+      options.maxWidth || 10000,
+      options.maxHeight || 10000
+    )
+  }
+
+  // if (options.focusable === false) {
+  //   panel.setCanBecomeKeyWindow(false)
+  // }
+
+  if (options.transparent || options.frame === false) {
+    panel.titlebarAppearsTransparent = true
+    panel.titleVisibility = NSWindowTitleHidden
+    panel.setOpaque(0)
+    panel.isMovableByWindowBackground = true
+    var toolbar2 = NSToolbar.alloc().initWithIdentifier(
+      'titlebarStylingToolbar'
+    )
+    toolbar2.setShowsBaselineSeparator(false)
+    panel.setToolbar(toolbar2)
+  }
+
+  if (options.titleBarStyle === 'hiddenInset') {
+    var toolbar = NSToolbar.alloc().initWithIdentifier('titlebarStylingToolbar')
+    toolbar.setShowsBaselineSeparator(false)
+    panel.setToolbar(toolbar)
+  }
+
+  if (options.frame === false || !options.useContentSize) {
+    browserWindow.setSize(width, height)
+  }
+
+  if (options.center) {
+    browserWindow.center()
+  }
+
+  if (options.alwaysOnTop) {
+    browserWindow.setAlwaysOnTop(true)
+  }
+
+  if (options.fullscreen) {
+    browserWindow.setFullScreen(true)
+  }
+  browserWindow.setFullScreenable(!!options.fullscreenable)
+
+  let title = options.title
+  if (options.frame === false) {
+    title = undefined
+  } else if (
+    typeof title === 'undefined' &&
+    typeof __command !== 'undefined' &&
+    __command.pluginBundle()
+  ) {
+    title = __command.pluginBundle().name()
+  }
+
+  if (title) {
+    browserWindow.setTitle(title)
+  }
+
+  var backgroundColor = options.backgroundColor
+  if (options.transparent) {
+    backgroundColor = NSColor.clearColor()
+  }
+  if (!backgroundColor && options.frame === false && options.vibrancy) {
+    backgroundColor = NSColor.clearColor()
+  }
+
+  browserWindow._setBackgroundColor(
+    backgroundColor || NSColor.windowBackgroundColor()
+  )
+
+  if (options.hasShadow === false) {
+    browserWindow.setHasShadow(false)
+  }
+
+  if (typeof options.opacity !== 'undefined') {
+    browserWindow.setOpacity(options.opacity)
+  }
+
+  options.webPreferences = options.webPreferences || {}
+
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(
+      options.webPreferences.devTools !== false,
+      'developerExtrasEnabled'
+    )
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(
+      options.webPreferences.javascript !== false,
+      'javaScriptEnabled'
+    )
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(!!options.webPreferences.plugins, 'plugInsEnabled')
+  webView
+    .configuration()
+    .preferences()
+    .setValue_forKey(
+      options.webPreferences.minimumFontSize || 0,
+      'minimumFontSize'
+    )
+
+  if (options.webPreferences.zoomFactor) {
+    webView.setMagnification(options.webPreferences.zoomFactor)
+  }
+
+  var contentView = panel.contentView()
+
+  if (options.frame !== false) {
+    webView.setFrame(contentView.bounds())
+    contentView.addSubview(webView)
+  } else {
+    // In OSX 10.10, adding subviews to the root view for the NSView hierarchy
+    // produces warnings. To eliminate the warnings, we resize the contentView
+    // to fill the window, and add subviews to that.
+    // http://crbug.com/380412
+    contentView.setAutoresizingMask(NSViewWidthSizable | NSViewHeightSizable)
+    fitSubviewToView(contentView, contentView.superview())
+
+    webView.setFrame(contentView.bounds())
+    contentView.addSubview(webView)
+
+    // The fullscreen button should always be hidden for frameless window.
+    if (panel.standardWindowButton(NSWindowFullScreenButton)) {
+      panel.standardWindowButton(NSWindowFullScreenButton).setHidden(true)
+    }
+
+    if (!options.titleBarStyle || options.titleBarStyle === 'default') {
+      // Hide the window buttons.
+      panel.standardWindowButton(NSWindowZoomButton).setHidden(true)
+      panel.standardWindowButton(NSWindowMiniaturizeButton).setHidden(true)
+      panel.standardWindowButton(NSWindowCloseButton).setHidden(true)
+
+      // Some third-party macOS utilities check the zoom button's enabled state to
+      // determine whether to show custom UI on hover, so we disable it here to
+      // prevent them from doing so in a frameless app window.
+      panel.standardWindowButton(NSWindowZoomButton).setEnabled(false)
+    }
+  }
+
+  if (options.vibrancy) {
+    browserWindow.setVibrancy(options.vibrancy)
+  }
+
+  // Set maximizable state last to ensure zoom button does not get reset
+  // by calls to other APIs.
+  browserWindow.setMaximizable(options.maximizable !== false)
+
+  panel.setHidesOnDeactivate(options.hidesOnDeactivate !== false)
+
+  if (options.remembersWindowFrame) {
+    panel.setFrameAutosaveName(identifier)
+    panel.setFrameUsingName_force(panel.frameAutosaveName(), false)
+  }
+
+  if (options.acceptsFirstMouse) {
+    browserWindow.on('focus', function (event) {
+      if (event.type() === NSEventTypeLeftMouseDown) {
+        browserWindow.webContents
+          .executeJavaScript(dispatchFirstClick(webView, event))
+          .catch(() => {})
+      }
+    })
+  }
+
+  executeJavaScript.injectScript(webView)
+  movableArea.injectScript(webView)
+  movableArea.setupHandler(browserWindow)
+
+  if (options.show !== false) {
+    browserWindow.show()
+  }
+
+  browserWindow.on('closed', function () {
+    browserWindow._destroyed = true
+    threadDictionary.removeObjectForKey(identifier)
+    var observer = threadDictionary[identifier + '.themeObserver']
+    if (observer) {
+      NSApplication.sharedApplication().removeObserver_forKeyPath(
+        observer,
+        'effectiveAppearance'
+      )
+      threadDictionary.removeObjectForKey(identifier + '.themeObserver')
+    }
+    fiber.cleanup()
+  })
+
+  threadDictionary[identifier] = panel
+
+  fiber.onCleanup(function () {
+    if (!browserWindow._destroyed) {
+      browserWindow.destroy()
+    }
+  })
+
+  return browserWindow
+}
+
+BrowserWindow.fromId = function (identifier) {
+  var threadDictionary = NSThread.mainThread().threadDictionary()
+
+  if (threadDictionary[identifier]) {
+    return BrowserWindow.fromPanel(threadDictionary[identifier], identifier)
+  }
+
+  return undefined
+}
+
+BrowserWindow.fromPanel = function (panel, identifier) {
+  var browserWindow = new EventEmitter()
+  browserWindow.id = identifier
+
+  if (!panel || !panel.contentView) {
+    throw new Error('needs to pass an NSPanel')
+  }
+
+  var webView = null
+  var subviews = panel.contentView().subviews()
+  for (var i = 0; i < subviews.length; i += 1) {
+    if (
+      !webView &&
+      !subviews[i].isKindOfClass(WKInspectorWKWebView) &&
+      subviews[i].isKindOfClass(WKWebView)
+    ) {
+      webView = subviews[i]
+    }
+  }
+
+  if (!webView) {
+    throw new Error('The panel needs to have a webview')
+  }
+
+  buildBrowserAPI(browserWindow, panel, webView)
+  buildWebAPI(browserWindow, panel, webView)
+
+  return browserWindow
+}
+
+module.exports = BrowserWindow
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/inject-client-messaging.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/inject-client-messaging.js ***!
+  \****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+module.exports = function (webView) {
+  var source =
+    'window.originalPostMessage = window.postMessage;' +
+    'window.postMessage = function(actionName) {' +
+    '  if (!actionName) {' +
+    "    throw new Error('missing action name')" +
+    '  }' +
+    '  var id = String(Math.random()).replace(".", "");' +
+    '    var args = [].slice.call(arguments);' +
+    '    args.unshift(id);' +
+    '  return new Promise(function (resolve, reject) {' +
+    '    window["' +
+    CONSTANTS.JS_BRIDGE_RESULT_SUCCESS +
+    '" + id] = resolve;' +
+    '    window["' +
+    CONSTANTS.JS_BRIDGE_RESULT_ERROR +
+    '" + id] = reject;' +
+    '    window.webkit.messageHandlers.' +
+    CONSTANTS.JS_BRIDGE +
+    '.postMessage(JSON.stringify(args));' +
+    '  });' +
+    '}'
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    source,
+    0,
+    true
+  )
+  webView.configuration().userContentController().addUserScript(script)
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/movable-area.js":
+/*!*****************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/movable-area.js ***!
+  \*****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+module.exports.injectScript = function (webView) {
+  var source =
+    '(function () {' +
+    "document.addEventListener('mousedown', onMouseDown);" +
+    '' +
+    'function shouldDrag(target) {' +
+    '  if (!target || (target.dataset || {}).appRegion === "no-drag") { return false }' +
+    '  if ((target.dataset || {}).appRegion === "drag") { return true }' +
+    '  return shouldDrag(target.parentElement)' +
+    '};' +
+    '' +
+    'function onMouseDown(e) {' +
+    '  if (e.button !== 0 || !shouldDrag(e.target)) { return }' +
+    '  window.postMessage("' +
+    CONSTANTS.START_MOVING_WINDOW +
+    '");' +
+    '};' +
+    '})()'
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    source,
+    0,
+    true
+  )
+  webView.configuration().userContentController().addUserScript(script)
+}
+
+module.exports.setupHandler = function (browserWindow) {
+  var initialMouseLocation = null
+  var initialWindowPosition = null
+  var interval = null
+
+  function moveWindow() {
+    // if the user released the button, stop moving the window
+    if (!initialWindowPosition || NSEvent.pressedMouseButtons() !== 1) {
+      clearInterval(interval)
+      initialMouseLocation = null
+      initialWindowPosition = null
+      return
+    }
+
+    var mouse = NSEvent.mouseLocation()
+    browserWindow.setPosition(
+      initialWindowPosition.x + (mouse.x - initialMouseLocation.x),
+      initialWindowPosition.y + (initialMouseLocation.y - mouse.y), // y is inverted
+      false
+    )
+  }
+
+  browserWindow.webContents.on(CONSTANTS.START_MOVING_WINDOW, function () {
+    initialMouseLocation = NSEvent.mouseLocation()
+    var position = browserWindow.getPosition()
+    initialWindowPosition = {
+      x: position[0],
+      y: position[1],
+    }
+
+    interval = setInterval(moveWindow, 1000 / 60) // 60 fps
+  })
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/parseWebArguments.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/parseWebArguments.js ***!
+  \**********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (webArguments) {
+  var args = null
+  try {
+    args = JSON.parse(webArguments)
+  } catch (e) {
+    // malformed arguments
+  }
+
+  if (
+    !args ||
+    !args.constructor ||
+    args.constructor !== Array ||
+    args.length == 0
+  ) {
+    return null
+  }
+
+  return args
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/set-delegates.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/set-delegates.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(Promise) {var ObjCClass = __webpack_require__(/*! mocha-js-delegate */ "./node_modules/mocha-js-delegate/index.js")
+var parseWebArguments = __webpack_require__(/*! ./parseWebArguments */ "./node_modules/sketch-module-web-view/lib/parseWebArguments.js")
+var CONSTANTS = __webpack_require__(/*! ./constants */ "./node_modules/sketch-module-web-view/lib/constants.js")
+
+// We create one ObjC class for ourselves here
+var WindowDelegateClass
+var NavigationDelegateClass
+var WebScriptHandlerClass
+var ThemeObserverClass
+
+// TODO: events
+// - 'page-favicon-updated'
+// - 'new-window'
+// - 'did-navigate-in-page'
+// - 'will-prevent-unload'
+// - 'crashed'
+// - 'unresponsive'
+// - 'responsive'
+// - 'destroyed'
+// - 'before-input-event'
+// - 'certificate-error'
+// - 'found-in-page'
+// - 'media-started-playing'
+// - 'media-paused'
+// - 'did-change-theme-color'
+// - 'update-target-url'
+// - 'cursor-changed'
+// - 'context-menu'
+// - 'select-bluetooth-device'
+// - 'paint'
+// - 'console-message'
+
+module.exports = function (browserWindow, panel, webview, options) {
+  if (!ThemeObserverClass) {
+    ThemeObserverClass = new ObjCClass({
+      utils: null,
+
+      'observeValueForKeyPath:ofObject:change:context:': function (
+        keyPath,
+        object,
+        change
+      ) {
+        const newAppearance = change[NSKeyValueChangeNewKey]
+        const isDark =
+          String(
+            newAppearance.bestMatchFromAppearancesWithNames([
+              'NSAppearanceNameAqua',
+              'NSAppearanceNameDarkAqua',
+            ])
+          ) === 'NSAppearanceNameDarkAqua'
+
+        this.utils.executeJavaScript(
+          "document.body.classList.remove('__skpm-" +
+            (isDark ? 'light' : 'dark') +
+            "'); document.body.classList.add('__skpm-" +
+            (isDark ? 'dark' : 'light') +
+            "')"
+        )
+      },
+    })
+  }
+
+  if (!WindowDelegateClass) {
+    WindowDelegateClass = new ObjCClass({
+      utils: null,
+      panel: null,
+
+      'windowDidResize:': function () {
+        this.utils.emit('resize')
+      },
+
+      'windowDidMiniaturize:': function () {
+        this.utils.emit('minimize')
+      },
+
+      'windowDidDeminiaturize:': function () {
+        this.utils.emit('restore')
+      },
+
+      'windowDidEnterFullScreen:': function () {
+        this.utils.emit('enter-full-screen')
+      },
+
+      'windowDidExitFullScreen:': function () {
+        this.utils.emit('leave-full-screen')
+      },
+
+      'windowDidMove:': function () {
+        this.utils.emit('move')
+        this.utils.emit('moved')
+      },
+
+      'windowShouldClose:': function () {
+        var shouldClose = 1
+        this.utils.emit('close', {
+          get defaultPrevented() {
+            return !shouldClose
+          },
+          preventDefault: function () {
+            shouldClose = 0
+          },
+        })
+        return shouldClose
+      },
+
+      'windowWillClose:': function () {
+        this.utils.emit('closed')
+      },
+
+      'windowDidBecomeKey:': function () {
+        this.utils.emit('focus', this.panel.currentEvent())
+      },
+
+      'windowDidResignKey:': function () {
+        this.utils.emit('blur')
+      },
+    })
+  }
+
+  if (!NavigationDelegateClass) {
+    NavigationDelegateClass = new ObjCClass({
+      state: {
+        wasReady: 0,
+      },
+      utils: null,
+
+      // // Called when the web view begins to receive web content.
+      'webView:didCommitNavigation:': function (webView) {
+        this.utils.emit('will-navigate', {}, String(String(webView.URL())))
+      },
+
+      // // Called when web content begins to load in a web view.
+      'webView:didStartProvisionalNavigation:': function () {
+        this.utils.emit('did-start-navigation')
+        this.utils.emit('did-start-loading')
+      },
+
+      // Called when a web view receives a server redirect.
+      'webView:didReceiveServerRedirectForProvisionalNavigation:': function () {
+        this.utils.emit('did-get-redirect-request')
+      },
+
+      // // Called when the web view needs to respond to an authentication challenge.
+      // 'webView:didReceiveAuthenticationChallenge:completionHandler:': function(
+      //   webView,
+      //   challenge,
+      //   completionHandler
+      // ) {
+      //   function callback(username, password) {
+      //     completionHandler(
+      //       0,
+      //       NSURLCredential.credentialWithUser_password_persistence(
+      //         username,
+      //         password,
+      //         1
+      //       )
+      //     )
+      //   }
+      //   var protectionSpace = challenge.protectionSpace()
+      //   this.utils.emit(
+      //     'login',
+      //     {},
+      //     {
+      //       method: String(protectionSpace.authenticationMethod()),
+      //       url: 'not implemented', // TODO:
+      //       referrer: 'not implemented', // TODO:
+      //     },
+      //     {
+      //       isProxy: !!protectionSpace.isProxy(),
+      //       scheme: String(protectionSpace.protocol()),
+      //       host: String(protectionSpace.host()),
+      //       port: Number(protectionSpace.port()),
+      //       realm: String(protectionSpace.realm()),
+      //     },
+      //     callback
+      //   )
+      // },
+
+      // Called when an error occurs during navigation.
+      // 'webView:didFailNavigation:withError:': function(
+      //   webView,
+      //   navigation,
+      //   error
+      // ) {},
+
+      // Called when an error occurs while the web view is loading content.
+      'webView:didFailProvisionalNavigation:withError:': function (
+        webView,
+        navigation,
+        error
+      ) {
+        this.utils.emit('did-fail-load', error)
+      },
+
+      // Called when the navigation is complete.
+      'webView:didFinishNavigation:': function () {
+        if (this.state.wasReady == 0) {
+          this.state.wasReady = 1
+          this.utils.emitBrowserEvent('ready-to-show')
+        }
+        this.utils.emit('did-navigate')
+        this.utils.emit('did-frame-navigate')
+        this.utils.emit('did-stop-loading')
+        this.utils.emit('did-finish-load')
+        this.utils.emit('did-frame-finish-load')
+      },
+
+      // Called when the web view’s web content process is terminated.
+      'webViewWebContentProcessDidTerminate:': function () {
+        this.utils.emit('dom-ready')
+      },
+
+      // Decides whether to allow or cancel a navigation.
+      // webView:decidePolicyForNavigationAction:decisionHandler:
+
+      // Decides whether to allow or cancel a navigation after its response is known.
+      // webView:decidePolicyForNavigationResponse:decisionHandler:
+    })
+  }
+
+  if (!WebScriptHandlerClass) {
+    WebScriptHandlerClass = new ObjCClass({
+      utils: null,
+      'userContentController:didReceiveScriptMessage:': function (_, message) {
+        var args = this.utils.parseWebArguments(String(message.body()))
+        if (!args) {
+          return
+        }
+        if (!args[0] || typeof args[0] !== 'string') {
+          return
+        }
+        args[0] = String(args[0])
+
+        this.utils.emit.apply(this, args)
+      },
+    })
+  }
+
+  var themeObserver = ThemeObserverClass.new({
+    utils: {
+      executeJavaScript(script) {
+        webview.evaluateJavaScript_completionHandler(script, null)
+      },
+    },
+  })
+
+  var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+    "document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('__skpm-" +
+      (typeof MSTheme !== 'undefined' && MSTheme.sharedTheme().isDark()
+        ? 'dark'
+        : 'light') +
+      "') }, false)",
+    0,
+    true
+  )
+  webview.configuration().userContentController().addUserScript(script)
+
+  NSApplication.sharedApplication().addObserver_forKeyPath_options_context(
+    themeObserver,
+    'effectiveAppearance',
+    NSKeyValueObservingOptionNew,
+    null
+  )
+
+  var threadDictionary = NSThread.mainThread().threadDictionary()
+  threadDictionary[browserWindow.id + '.themeObserver'] = themeObserver
+
+  var navigationDelegate = NavigationDelegateClass.new({
+    utils: {
+      setTitle: browserWindow.setTitle.bind(browserWindow),
+      emitBrowserEvent() {
+        try {
+          browserWindow.emit.apply(browserWindow, arguments)
+        } catch (err) {
+          if (
+            typeof process !== 'undefined' &&
+            process.listenerCount &&
+            process.listenerCount('uncaughtException')
+          ) {
+            process.emit('uncaughtException', err, 'uncaughtException')
+          } else {
+            console.error(err)
+            throw err
+          }
+        }
+      },
+      emit() {
+        try {
+          browserWindow.webContents.emit.apply(
+            browserWindow.webContents,
+            arguments
+          )
+        } catch (err) {
+          if (
+            typeof process !== 'undefined' &&
+            process.listenerCount &&
+            process.listenerCount('uncaughtException')
+          ) {
+            process.emit('uncaughtException', err, 'uncaughtException')
+          } else {
+            console.error(err)
+            throw err
+          }
+        }
+      },
+    },
+    state: {
+      wasReady: 0,
+    },
+  })
+
+  webview.setNavigationDelegate(navigationDelegate)
+
+  var webScriptHandler = WebScriptHandlerClass.new({
+    utils: {
+      emit(id, type) {
+        if (!type) {
+          webview.evaluateJavaScript_completionHandler(
+            CONSTANTS.JS_BRIDGE_RESULT_SUCCESS + id + '()',
+            null
+          )
+          return
+        }
+
+        var args = []
+        for (var i = 2; i < arguments.length; i += 1) args.push(arguments[i])
+
+        var listeners = browserWindow.webContents.listeners(type)
+
+        Promise.all(
+          listeners.map(function (l) {
+            return Promise.resolve().then(function () {
+              return l.apply(l, args)
+            })
+          })
+        )
+          .then(function (res) {
+            webview.evaluateJavaScript_completionHandler(
+              CONSTANTS.JS_BRIDGE_RESULT_SUCCESS +
+                id +
+                '(' +
+                JSON.stringify(res) +
+                ')',
+              null
+            )
+          })
+          .catch(function (err) {
+            webview.evaluateJavaScript_completionHandler(
+              CONSTANTS.JS_BRIDGE_RESULT_ERROR +
+                id +
+                '(' +
+                JSON.stringify(err) +
+                ')',
+              null
+            )
+          })
+      },
+      parseWebArguments: parseWebArguments,
+    },
+  })
+
+  webview
+    .configuration()
+    .userContentController()
+    .addScriptMessageHandler_name(webScriptHandler, CONSTANTS.JS_BRIDGE)
+
+  var utils = {
+    emit() {
+      try {
+        browserWindow.emit.apply(browserWindow, arguments)
+      } catch (err) {
+        if (
+          typeof process !== 'undefined' &&
+          process.listenerCount &&
+          process.listenerCount('uncaughtException')
+        ) {
+          process.emit('uncaughtException', err, 'uncaughtException')
+        } else {
+          console.error(err)
+          throw err
+        }
+      }
+    },
+  }
+  if (options.modal) {
+    // find the window of the document
+    var msdocument
+    if (options.parent.type === 'Document') {
+      msdocument = options.parent.sketchObject
+    } else {
+      msdocument = options.parent
+    }
+    if (msdocument && String(msdocument.class()) === 'MSDocumentData') {
+      // we only have an MSDocumentData instead of a MSDocument
+      // let's try to get back to the MSDocument
+      msdocument = msdocument.delegate()
+    }
+    utils.parentWindow = msdocument.windowForSheet()
+  }
+
+  var windowDelegate = WindowDelegateClass.new({
+    utils: utils,
+    panel: panel,
+  })
+
+  panel.setDelegate(windowDelegate)
+}
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@skpm/promise/index.js */ "./node_modules/@skpm/promise/index.js")))
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/lib/webview-api.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/lib/webview-api.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var EventEmitter = __webpack_require__(/*! events */ "events")
+var executeJavaScript = __webpack_require__(/*! ./execute-javascript */ "./node_modules/sketch-module-web-view/lib/execute-javascript.js")
+
+// let's try to match https://github.com/electron/electron/blob/master/docs/api/web-contents.md
+module.exports = function buildAPI(browserWindow, panel, webview) {
+  var webContents = new EventEmitter()
+
+  webContents.loadURL = browserWindow.loadURL
+
+  webContents.loadFile = function (/* filePath */) {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  webContents.downloadURL = function (/* filePath */) {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  webContents.getURL = function () {
+    return String(webview.URL())
+  }
+
+  webContents.getTitle = function () {
+    return String(webview.title())
+  }
+
+  webContents.isDestroyed = function () {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  webContents.focus = browserWindow.focus
+  webContents.isFocused = browserWindow.isFocused
+
+  webContents.isLoading = function () {
+    return !!webview.loading()
+  }
+
+  webContents.isLoadingMainFrame = function () {
+    // TODO:
+    return !!webview.loading()
+  }
+
+  webContents.isWaitingForResponse = function () {
+    return !webview.loading()
+  }
+
+  webContents.stop = function () {
+    webview.stopLoading()
+  }
+  webContents.reload = function () {
+    webview.reload()
+  }
+  webContents.reloadIgnoringCache = function () {
+    webview.reloadFromOrigin()
+  }
+  webContents.canGoBack = function () {
+    return !!webview.canGoBack()
+  }
+  webContents.canGoForward = function () {
+    return !!webview.canGoForward()
+  }
+  webContents.canGoToOffset = function (offset) {
+    return !!webview.backForwardList().itemAtIndex(offset)
+  }
+  webContents.clearHistory = function () {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.goBack = function () {
+    webview.goBack()
+  }
+  webContents.goForward = function () {
+    webview.goForward()
+  }
+  webContents.goToIndex = function (index) {
+    var backForwardList = webview.backForwardList()
+    var backList = backForwardList.backList()
+    var backListLength = backList.count()
+    if (backListLength > index) {
+      webview.loadRequest(NSURLRequest.requestWithURL(backList[index]))
+      return
+    }
+    var forwardList = backForwardList.forwardList()
+    if (forwardList.count() > index - backListLength) {
+      webview.loadRequest(
+        NSURLRequest.requestWithURL(forwardList[index - backListLength])
+      )
+      return
+    }
+    throw new Error('Cannot go to index ' + index)
+  }
+  webContents.goToOffset = function (offset) {
+    if (!webContents.canGoToOffset(offset)) {
+      throw new Error('Cannot go to offset ' + offset)
+    }
+    webview.loadRequest(
+      NSURLRequest.requestWithURL(webview.backForwardList().itemAtIndex(offset))
+    )
+  }
+  webContents.isCrashed = function () {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setUserAgent = function (/* userAgent */) {
+    // TODO:
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.getUserAgent = function () {
+    const userAgent = webview.customUserAgent()
+    return userAgent ? String(userAgent) : undefined
+  }
+  webContents.insertCSS = function (css) {
+    var source =
+      "var style = document.createElement('style'); style.innerHTML = " +
+      css.replace(/"/, '\\"') +
+      '; document.head.appendChild(style);'
+    var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+      source,
+      0,
+      true
+    )
+    webview.configuration().userContentController().addUserScript(script)
+  }
+  webContents.insertJS = function (source) {
+    var script = WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly(
+      source,
+      0,
+      true
+    )
+    webview.configuration().userContentController().addUserScript(script)
+  }
+  webContents.executeJavaScript = executeJavaScript(webview, browserWindow)
+  webContents.setIgnoreMenuShortcuts = function () {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setAudioMuted = function (/* muted */) {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.isAudioMuted = function () {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setZoomFactor = function (factor) {
+    webview.setMagnification_centeredAtPoint(factor, CGPointMake(0, 0))
+  }
+  webContents.getZoomFactor = function (callback) {
+    callback(Number(webview.magnification()))
+  }
+  webContents.setZoomLevel = function (level) {
+    // eslint-disable-next-line no-restricted-properties
+    webContents.setZoomFactor(Math.pow(1.2, level))
+  }
+  webContents.getZoomLevel = function (callback) {
+    // eslint-disable-next-line no-restricted-properties
+    callback(Math.log(Number(webview.magnification())) / Math.log(1.2))
+  }
+  webContents.setVisualZoomLevelLimits = function (/* minimumLevel, maximumLevel */) {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+  webContents.setLayoutZoomLevelLimits = function (/* minimumLevel, maximumLevel */) {
+    // TODO:??
+    console.warn(
+      'Not implemented yet, please open a PR on https://github.com/skpm/sketch-module-web-view :)'
+    )
+  }
+
+  // TODO:
+  // webContents.undo = function() {
+  //   webview.undoManager().undo()
+  // }
+  // webContents.redo = function() {
+  //   webview.undoManager().redo()
+  // }
+  // webContents.cut = webview.cut
+  // webContents.copy = webview.copy
+  // webContents.paste = webview.paste
+  // webContents.pasteAndMatchStyle = webview.pasteAsRichText
+  // webContents.delete = webview.delete
+  // webContents.replace = webview.replaceSelectionWithText
+
+  webContents.send = function () {
+    const script =
+      'window.postMessage({' +
+      'isSketchMessage: true,' +
+      "origin: '" +
+      String(__command.identifier()) +
+      "'," +
+      'args: ' +
+      JSON.stringify([].slice.call(arguments)) +
+      '}, "*")'
+    webview.evaluateJavaScript_completionHandler(script, null)
+  }
+
+  webContents.getNativeWebview = function () {
+    return webview
+  }
+
+  browserWindow.webContents = webContents
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/sketch-module-web-view/remote.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/sketch-module-web-view/remote.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* globals NSThread */
+var threadDictionary = NSThread.mainThread().threadDictionary()
+
+module.exports.getWebview = function (identifier) {
+  return __webpack_require__(/*! ./lib */ "./node_modules/sketch-module-web-view/lib/index.js").fromId(identifier) // eslint-disable-line
+}
+
+module.exports.isWebviewPresent = function isWebviewPresent(identifier) {
+  return !!threadDictionary[identifier]
+}
+
+module.exports.sendToWebview = function sendToWebview(identifier, evalString) {
+  if (!module.exports.isWebviewPresent(identifier)) {
+    return
+  }
+
+  var panel = threadDictionary[identifier]
+  var webview = null
+  var subviews = panel.contentView().subviews()
+  for (var i = 0; i < subviews.length; i += 1) {
+    if (
+      !webview &&
+      !subviews[i].isKindOfClass(WKInspectorWKWebView) &&
+      subviews[i].isKindOfClass(WKWebView)
+    ) {
+      webview = subviews[i]
+    }
+  }
+
+  if (!webview || !webview.evaluateJavaScript_completionHandler) {
+    throw new Error('Webview ' + identifier + ' not found')
+  }
+
+  webview.evaluateJavaScript_completionHandler(evalString, null)
+}
 
 
 /***/ }),
@@ -9034,43 +10018,53 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./resources/webview.html":
+/*!********************************!*\
+  !*** ./resources/webview.html ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Contents/Sketch")[0] + ".sketchplugin/Contents/Resources/_webpack_resources/c5b223e6cce380d3ceffc90a0c0a73bc.html";
+
+/***/ }),
+
 /***/ "./src/import-tokens.js":
 /*!******************************!*\
   !*** ./src/import-tokens.js ***!
   \******************************/
-/*! exports provided: default */
+/*! exports provided: default, onShutdown */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "onShutdown", function() { return onShutdown; });
 /* harmony import */ var _babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/typeof.js");
 /* harmony import */ var _babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/slicedToArray.js");
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/toConsumableArray.js");
 /* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! colorcolor */ "./node_modules/colorcolor/src/colorcolor.js");
-/* harmony import */ var colorcolor__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(colorcolor__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! path */ "path");
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(path__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! sketch-module-web-view */ "./node_modules/sketch-module-web-view/lib/index.js");
+/* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! sketch-module-web-view/remote */ "./node_modules/sketch-module-web-view/remote.js");
+/* harmony import */ var sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var sketch_dom__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! sketch/dom */ "sketch/dom");
 /* harmony import */ var sketch_dom__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(sketch_dom__WEBPACK_IMPORTED_MODULE_5__);
 
 
 
+Mocha.sharedRuntime().loadFrameworkWithName("CoreFoundation");
 
 
-var cd = __webpack_require__(/*! color-difference */ "./node_modules/color-difference/lib/index.js");
-
-
+var webviewIdentifier = "dynamicPalette.webview";
 
 var fs = __webpack_require__(/*! @skpm/fs */ "./node_modules/@skpm/fs/index.js");
 
 var os = __webpack_require__(/*! os */ "os");
 
-var path = __webpack_require__(/*! path */ "path");
+var path = __webpack_require__(/*! path */ "path"); // var sortObj = require("sort-object");
 
-var desktopDir = path.join(os.homedir(), "Desktop"); // var sortObj = require("sort-object");
 
 var sort = __webpack_require__(/*! smart-deep-sort */ "./node_modules/smart-deep-sort/lib/index.js"); // #region Sketch Items
 
@@ -9083,17 +10077,15 @@ var Style = __webpack_require__(/*! sketch/dom */ "sketch/dom").Style;
 
 
 
-var Group = __webpack_require__(/*! sketch/dom */ "sketch/dom").Group;
-
 var Text = __webpack_require__(/*! sketch/dom */ "sketch/dom").Text;
 
-var SharedStyle = __webpack_require__(/*! sketch/dom */ "sketch/dom").SharedStyle; // Document variables
+var Settings = __webpack_require__(/*! sketch/settings */ "sketch/settings");
+
+var identifier = __command.identifier(); // Document variables
 
 
 var document = sketch.getSelectedDocument();
-var doc = context.document;
-var firstSelectedLayer = document.selectedLayers.layers[0];
-var artboard = sketch.Artboard; // #endregion
+var doc = context.document; // #endregion
 // #region Styles Variables
 
 var layerStyles = document.sharedLayerStyles;
@@ -9143,176 +10135,235 @@ var MDPaletteChromaOptions = ["0", "10", "20", "30", "40", "50", "60", "70", "80
 var pageName = "Material Design Palettes"; // #endregion Visual variables
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  var directoryFiles = getPath();
-  console.log(directoryFiles);
+  // Check if this is the first time the user launches the plugin
+  var isFirstLaunch = true;
 
-  if (directoryFiles !== undefined && directoryFiles !== null) {
-    var isMDTokens = true;
-    var fileName = path.basename(directoryFiles);
-    var _folder = "";
+  if (Settings.settingForKey("launched") === true) {
+    isFirstLaunch = false;
+  } // If the user ask for the guide or it is the first launch, show the WebView
 
-    if (fileName === "dsp.json") {
-      _folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/data/";
-    } else if (fileName === "components.json" || fileName === "docs.json" || fileName === "fonts.json" || fileName === "tokens.json") {
-      _folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/";
-    } else {
-      isMDTokens = false;
+
+  if (identifier.includes("tour") || isFirstLaunch) {
+    /* Create the webview with the sizes */
+    var options = {
+      identifier: webviewIdentifier,
+      width: 1024,
+      height: 620,
+      show: false,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      title: "👀 Plugin Guide"
+    };
+
+    if (options["title"] && isFirstLaunch) {
+      options["title"] = "🪄 Import theme";
     }
 
-    if (isMDTokens) {
-      var fontTokens = JSON.parse(fs.readFileSync(_folder + "fonts.json")); // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
+    var browserWindow = new sketch_module_web_view__WEBPACK_IMPORTED_MODULE_3___default.a(options);
+    browserWindow.once("ready-to-show", function () {
+      try {
+        // browserWindow.show();
+        browserWindow.webContents.executeJavaScript("firstLaunch(".concat(isFirstLaunch, ")")).then(function (result) {
+          // Once we're processing the styles on the webview, we can show it
+          browserWindow.show();
+        });
+      } catch (createWebViewErr) {
+        console.log(createWebViewErr);
+      }
+    });
+    var webContents = browserWindow.webContents; // add a handler for a call from web content's javascript
 
-      var tokensTokens = JSON.parse(fs.readFileSync(_folder + "tokens.json")); // #region Color Tokens import
+    webContents.on("nativeLog", function (parameters) {
+      try {
+        var fromWebContents = parameters; // If it is the first launch, load the Material Design webtool and run the plugin
+        // If it is the guide, load the Material Design webtool only
 
-      var palettes = [];
-      var themes_light = [];
-      var themes_dark = [];
-      var fillStyles = [];
-      var borderStyles = [];
-      tokensTokens.entities.forEach(function (entity) {
-        var alias = false;
+        setTimeout(function () {
+          if (isFirstLaunch || fromWebContents.submit === "webtool") loadWebTool();
 
-        if (entity.type === "Alias") {
-          alias = true;
-        }
-
-        if (!alias) {
-          if (entity.category_id === "ref.palette") {
-            if (!entity.name.includes("NaN")) {
-              var name = entity.name.substring(entity.name.lastIndexOf(".") + 1);
-              var palette = name.replace(/[0-9]/g, "");
-              var color = entity.value;
-              var description = entity.description;
-              palettes.push([palette, name, color]);
-            }
-          } else if (entity.category_id === "sys.color.light") {
-            var theme = entity.tags[4];
-            var _name = entity.tags[3];
-            var _palette = entity.tags[3];
-            var _color = entity.value;
-            themes_light.push([theme, _name, _palette, _color]);
-          } else if (entity.category_id === "sys.color.dark") {
-            var _theme = entity.tags[4];
-            var _name2 = entity.tags[3];
-            var _palette2 = entity.tags[3];
-            var _color2 = entity.value;
-            themes_dark.push([_theme, _name2, _palette2, _color2]);
+          if (isFirstLaunch) {
+            runPlugin();
           }
-        }
-      });
-      var groupByCategory = palettes.reduce(function (group, palette) {
-        var _group$category;
+        }, 180);
+        browserWindow.close();
+      } catch (pluginErr) {
+        console.log(pluginErr);
+      }
+    });
+    browserWindow.loadURL(__webpack_require__(/*! ../resources/webview.html */ "./resources/webview.html"));
+    Settings.setSettingForKey("launched", true);
+  } else if (identifier.includes("webtool")) {
+    loadWebTool();
+  } else {
+    runPlugin();
+  }
 
-        var _palette3 = _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1___default()(palette, 1),
-            category = _palette3[0];
+  function runPlugin() {
+    var directoryFiles = getPath();
+    console.log(directoryFiles);
 
-        group[category] = (_group$category = group[category]) !== null && _group$category !== void 0 ? _group$category : [];
-        group[category].push(palette);
-        return group;
-      }, {}); // #endregion Color Tokens import
-      // #region Text Tokens import
+    if (directoryFiles !== undefined && directoryFiles !== null) {
+      // #region JSON files chacek
+      var isMDTokens = true;
+      var fileName = path.basename(directoryFiles);
+      var _folder = "";
 
-      var textMDStyles = [];
-      var styleName = "";
-      var fontFamily = "";
-      var fontSize = 0;
-      var fontLineHeight = 0;
-      var fontWeight = "Regular";
-      var fontKerning = 0;
-      fontTokens.entities.forEach(function (entity) {
-        var alias = false;
-
-        if (entity.type === "Alias") {
-          alias = true;
-        }
-
-        if (!alias) {
-          styleName = entity.tags[0];
-          fontFamily = entity.tokens[0].value;
-          fontLineHeight = parseFloat(entity.tokens[1].value);
-          fontWeight = entity.tokens[2].value;
-          fontKerning = parseFloat(entity.tokens[3].value);
-          fontSize = parseFloat(entity.tokens[4].value);
-          textMDStyles.push([styleName, fontFamily, fontLineHeight, fontWeight, fontKerning, fontSize]);
-        }
-      }); // #endregion Text Tokens import
-
-      var generatedLayerStyles = [];
-      var generatedTextStyles = []; // Create color variables for each palette
-
-      var _colorVariables = paletteToColorVariables(palettes); // #region Connect Color Variables
-      // themes_light.forEach((style) => {
-      //     generatedLayerStyles.push(
-      //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-      //     );
-      //     if (availableTextStyles(style[1])) {
-      //         textMDStyles.forEach((textStyle) => {
-      //             generatedTextStyles.push(
-      //                 createNewTextStyle(
-      //                     style[0],
-      //                     style[1],
-      //                     style[2],
-      //                     style[3],
-      //                     textStyle
-      //                 )
-      //             );
-      //         });
-      //     }
-      // });
-      // themes_dark.forEach((style) => {
-      //     generatedLayerStyles.push(
-      //         createNewLayerStyle(style[0], style[1], style[2], style[3])
-      //     );
-      //     if (availableTextStyles(style[1])) {
-      //         textMDStyles.forEach((textStyle) => {
-      //             generatedTextStyles.push(
-      //                 createNewTextStyle(
-      //                     style[0],
-      //                     style[1],
-      //                     style[2],
-      //                     style[3],
-      //                     textStyle
-      //                 )
-      //             );
-      //         });
-      //     }
-      // });
-      // #endregion Connect Color Variables
-      // #region Generates elements
-      // 1. Remove the page if it exists
+      if (fileName === "dsp.json") {
+        _folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/data/";
+      } else if (fileName === "components.json" || fileName === "docs.json" || fileName === "fonts.json" || fileName === "tokens.json") {
+        _folder = directoryFiles.substring(0, directoryFiles.lastIndexOf("/")) + "/";
+      } else {
+        isMDTokens = false;
+      } // #endregion JSON files chacek
+      // *********************************************************
+      // If the JSON selected file is correct, import MD3 Palettes
+      // *********************************************************
 
 
-      removeObjectsFromPage(document, pageName); // 2. Create a new page for the Color explaination
+      if (isMDTokens) {
+        var fontTokens = JSON.parse(fs.readFileSync(_folder + "fonts.json")); // let docsTokens = JSON.parse(fs.readFileSync(folder + "docs.json"));
 
-      var newPage = findOrCreatePage(document, pageName); // #region Tonal Palettes
-      // 3. Insert the Palette artboard
+        var tokensTokens = JSON.parse(fs.readFileSync(_folder + "tokens.json")); // #region Color Tokens import
 
-      var paletteArtboard = createArtboard(newPage, 0, 0, 1636, 816, "Tonal Palettes");
-      var paletteTitle = createTextWithStyleName(paletteArtboard, 32, 16, "light/display/on-background/display-large", "Tonal Palette", "Tonal Palette title");
-      var palettesList = createPaletteInArboard(paletteArtboard, groupByCategory); // #endregion Tonal Palettes
-      // #region Light theme
-      // 4. insert the light theme artboard
+        var palettes = [];
+        var themes_light = [];
+        var themes_dark = [];
+        var fillStyles = [];
+        var borderStyles = [];
+        tokensTokens.entities.forEach(function (entity) {
+          var alias = false;
 
-      var lightThemeArtboard = createArtboard(newPage, 1736, 0, 736, 816, "Light theme");
-      var lightThemeTitle = createTextWithStyleName(lightThemeArtboard, 32, 16, "light/display/on-background/display-large", "Light Theme", "Light Theme title");
-      var lightThemeList = createThemeInArboard(lightThemeArtboard, "light", generatedLayerStyles, generatedTextStyles); // #endregion Light theme
-      // #region Dark theme
-      // 5. insert the dark theme artboard
+          if (entity.type === "Alias") {
+            alias = true;
+          }
 
-      var darkThemeArtboard = createArtboard(newPage, 2572, 0, 736, 816, "Dark theme");
-      var darkThemeTitle = createTextWithStyleName(darkThemeArtboard, 32, 16, "dark/display/on-background/display-large", "Dark Theme", "Dark Theme title");
-      var darkThemeList = createThemeInArboard(darkThemeArtboard, "dark", generatedLayerStyles, generatedTextStyles); // #endregion Dark theme
-      // #endregion Generates elements
+          if (!alias) {
+            if (entity.category_id === "ref.palette") {
+              if (!entity.name.includes("NaN")) {
+                var name = entity.name.substring(entity.name.lastIndexOf(".") + 1);
+                var palette = name.replace(/[0-9]/g, "");
+                var color = entity.value;
+                var description = entity.description;
+                palettes.push([palette, name, color]);
+              }
+            } else if (entity.category_id === "sys.color.light") {
+              var theme = entity.tags[4];
+              var _name = entity.tags[3];
+              var _palette = entity.tags[3];
+              var _color = entity.value;
+              themes_light.push([theme, _name, _palette, _color]);
+            } else if (entity.category_id === "sys.color.dark") {
+              var _theme = entity.tags[4];
+              var _name2 = entity.tags[3];
+              var _palette2 = entity.tags[3];
+              var _color2 = entity.value;
+              themes_dark.push([_theme, _name2, _palette2, _color2]);
+            }
+          }
+        });
+        var groupByCategory = palettes.reduce(function (group, palette) {
+          var _group$category;
 
-      newPage.selected = true;
-      document.sketchObject.contentDrawView().centerLayersInCanvas(); // wait for animation to complete
+          var _palette3 = _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1___default()(palette, 1),
+              category = _palette3[0];
 
-      setTimeout(function () {
+          group[category] = (_group$category = group[category]) !== null && _group$category !== void 0 ? _group$category : [];
+          group[category].push(palette);
+          return group;
+        }, {}); // #endregion Color Tokens import
+        // #region Text Tokens import
+
+        var textMDStyles = [];
+        var styleName = "";
+        var fontFamily = "";
+        var fontSize = 0;
+        var fontLineHeight = 0;
+        var fontWeight = "Regular";
+        var fontKerning = 0;
+        fontTokens.entities.forEach(function (entity) {
+          var alias = false;
+
+          if (entity.type === "Alias") {
+            alias = true;
+          }
+
+          if (!alias) {
+            styleName = entity.tags[0];
+            fontFamily = entity.tokens[0].value;
+            fontLineHeight = parseFloat(entity.tokens[1].value);
+            fontWeight = entity.tokens[2].value;
+            fontKerning = parseFloat(entity.tokens[3].value);
+            fontSize = parseFloat(entity.tokens[4].value);
+            textMDStyles.push([styleName, fontFamily, fontLineHeight, fontWeight, fontKerning, fontSize]);
+          }
+        }); // #endregion Text Tokens import
+
+        var generatedLayerStyles = [];
+        var generatedTextStyles = []; // Create color variables for each palette
+
+        var _colorVariables = paletteToColorVariables(palettes); // #region Connect Color Variables
+
+
+        themes_light.forEach(function (style) {
+          generatedLayerStyles.push(createNewLayerStyle(style[0], style[1], style[2], style[3]));
+
+          if (availableTextStyles(style[1])) {
+            textMDStyles.forEach(function (textStyle) {
+              generatedTextStyles.push(createNewTextStyle(style[0], style[1], style[2], style[3], textStyle));
+            });
+          }
+        });
+        themes_dark.forEach(function (style) {
+          generatedLayerStyles.push(createNewLayerStyle(style[0], style[1], style[2], style[3]));
+
+          if (availableTextStyles(style[1])) {
+            textMDStyles.forEach(function (textStyle) {
+              generatedTextStyles.push(createNewTextStyle(style[0], style[1], style[2], style[3], textStyle));
+            });
+          }
+        }); // #endregion Connect Color Variables
+        // #region Generates elements
+        // 1. Remove the page if it exists
+
+        removeObjectsFromPage(document, pageName); // 2. Create a new page for the Color explaination
+
+        var newPage = findOrCreatePage(document, pageName); // #region Tonal Palettes
+        // 3. Insert the Palette artboard
+
+        var paletteArtboard = createArtboard(newPage, 0, 0, 1636, 816, "Tonal Palettes");
+        var paletteTitle = createTextWithStyleName(paletteArtboard, 32, 16, "light/display/on-background/display-large", "Tonal Palette", "Tonal Palette title");
+        var palettesList = createPaletteInArboard(paletteArtboard, groupByCategory); // #endregion Tonal Palettes
+        // #region Light theme
+        // 4. insert the light theme artboard
+
+        var lightThemeArtboard = createArtboard(newPage, 1736, 0, 736, 816, "Light theme");
+        var lightThemeTitle = createTextWithStyleName(lightThemeArtboard, 32, 16, "light/display/on-background/display-large", "Light Theme", "Light Theme title");
+        var lightThemeList = createThemeInArboard(lightThemeArtboard, "light", generatedLayerStyles, generatedTextStyles); // #endregion Light theme
+        // #region Dark theme
+        // 5. insert the dark theme artboard
+
+        var darkThemeArtboard = createArtboard(newPage, 2572, 0, 736, 816, "Dark theme");
+        var darkThemeTitle = createTextWithStyleName(darkThemeArtboard, 32, 16, "dark/display/on-background/display-large", "Dark Theme", "Dark Theme title");
+        var darkThemeList = createThemeInArboard(darkThemeArtboard, "dark", generatedLayerStyles, generatedTextStyles); // #endregion Dark theme
+        // #endregion Generates elements
+
         newPage.selected = true;
-      }, 100);
-    } else {
-      sketch.UI.alert("Select the correct file", "Please select one of the JSON files from your downloaded Material Design 3 token folder");
+        document.sketchObject.contentDrawView().centerLayersInCanvas(); // wait for animation to complete
+
+        setTimeout(function () {
+          newPage.selected = true;
+        }, 100);
+        sketch.UI.alert("Material Design palette imported!", "💎 Your Color Variables and Layer and Text styles are waiting for you! 💎");
+      } else {
+        sketch.UI.alert("Select the correct file", "Please select one of the JSON files from your downloaded Material Design 3 token folder");
+      }
     }
+  }
+
+  function loadWebTool() {
+    openUrl("https://links.gratton.design/material-design-webtool");
   }
 
   function paletteToColorVariables(palettes) {
@@ -9443,34 +10494,6 @@ function createThemeInArboard(artboard, theme) {
 // General Styles management functions                                 //
 // ******************************************************************* //
 
-
-function getLayerStyleNameFromID(id) {
-  var styleName = "";
-
-  for (var i = 0; i < arrayLayerStyleNames.length; i++) {
-    if (arrayLayerStyleIDs[i] === id) {
-      styleName = arrayLayerStyleNames[i];
-    }
-  }
-
-  return styleName;
-}
-
-function getTextStyleNameFromID(id) {
-  try {
-    var textStyle = "";
-
-    for (var i = 0; i < arrayTextStyleStyles.length; i++) {
-      if (arrayTextStyleIDs[i] === id) {
-        textStyle = arrayTextStyleStyles[i];
-      }
-    }
-
-    return textStyle;
-  } catch (getTextStylesStyleFromIDErr) {
-    console.log(getTextStylesStyleFromIDErr);
-  }
-}
 
 function getLayerStyleIDFromName(name) {
   var styleID = "";
@@ -9821,50 +10844,6 @@ function findAndRemovePage(document, name) {
     message = "Page do not exist";
     return;
   }
-}
-/* Manage the text */
-
-
-function createTextWithStyleID(parentLayer, padding, styleID) {
-  var textX = padding;
-  var textY = 10;
-  var textParent = parentLayer;
-  var textStyleID = styleID;
-  var textValue = buttonTextName;
-  var textName = buttonTextName;
-  var index = arrayTextStyleIDs.indexOf(textStyleID);
-  var newText = new Text({
-    parent: textParent,
-    text: textValue
-  });
-  newText.frame.x = textX;
-  newText.frame.y = textY;
-  newText.sharedStyleId = textStyleID;
-  newText.style = textStyles[index].style;
-  newText.name = textName;
-  return newText;
-}
-
-function createTextWithStyleName(parentLayer, posX, posY, styleName) {
-  var textValue = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
-  var textName = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : "";
-  var textX = posX;
-  var textY = posY;
-  var textStyleID = getTextStyleIDFromName(styleName); // console.log("Text");
-  // console.log(styleName);
-  // console.log(textStyleID);
-
-  var index = arrayTextStyleIDs.indexOf(textStyleID);
-  var newText = new Text({
-    parent: parentLayer,
-    text: textValue,
-    sharedStyleId: textStyleID,
-    style: textStyles[index].style,
-    name: textName
-  });
-  newText.frame.x = posX;
-  newText.frame.y = posY;
-  return newText;
 } // ******************************************************************* //
 // Handle function to manage Sketch items                              //
 // ******************************************************************* //
@@ -9956,20 +10935,27 @@ function createShapePathWithStyleName(parentLayer, x, y, width, height, type, st
   return newShape;
 }
 
-function createGroup(parentLayer, children, name) {
-  try {
-    var _Group = sketch.Group;
-    var newGroup = new _Group({
-      parent: parentLayer,
-      layers: children,
-      name: name
-    });
-    return newGroup;
-  } catch (errGroup) {
-    console.log(errGroup);
-  }
-} //
+function createTextWithStyleName(parentLayer, posX, posY, styleName) {
+  var textValue = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
+  var textName = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : "";
+  var textX = posX;
+  var textY = posY;
+  var textStyleID = getTextStyleIDFromName(styleName); // console.log("Text");
+  // console.log(styleName);
+  // console.log(textStyleID);
 
+  var index = arrayTextStyleIDs.indexOf(textStyleID);
+  var newText = new Text({
+    parent: parentLayer,
+    text: textValue,
+    sharedStyleId: textStyleID,
+    style: textStyles[index].style,
+    name: textName
+  });
+  newText.frame.x = posX;
+  newText.frame.y = posY;
+  return newText;
+}
 
 function matchingSwatchForName() {
   var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -9985,22 +10971,22 @@ function matchingSwatchForName() {
   if (matchingSwatches.length == 1) {
     return matchingSwatches[0];
   }
+} // ******************************************************************* //
+// When the plugin is shutdown by Sketch (for example when the user    //
+// disable the plugin) we need to close the webview if it's open       //
+// ******************************************************************* //
+
+
+function onShutdown() {
+  var existingWebview = Object(sketch_module_web_view_remote__WEBPACK_IMPORTED_MODULE_4__["getWebview"])(webviewIdentifier);
+
+  if (existingWebview) {
+    existingWebview.close();
+  }
 }
 
-function matchingSwatchForColor() {
-  var color = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-  var swatches = sketch.getSelectedDocument().swatches;
-  var matchingSwatches = swatches.filter(function (swatch) {
-    return swatch.color === color;
-  });
-
-  if (matchingSwatches.length == 0) {
-    return null;
-  }
-
-  if (matchingSwatches.length == 1) {
-    return matchingSwatches[0];
-  }
+function openUrl(url) {
+  NSWorkspace.sharedWorkspace().openURL(NSURL.URLWithString(url));
 }
 
 /***/ }),
@@ -10013,6 +10999,17 @@ function matchingSwatchForColor() {
 /***/ (function(module, exports) {
 
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ "events":
+/*!*************************!*\
+  !*** external "events" ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("events");
 
 /***/ }),
 
@@ -10060,6 +11057,17 @@ module.exports = require("sketch/dom");
 
 /***/ }),
 
+/***/ "sketch/settings":
+/*!**********************************!*\
+  !*** external "sketch/settings" ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("sketch/settings");
+
+/***/ }),
+
 /***/ "util":
 /*!***********************!*\
   !*** external "util" ***!
@@ -10087,6 +11095,10 @@ module.exports = require("util");
     }
   }
 }
+globalThis['onRun'] = __skpm_run.bind(this, 'default');
+globalThis['onShutdown'] = __skpm_run.bind(this, 'onShutdown');
+globalThis['onRun'] = __skpm_run.bind(this, 'default');
+globalThis['onShutdown'] = __skpm_run.bind(this, 'onShutdown');
 globalThis['onRun'] = __skpm_run.bind(this, 'default');
 globalThis['onShutdown'] = __skpm_run.bind(this, 'onShutdown')
 
