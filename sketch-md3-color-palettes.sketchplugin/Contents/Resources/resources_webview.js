@@ -94,10 +94,10 @@
 /***/ (function(module, exports) {
 
 // Disable the context menu (eg. the right click menu) to have a more native feel
-// document.addEventListener("contextmenu", (e) => {
-//     e.preventDefault();
-// });
-// Enter Key = Click on Create Button button
+document.addEventListener("contextmenu", function (e) {
+  e.preventDefault();
+}); // Enter Key = Click on Create Button button
+
 document.addEventListener("keyup", function (event) {
   if (event.key === "Enter") {
     document.getElementById("parametersSubmit").click();
