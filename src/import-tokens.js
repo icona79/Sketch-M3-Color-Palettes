@@ -83,6 +83,7 @@ const pageName = "Material Design Palettes";
 
 export default function () {
     // Check if this is the first time the user launches the plugin
+    // Settings.setSettingForKey("launched", false);
     var isFirstLaunch = true;
     if (Settings.settingForKey("launched") === true) {
         isFirstLaunch = false;

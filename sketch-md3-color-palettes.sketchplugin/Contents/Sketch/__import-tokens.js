@@ -10136,6 +10136,7 @@ var pageName = "Material Design Palettes"; // #endregion Visual variables
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
   // Check if this is the first time the user launches the plugin
+  Settings.setSettingForKey("launched", false);
   var isFirstLaunch = true;
 
   if (Settings.settingForKey("launched") === true) {
@@ -10192,8 +10193,7 @@ var pageName = "Material Design Palettes"; // #endregion Visual variables
         console.log(pluginErr);
       }
     });
-    browserWindow.loadURL(__webpack_require__(/*! ../resources/webview.html */ "./resources/webview.html"));
-    Settings.setSettingForKey("launched", true);
+    browserWindow.loadURL(__webpack_require__(/*! ../resources/webview.html */ "./resources/webview.html")); // Settings.setSettingForKey("launched", true);
   } else if (identifier.includes("webtool")) {
     loadWebTool();
   } else {

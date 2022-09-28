@@ -1,7 +1,7 @@
 // Disable the context menu (eg. the right click menu) to have a more native feel
-document.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-});
+// document.addEventListener("contextmenu", (e) => {
+//     e.preventDefault();
+// });
 
 // Enter Key = Click on Create Button button
 document.addEventListener("keyup", function (event) {
@@ -22,7 +22,7 @@ const stringOnly = "/^[A-Za-z0-9]+$/";
 document.getElementById("parametersSubmit").addEventListener("click", () => {
     console.log("Confirm button clicked");
     var parameters = {
-        submit: submit,
+        submit: "submit",
     };
     window.postMessage("nativeLog", parameters);
 });
