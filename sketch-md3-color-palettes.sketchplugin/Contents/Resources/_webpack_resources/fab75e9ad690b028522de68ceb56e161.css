@@ -213,6 +213,10 @@ h1 + div {
     margin-bottom: 32px;
 }
 
+.hidden {
+    display: none;
+}
+
 footer {
     width: var(--size-layout-max-width);
     height: 96px;
@@ -280,7 +284,6 @@ button.button.secondary:active {
     background-image: none;
 }
 
-[hidden],
-.hidden {
+[hidden] {
     display: none;
 }
