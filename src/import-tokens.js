@@ -82,44 +82,31 @@ const pageName = "Material Design Palettes";
 // #endregion Visual variables
 
 export default function () {
-    // Check if this is the first time the user launches the plugin
-    // Settings.setSettingForKey("launched", false);
-    var isFirstLaunch = true;
-    if (Settings.settingForKey("launched") === true) {
-        isFirstLaunch = false;
-    }
-
-    // If the user ask for the guide or it is the first launch, show the WebView
-    if (identifier.includes("tour") || isFirstLaunch) {
+    if (!identifier.includes("webtool")) {
         /* Create the webview with the sizes */
         const options = {
             identifier: webviewIdentifier,
-            width: 1024,
-            height: 620,
+            width: 960,
+            height: 400,
             show: false,
             resizable: false,
             minimizable: false,
             maximizable: false,
             fullscreenable: false,
-            title: "👀 Material Design theme importer - Plugin Guide",
+            alwaysOnTop: true,
+            title: "🪄 Material Design theme importer - Import theme",
         };
 
-        if (options["title"] && isFirstLaunch) {
-            options["title"] =
-                "🪄 Material Design theme importer - Import theme";
-        }
+        // if (options["title"] && isFirstLaunch) {
+        //     options["title"] = "🪄 Material Design theme importer - Import theme";
+        // }
 
         const browserWindow = new BrowserWindow(options);
 
+        browserWindow.show();
         browserWindow.once("ready-to-show", () => {
             try {
-                // browserWindow.show();
-                browserWindow.webContents
-                    .executeJavaScript(`firstLaunch(${isFirstLaunch})`)
-                    .then((result) => {
-                        // Once we're processing the styles on the webview, we can show it
-                        browserWindow.show();
-                    });
+                browserWindow.show();
             } catch (createWebViewErr) {
                 console.log(createWebViewErr);
             }
@@ -127,20 +114,25 @@ export default function () {
 
         const webContents = browserWindow.webContents;
 
+        webContents.on("externalLinkClicked", (url) => {
+            NSWorkspace.sharedWorkspace().openURL(NSURL.URLWithString(url));
+        });
+
         // add a handler for a call from web content's javascript
         webContents.on("nativeLog", (parameters) => {
             try {
                 let fromWebContents = parameters;
+
                 // If it is the first launch, load the Material Design webtool and run the plugin
                 // If it is the guide, load the Material Design webtool only
                 setTimeout(function () {
-                    if (isFirstLaunch || fromWebContents.submit === "webtool")
-                        loadWebTool();
-                    if (isFirstLaunch) {
+                    // if (fromWebContents.submit === "webtool") {
+                    //     loadWebTool();
+                    // }
+                    if (fromWebContents.submit === "submit") {
                         runPlugin();
                     }
                 }, 180);
-
                 browserWindow.close();
             } catch (pluginErr) {
                 console.log(pluginErr);
@@ -148,11 +140,12 @@ export default function () {
         });
 
         browserWindow.loadURL(require("../resources/webview.html"));
-        Settings.setSettingForKey("launched", true);
-    } else if (identifier.includes("webtool")) {
-        loadWebTool();
     } else {
-        runPlugin();
+        NSWorkspace.sharedWorkspace().openURL(
+            NSURL.URLWithString(
+                "https://links.gratton.design/material-design-webtool"
+            )
+        );
     }
 
     function runPlugin() {
@@ -427,10 +420,6 @@ export default function () {
                 );
             }
         }
-    }
-
-    function loadWebTool() {
-        openUrl("https://links.gratton.design/material-design-webtool");
     }
 
     function paletteToColorVariables(palettes) {
@@ -1141,8 +1130,4 @@ export function onShutdown() {
     if (existingWebview) {
         existingWebview.close();
     }
-}
-
-function openUrl(url) {
-    NSWorkspace.sharedWorkspace().openURL(NSURL.URLWithString(url));
 }
